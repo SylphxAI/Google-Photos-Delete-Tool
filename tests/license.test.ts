@@ -69,6 +69,32 @@ describe('verifyLicense', () => {
     if (result.ok) expect(result.payload.order).toBe('pi_test_123')
   })
 
+  it('accepts the exact Money token shape from the licence design (fixed key order, product, order, grant)', async () => {
+    const token = await signPayload({
+      plan: 'pro',
+      email: 'buyer@example.com',
+      issuedAt: 1790000000000,
+      product: 'gpdt',
+      order: 'pi_3Qexample',
+      grant: 'orgs/o/projects/p/envs/e/checkout_sessions/lic-abc/line_items/0',
+    })
+    const result = await verifyLicense(token, testKeys.publicRaw)
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.payload.product).toBe('gpdt')
+  })
+
+  it('keeps accepting the legacy "gpdt-pro" product slug so no issued token breaks', async () => {
+    const token = await signPayload({ plan: 'pro', email: 'old@example.com', issuedAt: 1, product: 'gpdt-pro' })
+    expect((await verifyLicense(token, testKeys.publicRaw)).ok).toBe(true)
+  })
+
+  it('a gpdt token with a bad signature is still rejected', async () => {
+    const good = await signPayload({ plan: 'pro', product: 'gpdt', issuedAt: 1 })
+    const other = await signPayload({ plan: 'pro', product: 'gpdt', issuedAt: 2 })
+    const forged = `${good.split('.')[0]}.${other.split('.')[1]}`
+    expect(await verifyLicense(forged, testKeys.publicRaw)).toEqual({ ok: false, reason: 'bad-signature' })
+  })
+
   it('rejects a Money token for another product', async () => {
     const token = await signPayload({ plan: 'pro', product: 'other', order: 'pi_x', seats: 1, expiresAt: Date.now() + 1e12 })
     expect(await verifyLicense(token, testKeys.publicRaw)).toEqual({ ok: false, reason: 'wrong-plan' })

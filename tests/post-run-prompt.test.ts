@@ -98,7 +98,7 @@ describe('post-run Get Pro button', () => {
     const free = await claimPostRunPrompt(ok, memStorage(), 'chrome', false)
     expect(free?.proUrl).toBeTruthy()
     const u = new URL(free!.proUrl!)
-    expect(u.hash).toBe('#pro')
+    expect(u.origin + u.pathname).toBe('https://buy.sylphx.com/buy/gpdt')
     expect(u.searchParams.get('utm_medium')).toBe('post_run')
     expect(u.searchParams.get('utm_source')).toBe('extension')
     const pro = await claimPostRunPrompt(ok, memStorage(), 'chrome', true)

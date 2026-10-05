@@ -231,10 +231,13 @@ describe('site tracking', () => {
 })
 
 describe('site live truth', () => {
-  it('ships self-serve off and links no buy.sylphx.com URL in any page', () => {
+  it('ships self-serve on: Pro button buys at checkout, thanks no longer says manual delivery', () => {
     const cfg = JSON.parse(read('config.json'))
-    expect(cfg.selfServeCheckout).toBe(false)
-    for (const f of [...PAGES, '404.html']) expect(read(f)).not.toContain('buy.sylphx.com')
+    expect(cfg.selfServeCheckout).toBe(true)
+    expect(read('index.html')).toMatch(/data-cta="pro" href="https:\/\/buy\.sylphx\.com\/buy\/gpdt">Buy Pro</)
+    expect(read('index.html')).not.toContain('See Pro details')
+    expect(read('thanks.html')).not.toMatch(/by hand|few hours/)
+    expect(read('thanks.html')).toContain('buy.sylphx.com/recover?product=gpdt')
   })
 
   it('with the switch off the recover link stays hidden and unlinked', async () => {
