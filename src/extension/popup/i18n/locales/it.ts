@@ -84,7 +84,9 @@ const it: Translations = {
       activate: "Attiva",
       getPro: "Passa a Pro — US$9.99 una tantum",
       active: "Pro attivo — filtri abilitati",
-      invalid: "Token di licenza non valido",
+      malformed: "Il formato del token di licenza non è valido. Incolla il token completo dall’e-mail di acquisto.",
+      wrongPlan: "Questo token non è per Google Photos Delete Tool Pro. Usa il token dell’e-mail di acquisto di GPDT.",
+      badSignature: "Impossibile verificare la firma della licenza. Copia il token originale dall’e-mail di acquisto senza modificarlo.",
     },
   },
   pro: {

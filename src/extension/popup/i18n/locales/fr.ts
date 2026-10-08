@@ -84,7 +84,9 @@ const fr: Translations = {
       activate: "Activer",
       getPro: "Passer à Pro — US$9.99, une seule fois",
       active: "Pro actif — filtres activés",
-      invalid: "Jeton de licence invalide",
+      malformed: "Le format du jeton de licence est invalide. Collez le jeton complet de votre e-mail d’achat.",
+      wrongPlan: "Ce jeton n’est pas pour Google Photos Delete Tool Pro. Utilisez le jeton de votre e-mail d’achat GPDT.",
+      badSignature: "La signature de la licence n’a pas pu être vérifiée. Copiez le jeton original de votre e-mail d’achat sans le modifier.",
     },
   },
   pro: {
