@@ -3,6 +3,7 @@ import { setMarkup } from './set-markup'
 import { formatElapsed } from '../../core/utils'
 import { buildDiagnosticIssueUrl, type DiagnosticBlob } from '../../core/diagnostics'
 import { verifyLicense } from '../../core/license'
+import { licenseStatusText } from './license-status'
 import { PRO_VARIANT_KEY, buildDryRunTeaser, countLabelTypes, getProVariant, proUrl, type ProVariant } from '../../core/pro-moments'
 import { renderProTeaser } from '../../ui/pro-teaser/teaser'
 import { TRASH_URL } from '../../core/empty-trash-baton'
@@ -410,7 +411,7 @@ async function refreshProState(): Promise<void> {
   } else {
     const result = await verifyLicense(token)
     proActive = result.ok
-    licenseStatus.textContent = result.ok ? t('settings.license.active') : t('settings.license.invalid')
+    licenseStatus.textContent = licenseStatusText(result)
     licenseStatus.className = result.ok ? 'license-status ok' : 'license-status bad'
   }
   refreshDryRunDependentFields()
@@ -422,7 +423,7 @@ licenseBtn.addEventListener('click', async () => {
   if (!token) return
   const result = await verifyLicense(token)
   if (!result.ok) {
-    licenseStatus.textContent = t('settings.license.invalid')
+    licenseStatus.textContent = licenseStatusText(result)
     licenseStatus.className = 'license-status bad'
     return
   }

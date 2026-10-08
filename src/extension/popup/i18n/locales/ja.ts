@@ -84,7 +84,9 @@ const ja: Translations = {
       activate: "有効化",
       getPro: "Pro を入手 — 一度きり US$9.99",
       active: "Pro 有効 — フィルター利用可",
-      invalid: "無効なライセンストークン",
+      malformed: "ライセンストークンの形式が無効です。購入メールから完全なトークンを貼り付けてください。",
+      wrongPlan: "このトークンは Google Photos Delete Tool Pro 用ではありません。GPDT の購入メールのトークンを使用してください。",
+      badSignature: "ライセンスの署名を検証できませんでした。購入メールから元のトークンを変更せずにコピーしてください。",
     },
   },
   pro: {
