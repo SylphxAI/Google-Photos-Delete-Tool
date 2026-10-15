@@ -1,0 +1,5 @@
+self-hosted-runner:
+  labels:
+    - sylphx-linux-standard
+    - sylphx-linux-large
+    - sylphx-linux-xlarge

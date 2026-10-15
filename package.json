@@ -26,7 +26,6 @@
     "license:issue": "bun run scripts/license.ts issue",
     "license:verify": "bun run scripts/license.ts verify",
     "listing:check": "bun run scripts/listing.ts",
-    "listing:cws": "bun run scripts/listing.ts --cws-metadata",
     "amo:bootstrap": "bun scripts/amo-create.mjs --zip google-photos-delete-tool-firefox.zip",
     "amo:bootstrap:dry": "bun scripts/amo-create.mjs --zip google-photos-delete-tool-firefox.zip --dry-run",
     "gf:upload": "bun scripts/greasy-fork-upload.mjs",

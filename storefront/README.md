@@ -20,9 +20,13 @@ Screenshots and post drafts live here too.
    - AMO summary ≤ 250 chars, AMO detailed description ≤ 10,000 chars
    - names: CWS ≤ 75, Edge ≤ 45, AMO ≤ 50
 3. `listing.appliesTo` must equal the current `package.json` version.
-4. Commit. The Chrome Web Store listing is pushed by the
-   `update-cws-listing.yml` workflow (dispatchable) or updated manually in
-   the dashboard for Edge/AMO at bootstrap time.
+4. Commit. The Chrome Web Store API v2 has no call that updates listing
+   text (the v1.1 metadata update shuts down on 2026-10-15), so listing
+   changes go through the dashboard: paste the new copy from
+   `listing.json` into the draft listing (`node scripts/cws-listing.mjs
+   --item-id <id>` does it from a browser session). The draft ships with
+   the next v2 publish. Edge/AMO listing text is dashboard-only at
+   bootstrap time.
 
 ## Screenshots
 

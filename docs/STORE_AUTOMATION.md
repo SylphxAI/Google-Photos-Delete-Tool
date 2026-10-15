@@ -44,7 +44,7 @@ store-retry.yml (every 6h) ──▶ store-publish.yml
 |---|---|---|
 | GitHub release from tag | agent | every tag |
 | CWS package publish | agent | retry loop; blocked while item is in review unless a manual dispatch sets `cancel_pending` |
-| CWS listing text | agent (API) / dashboard fallback | re-dispatch `update-cws-listing.yml` |
+| CWS listing text | agent (browser handoff) / dashboard | no v2 API call exists; edit the draft listing from `storefront/listing.json`, it ships with the next v2 publish |
 | Edge package publish | agent | after one-time bootstrap |
 | AMO version publish | agent | after one-time bootstrap |
 | Greasy Fork | **human, once** | no public API; script updates itself afterwards |
@@ -81,8 +81,14 @@ drift — the agent adapts, never fakes.
 
 | Store | Repo secrets |
 |---|---|
-| Chrome Web Store (API v2, preferred) | `CWS_SERVICE_ACCOUNT_JSON`, `CWS_PUBLISHER_ID`, `CHROME_EXTENSION_ID` |
-| Chrome Web Store (OAuth fallback) | `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN` ([setup](CHROME_WEB_STORE_SETUP.md)) |
+| Chrome Web Store (API v2, service account, preferred) | `CWS_SERVICE_ACCOUNT_JSON`, `CWS_PUBLISHER_ID`, `CHROME_EXTENSION_ID` |
+| Chrome Web Store (API v2, OAuth refresh token) | `CWS_PUBLISHER_ID`, `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN` ([setup](CHROME_WEB_STORE_SETUP.md)) |
+
+`CWS_PUBLISHER_ID` is not a secret (CWS dashboard, Account page). Set it as the
+`CWS_PUBLISHER_ID` repo **variable**; a secret of the same name also works and
+wins. The Chrome Web Store API v1.1 shuts down on 2026-10-15, so there is no
+publisher-less path any more: with credentials but no publisher id the CWS job
+fails with a message naming the variable.
 | Microsoft Edge Add-ons | `EDGE_CLIENT_ID`, `EDGE_API_KEY`, `EDGE_PRODUCT_ID` |
 | Firefox AMO | `FIREFOX_JWT_ISSUER`, `FIREFOX_JWT_SECRET` |
 
@@ -93,11 +99,12 @@ agent; identity stays with the account holder.
 
 ### Chrome Web Store
 
-Two auth paths share one workflow (`store-publish.yml`). When
-`CWS_SERVICE_ACCOUNT_JSON` is set the CWS API v2 service-account path is used;
-otherwise the OAuth refresh-token path runs unchanged. A service-account secret
-without `CWS_PUBLISHER_ID` or `CHROME_EXTENSION_ID` fails the run rather than
-silently falling back.
+Two auth paths share one workflow (`store-publish.yml`) and both call the CWS
+API v2 through `scripts/cws-v2.mjs`. When `CWS_SERVICE_ACCOUNT_JSON` is set the
+service-account path is used; otherwise an access token is minted from the
+`CHROME_*` OAuth refresh-token secrets (same v2 calls). Either path without
+`CWS_PUBLISHER_ID` or `CHROME_EXTENSION_ID` fails the run rather than silently
+falling back.
 
 **Service account setup (once, no human clicks afterwards)**
 
@@ -135,8 +142,8 @@ gh workflow run "Publish to Chrome Web Store (manual)" -f tag=<tag> -f cancel_pe
 ```
 
 `cancel_pending` is off by default, exists only on that manual dispatch, and is
-never passed by the scheduled retry or `publish-stores.yml`. It has no effect on
-the OAuth path (the run warns), because v1 has no cancel call. v2 documents no
+never passed by the scheduled retry or `publish-stores.yml`. It works on both
+auth paths (v2 has `:cancelSubmission`). v2 documents no
 call to withdraw a `STAGED` (approved, unpublished) submission other than
 `:publish`.
 
@@ -195,16 +202,13 @@ the entire lifetime cost.
 
 ### CWS listing text
 
-`storefront/listing.json` is the single source. Push it with:
-
-```bash
-gh workflow run "Update CWS Listing (manual)"
-```
-
-It fails while the item is in review (`ITEM_NOT_UPDATABLE` on upload, HTTP 304
-on metadata); re-dispatch after review clears. If the metadata endpoints are
-unavailable, the browser-handoff fallback pastes the same file into the
-dashboard: `node scripts/cws-listing.mjs --item-id <id>`.
+`storefront/listing.json` is the single source. The Chrome Web Store API v2
+has no call that updates listing text, and the v1.1 metadata update shuts
+down on 2026-10-15, so listing changes go through the dashboard: save the new
+copy in the draft listing (browser handoff: `node scripts/cws-listing.mjs
+--item-id <id>` pastes the same file into the dashboard). The draft listing
+ships with the next v2 publish. The dashboard rejects edits while the item is
+in review; make them after review clears.
 Screenshots: `node scripts/cws-screenshots.mjs` captures real 1280×800
 shots from the user's own Google Photos session (dry-run + filters are
 safe; running/empty-trash require `--allow-destructive` and the user
@@ -222,6 +226,10 @@ gh workflow run "Publish Stores (manual)" -f stores=auto
 
 # run the retry loop once now
 gh workflow run "Store Publish Retry (scheduled)"
+
+# read the live Chrome Web Store state (read-only: items.get projection DRAFT
+# plus v2 fetchStatus; uploadState, item status, version, itemError; no login)
+gh workflow run "Chrome Web Store status (read-only)"
 
 # check recorded submissions (not live-version proof)
 git fetch origin store-state && git show origin/store-state:state.json

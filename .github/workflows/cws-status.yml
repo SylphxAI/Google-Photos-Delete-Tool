@@ -1,0 +1,43 @@
+name: Chrome Web Store status (read-only)
+
+# Reads the Chrome Web Store state of the extension without a browser login:
+# items.get with projection DRAFT (uploadState, draft version, itemError) and the
+# v2 fetchStatus (review state of the submitted and published revisions). It
+# uploads, submits, publishes and cancels nothing, and it prints no token.
+# Credentials are the same repo secrets and variable the publish workflow uses.
+#
+#   gh workflow run "Chrome Web Store status (read-only)" --repo SylphxAI/Google-Photos-Delete-Tool
+#
+# Then read the run log or its job summary.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cws-status
+  cancel-in-progress: false
+
+jobs:
+  status:
+    name: Read Chrome Web Store status
+    runs-on: sylphx-linux-standard
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '22'
+
+      - name: Read status
+        env:
+          CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: node scripts/cws-v2.mjs status

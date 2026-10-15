@@ -53,7 +53,7 @@ on:
         type: string
         default: ''
       publisher_id:
-        description: 'With staged_ref: CWS publisher id (not a secret); blank = the CWS_PUBLISHER_ID secret'
+        description: 'With staged_ref: CWS publisher id (not a secret); blank = the CWS_PUBLISHER_ID repo variable or secret'
         required: false
         type: string
         default: ''
@@ -184,18 +184,20 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      # Service account (CWS API v2) wins when CWS_SERVICE_ACCOUNT_JSON is set;
-      # otherwise the OAuth refresh-token path below is used unchanged.
+      # Chrome Web Store API v2 only (the v1.1 API the old upload CLI called shuts
+      # down on 2026-10-15). A service account wins when CWS_SERVICE_ACCOUNT_JSON
+      # is set; otherwise an access token is minted from the CHROME_* OAuth
+      # refresh-token secrets. Both need the publisher id, which is not a secret:
+      # the CWS_PUBLISHER_ID repo variable (a secret of that name also works).
       - name: Credential guard
         id: creds
         env:
           CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
-          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          CANCEL_PENDING: ${{ inputs.cancel_pending && 'true' || 'false' }}
         run: |
           set -euo pipefail
           MODE="$(node scripts/cws-v2.mjs mode)"
@@ -205,9 +207,6 @@ jobs:
             echo "ready=no" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::CWS auth path: $MODE"
-            if [ "$MODE" = "oauth" ] && [ "$CANCEL_PENDING" = "true" ]; then
-              echo "::warning::cancel_pending needs the CWS v2 service account (CWS_SERVICE_ACCOUNT_JSON); ignored on the OAuth path"
-            fi
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           fi
 
@@ -228,99 +227,27 @@ jobs:
           name: store-zips
           path: zips
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      # Upload, publish (one retry after 10 min on a reachability error) and read
+      # back through the v2 API. A submission already in review exits 0 with
+      # blocked=yes and no state change; any real failure exits 1.
+      - name: Publish via Chrome Web Store API v2
+        id: v2
         if: steps.creds.outputs.ready == 'yes' && steps.state.outputs.status == 'pending'
-        with:
-          bun-version-file: .bun-version
-
-      - name: Install dependencies (CLI)
-        if: steps.creds.outputs.ready == 'yes' && steps.state.outputs.status == 'pending'
-        run: bun install --frozen-lockfile
-
-      - name: Upload to Chrome Web Store
-        id: upload
-        if: steps.creds.outputs.auth == 'oauth' && steps.state.outputs.status == 'pending'
         env:
+          CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-        run: |
-          set +e
-          OUT="$(bun x chrome-webstore-upload-cli@3.5.0 upload \
-            --source zips/google-photos-delete-tool.zip \
-            --extension-id "$CHROME_EXTENSION_ID" \
-            --client-id "$CHROME_CLIENT_ID" \
-            --client-secret "$CHROME_CLIENT_SECRET" \
-            --refresh-token "$CHROME_REFRESH_TOKEN" 2>&1)"
-          RC=$?
-          set -e
-          echo "$OUT"
-          if [ $RC -eq 0 ]; then
-            echo "uploaded=yes" >> "$GITHUB_OUTPUT"
-          elif printf '%s' "$OUT" | grep -qi 'ITEM_NOT_UPDATABLE'; then
-            echo "::notice::CWS blocked: item is in pending review / ready to publish / deleted (ITEM_NOT_UPDATABLE). The retry loop will try again after review clears."
-            echo "blocked=yes" >> "$GITHUB_OUTPUT"
-            exit 0
-          else
-            echo "::error::CWS upload failed (exit $RC)"
-            exit 1
-          fi
-
-      - name: Publish via Chrome Web Store API v2 (service account)
-        id: v2
-        if: steps.creds.outputs.auth == 'sa' && steps.state.outputs.status == 'pending'
-        env:
-          CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
-          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
-          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CANCEL_PENDING: ${{ inputs.cancel_pending && 'true' || 'false' }}
         run: |
           ARGS=(publish --zip zips/google-photos-delete-tool.zip)
           if [ "$CANCEL_PENDING" = "true" ]; then ARGS+=(--cancel-pending); fi
           node scripts/cws-v2.mjs "${ARGS[@]}"
 
-      - name: Publish to Chrome Web Store
-        id: publish
-        if: steps.creds.outputs.auth == 'oauth' && steps.upload.outputs.uploaded == 'yes'
-        env:
-          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-        run: |
-          publish() {
-            bun x chrome-webstore-upload-cli@3.5.0 publish \
-              --extension-id "$CHROME_EXTENSION_ID" \
-              --client-id "$CHROME_CLIENT_ID" \
-              --client-secret "$CHROME_CLIENT_SECRET" \
-              --refresh-token "$CHROME_REFRESH_TOKEN" 2>&1
-          }
-          set +e
-          OUT="$(publish)"
-          RC=$?
-          set -e
-          echo "$OUT"
-          RETRIED=""
-          if [ $RC -ne 0 ] && printf '%s' "$OUT" | grep -qiE 'not reachable|Timeout while connecting'; then
-            echo "::notice::CWS publish hit a transient reachability error; retrying once after 10 min"
-            sleep 600
-            RETRIED=" (retried once after 10 min)"
-            set +e
-            OUT="$(publish)"
-            RC=$?
-            set -e
-            echo "$OUT"
-          fi
-          if [ $RC -eq 0 ]; then
-            echo "published=yes" >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::CWS publish failed (exit $RC)$RETRIED — inspect the dashboard; state not advanced"
-            exit 1
-          fi
-
       - name: Record submitted state
-        if: steps.publish.outputs.published == 'yes' || steps.v2.outputs.published == 'yes'
+        if: steps.v2.outputs.published == 'yes'
         run: |
           set -euo pipefail
           STATE_FILE=/tmp/store-state.json node scripts/store-state.mjs set cws ${{ needs.resolve.outputs.tag }}
@@ -682,7 +609,7 @@ jobs:
         id: submit
         env:
           CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
-          CWS_PUBLISHER_ID: ${{ inputs.publisher_id || secrets.CWS_PUBLISHER_ID }}
+          CWS_PUBLISHER_ID: ${{ inputs.publisher_id || secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}

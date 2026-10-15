@@ -38,7 +38,7 @@ on:
         required: false
         default: ''
       publisher_id:
-        description: 'Staged submission: CWS publisher id (dashboard Account page; not a secret). Blank = CWS_PUBLISHER_ID secret'
+        description: 'Staged submission: CWS publisher id (dashboard Account page; not a secret). Blank = the CWS_PUBLISHER_ID repo variable or secret'
         required: false
         default: ''
 

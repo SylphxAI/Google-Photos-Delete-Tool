@@ -3,11 +3,9 @@
  *
  * Reads storefront/listing.json and enforces every store's character
  * limits (source-level evidence: a listing that violates a limit can
- * never reach a store workflow). Also emits the exact JSON payload for
- * the Chrome Web Store metadata-only update API.
+ * never reach a store workflow).
  *
  *   bun run listing:check          # validate (CI)
- *   bun run listing:cws            # emit CWS metadata payload
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -20,10 +18,7 @@ const read = (p: string) => readFileSync(resolve(root, p), 'utf-8')
 const pkg = JSON.parse(read('package.json'))
 const listing = JSON.parse(read('storefront/listing.json'))
 
-// When emitting a machine payload (--cws-metadata), stdout must carry ONLY
-// the JSON — diagnostics go to stderr so `bun run listing:cws > file` is safe.
-const emitting = process.argv.includes('--cws-metadata')
-const log = (msg: string) => (emitting ? console.error(msg) : console.log(msg))
+const log = (msg: string) => console.log(msg)
 
 let failures = 0
 function check(ok: boolean, what: string): void {
@@ -133,17 +128,3 @@ if (failures > 0) {
   process.exit(1)
 }
 log('listing: OK')
-
-// ─── Emit CWS metadata payload (metadata-only update API) ────────
-if (process.argv.includes('--cws-metadata')) {
-  const payload = {
-    title: listing.cws.title,
-    summary: listing.cws.summary,
-    description: listing.cws.description.join('\n\n'),
-    category: listing.cws.category,
-    defaultLocale: listing.cws.locale,
-    homepageUrl: listing.shared.homepageUrl,
-    supportUrl: listing.shared.supportUrl,
-  }
-  process.stdout.write(JSON.stringify(payload, null, 2))
-}

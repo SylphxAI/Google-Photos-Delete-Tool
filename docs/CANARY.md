@@ -34,7 +34,7 @@ including that the runner has exactly one click site.
 ## Supplying the account
 
 Use a disposable Google account that holds only the
-[gpdt-test-library](https://github.com/SylphxAI/gpdt-test-library) photos.
+[GPDT test library](../test-library/README.md) photos.
 Sign in once in a browser, export the Playwright storage state (cookies and
 local storage as JSON), and store it as the repo secret
 `GPDT_CANARY_STORAGE_STATE`. Never commit it. While the secret is absent the

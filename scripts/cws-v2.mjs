@@ -33,8 +33,9 @@
  * with the v1 wording kept only as a fallback on a failed upload.
  *
  * Commands (all read the environment; nothing secret is ever printed):
- *   node scripts/cws-v2.mjs mode                  # prints sa | oauth | none, exit 1 if SA config is partial
+ *   node scripts/cws-v2.mjs mode                  # prints sa | oauth | none, exit 1 if the config is partial
  *   node scripts/cws-v2.mjs publish --zip <file> [--cancel-pending] [--staged]
+ *   node scripts/cws-v2.mjs status                # read-only: v1.1 items.get (projection DRAFT) + v2 fetchStatus
  *
  * --staged submits with publishType STAGED_PUBLISH and accepts only a
  * PENDING_REVIEW or STAGED readback, so the run can never make a version live.
@@ -42,8 +43,9 @@
  * Environment: CWS_SERVICE_ACCOUNT_JSON, CWS_PUBLISHER_ID, CHROME_EXTENSION_ID
  * (service-account path), or CHROME_CLIENT_ID / CHROME_CLIENT_SECRET /
  * CHROME_REFRESH_TOKEN plus CWS_PUBLISHER_ID and CHROME_EXTENSION_ID (the same
- * v2 calls with an OAuth access token minted from the refresh token). Without
- * CWS_PUBLISHER_ID the OAuth secrets stay with the workflow's v1 CLI path.
+ * v2 calls with an OAuth access token minted from the refresh token). The v1.1
+ * API shuts down on 2026-10-15 and v2 addresses items by publisher id, so the
+ * OAuth secrets without CWS_PUBLISHER_ID are refused, never sent to v1.
  *
  * Exit codes: 0 = published or blocked by a pending review (outputs say which),
  * 1 = any failure (auth, validation, readback). State must only advance on
@@ -61,18 +63,27 @@ const ACCEPTED_STATES = ['PENDING_REVIEW', 'STAGED', 'PUBLISHED', 'PUBLISHED_TO_
 const STAGED_ACCEPTED_STATES = ['PENDING_REVIEW', 'STAGED']
 export const PUBLISH_TYPES = ['DEFAULT_PUBLISH', 'STAGED_PUBLISH']
 
-/** Choose the auth path. Service account wins when its secret is set. */
+/**
+ * Choose the auth path. Service account wins when its secret is set. Both paths
+ * need the publisher id: the v2 API has no publisher-less form.
+ */
 export function selectAuthMode(env) {
   const has = (k) => typeof env[k] === 'string' && env[k].trim() !== ''
   if (has('CWS_SERVICE_ACCOUNT_JSON')) {
     const missing = ['CWS_PUBLISHER_ID', 'CHROME_EXTENSION_ID'].filter((k) => !has(k))
-    return missing.length ? { mode: 'invalid', missing } : { mode: 'sa' }
+    return missing.length ? { mode: 'invalid', via: 'CWS_SERVICE_ACCOUNT_JSON', missing } : { mode: 'sa' }
   }
   if (['CHROME_EXTENSION_ID', 'CHROME_CLIENT_ID', 'CHROME_CLIENT_SECRET', 'CHROME_REFRESH_TOKEN'].every(has)) {
-    return { mode: 'oauth' }
+    return has('CWS_PUBLISHER_ID') ? { mode: 'oauth' } : { mode: 'invalid', via: 'the CHROME_* OAuth secrets', missing: ['CWS_PUBLISHER_ID'] }
   }
   return { mode: 'none' }
 }
+
+/** The error line for a refused configuration (names what to set, never a value). */
+export const invalidModeMessage = (sel) =>
+  sel.missing.includes('CWS_PUBLISHER_ID') && sel.via !== 'CWS_SERVICE_ACCOUNT_JSON'
+    ? `${sel.via} are set but CWS_PUBLISHER_ID is missing; the Chrome Web Store API v1.1 shuts down on 2026-10-15 and v2 needs the publisher id. Set the CWS_PUBLISHER_ID repo variable (developer dashboard, Account page; not a secret).`
+    : `${sel.via} is set but ${sel.missing.join(', ')} is missing; refusing to fall back silently`
 
 const b64url = (v) => Buffer.from(v).toString('base64url')
 
@@ -235,6 +246,69 @@ export async function publishV2(opts) {
   return { outcome: 'published', itemState, crxVersion: crxVersion ?? '', cancelled, staged, readback: after.json }
 }
 
+export const V1_ITEMS_BASE = 'https://www.googleapis.com/chromewebstore/v1.1/items'
+
+/**
+ * Read-only status: the v1.1 items.get draft (uploadState, crxVersion, itemError;
+ * the v1.1 API shuts down on 2026-10-15) and the v2 fetchStatus (review state of
+ * the submitted and published revisions). The two reads are independent: one
+ * failing does not hide the other. Only whitelisted fields are returned, never
+ * the whole body. Throws only when neither read produced data.
+ */
+export async function readStatus({ token, publisherId, itemId, fetchImpl = fetch }) {
+  const out = { draft: null, v2: null, errors: [] }
+  const d = await call(fetchImpl, token, 'GET', `${V1_ITEMS_BASE}/${encodeURIComponent(itemId)}?projection=DRAFT`).catch((e) => ({ ok: false, status: 0, error: e }))
+  if (d.ok && d.json) {
+    out.draft = {
+      uploadState: d.json.uploadState ?? 'UNKNOWN',
+      crxVersion: d.json.crxVersion ?? '',
+      itemError: (d.json.itemError ?? []).map((e) => ({ code: e.error_code ?? '', detail: e.error_detail ?? '' })),
+    }
+  } else {
+    out.errors.push(`items.get (v1.1, projection DRAFT) failed (HTTP ${d.status})`)
+  }
+  if (!publisherId) {
+    out.errors.push('v2 fetchStatus skipped: CWS_PUBLISHER_ID is not set')
+  } else {
+    const v = await call(fetchImpl, token, 'GET', `${API_BASE}/v2/${itemName(publisherId, itemId)}:fetchStatus`).catch((e) => ({ ok: false, status: 0, error: e }))
+    if (v.ok && v.json) {
+      const rev = (r) => (r ? { state: r.state ?? 'UNKNOWN', versions: (r.distributionChannels ?? []).map((c) => c.crxVersion).filter(Boolean) } : null)
+      out.v2 = {
+        submitted: rev(v.json.submittedItemRevisionStatus),
+        published: rev(v.json.publishedItemRevisionStatus),
+        lastAsyncUploadState: v.json.lastAsyncUploadState ?? 'UNKNOWN',
+        takenDown: v.json.takenDown === true,
+        warned: v.json.warned === true,
+      }
+    } else {
+      out.errors.push(`fetchStatus (v2) failed (HTTP ${v.status})`)
+    }
+  }
+  if (!out.draft && !out.v2) throw new Error(out.errors.join('; '))
+  return out
+}
+
+/** One-per-line summary of readStatus() for the log and the job summary. */
+export function formatStatus(r) {
+  const lines = []
+  if (r.draft) {
+    lines.push(`uploadState: ${r.draft.uploadState}`)
+    lines.push(`version (draft crxVersion): ${r.draft.crxVersion || 'none'}`)
+    lines.push(r.draft.itemError.length
+      ? `itemError: ${r.draft.itemError.map((e) => `${e.code}${e.detail ? ` (${e.detail})` : ''}`).join('; ')}`
+      : 'itemError: none')
+  }
+  if (r.v2) {
+    const fmt = (x) => (x ? `${x.state}${x.versions.length ? ` version ${x.versions.join(', ')}` : ''}` : 'none')
+    lines.push(`item status, submitted revision: ${fmt(r.v2.submitted)}`)
+    lines.push(`item status, published revision: ${fmt(r.v2.published)}`)
+    lines.push(`lastAsyncUploadState: ${r.v2.lastAsyncUploadState}`)
+    lines.push(`takenDown: ${r.v2.takenDown}  warned: ${r.v2.warned}`)
+  }
+  for (const e of r.errors) lines.push(`note: ${e}`)
+  return lines
+}
+
 function writeOutputs(pairs) {
   if (!process.env.GITHUB_OUTPUT) return
   appendFileSync(process.env.GITHUB_OUTPUT, Object.entries(pairs).map(([k, v]) => `${k}=${v}\n`).join(''))
@@ -245,14 +319,15 @@ async function main(argv, env) {
   if (cmd === 'mode') {
     const sel = selectAuthMode(env)
     if (sel.mode === 'invalid') {
-      console.error(`::error::CWS_SERVICE_ACCOUNT_JSON is set but ${sel.missing.join(', ')} is missing; refusing to fall back silently`)
+      console.error(`::error::${invalidModeMessage(sel)}`)
       return 1
     }
     console.log(sel.mode)
     return 0
   }
+  if (cmd === 'status') return statusCommand(env)
   if (cmd !== 'publish') {
-    console.error('usage: cws-v2.mjs mode | publish --zip <file> [--cancel-pending] [--staged]')
+    console.error('usage: cws-v2.mjs mode | status | publish --zip <file> [--cancel-pending] [--staged]')
     return 2
   }
   const zipIdx = rest.indexOf('--zip')
@@ -260,7 +335,11 @@ async function main(argv, env) {
   if (!zipPath) { console.error('::error::--zip <file> required'); return 2 }
   const sel = selectAuthMode(env)
   const publisherId = (env.CWS_PUBLISHER_ID ?? '').trim()
-  if (sel.mode !== 'sa' && !(sel.mode === 'oauth' && publisherId)) {
+  if (sel.mode === 'invalid') {
+    console.error(`::error::${invalidModeMessage(sel)}`)
+    return 1
+  }
+  if (sel.mode !== 'sa' && sel.mode !== 'oauth') {
     console.error('::error::v2 needs the service account, or the OAuth secrets plus CWS_PUBLISHER_ID')
     return 1
   }
@@ -293,6 +372,36 @@ async function main(argv, env) {
     return 0
   } catch (err) {
     console.error(`::error::CWS v2 failed: ${err instanceof Error ? err.message : 'unknown error'}; state not advanced`)
+    return 1
+  }
+}
+
+async function statusCommand(env) {
+  const sel = selectAuthMode(env)
+  if (sel.mode === 'invalid') {
+    console.error(`::error::${invalidModeMessage(sel)}`)
+    return 1
+  }
+  if (sel.mode === 'none') {
+    console.error('::error::no service account or CHROME_* OAuth secrets configured')
+    return 1
+  }
+  try {
+    const token = sel.mode === 'sa'
+      ? await mintAccessToken(env.CWS_SERVICE_ACCOUNT_JSON)
+      : await mintOAuthAccessToken({ clientId: env.CHROME_CLIENT_ID.trim(), clientSecret: env.CHROME_CLIENT_SECRET.trim(), refreshToken: env.CHROME_REFRESH_TOKEN.trim() })
+    console.log(`::add-mask::${token}`)
+    const result = await readStatus({ token, publisherId: (env.CWS_PUBLISHER_ID ?? '').trim(), itemId: env.CHROME_EXTENSION_ID.trim() })
+    const lines = formatStatus(result)
+    lines.unshift(`read at: ${new Date().toISOString()}`)
+    console.log(`Chrome Web Store status (auth: ${sel.mode})`)
+    for (const l of lines) console.log(l)
+    if (env.GITHUB_STEP_SUMMARY) {
+      appendFileSync(env.GITHUB_STEP_SUMMARY, `### Chrome Web Store status\n\n${lines.map((l) => `- ${l}`).join('\n')}\n`)
+    }
+    return 0
+  } catch (err) {
+    console.error(`::error::CWS status failed: ${err instanceof Error ? err.message : 'unknown error'}`)
     return 1
   }
 }

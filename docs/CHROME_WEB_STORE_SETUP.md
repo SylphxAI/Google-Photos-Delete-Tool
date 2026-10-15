@@ -1,7 +1,7 @@
 # Chrome Web Store API setup
 
 One-time setup for automatic publishing from GitHub Actions. It produces four
-repo secrets:
+repo secrets, plus one repo variable:
 
 | Secret | Value |
 |---|---|
@@ -24,6 +24,9 @@ repo secrets:
    the extension, and exchange the code for the refresh token. (Alternative:
    `npx chrome-webstore-upload-keys`.)
 5. Add the four secrets under repo Settings, Secrets and variables, Actions.
+   Also add the repo variable `CWS_PUBLISHER_ID` (the publisher id on the CWS
+   developer dashboard's Account page; not a secret). The Chrome Web Store API
+   v1.1 shuts down on 2026-10-15; publishing uses API v2, which needs it.
 
 Then bump the version in `package.json` (the build syncs it to the manifest),
 tag `v<version>` and push the tag. `release.yml` builds, creates the GitHub

@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { generateKeyPairSync, createVerify } from 'node:crypto'
 import { readFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 // @ts-expect-error plain .mjs script, no type declarations
-import { selectAuthMode, signServiceAccountJwt, mintAccessToken, mintOAuthAccessToken, publishV2, API_BASE, SCOPE } from '../scripts/cws-v2.mjs'
+import { selectAuthMode, signServiceAccountJwt, mintAccessToken, mintOAuthAccessToken, publishV2, readStatus, formatStatus, invalidModeMessage, API_BASE, SCOPE } from '../scripts/cws-v2.mjs'
 
 const wf = (n: string) => readFileSync(fileURLToPath(new URL(`../.github/workflows/${n}`, import.meta.url)), 'utf8')
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
@@ -12,14 +13,24 @@ const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   publicKeyEncoding: { type: 'spki', format: 'pem' },
 })
 const key = { client_email: 'cws-publisher@p.iam.gserviceaccount.com', private_key: privateKey, token_uri: 'https://oauth2.googleapis.com/token' }
-const OAUTH = { CHROME_EXTENSION_ID: 'e', CHROME_CLIENT_ID: 'c', CHROME_CLIENT_SECRET: 's', CHROME_REFRESH_TOKEN: 'r' }
+const OAUTH_SECRETS = { CHROME_EXTENSION_ID: 'e', CHROME_CLIENT_ID: 'c', CHROME_CLIENT_SECRET: 's', CHROME_REFRESH_TOKEN: 'r' }
+const OAUTH = { ...OAUTH_SECRETS, CWS_PUBLISHER_ID: 'p' }
 
 describe('selectAuthMode', () => {
   it('prefers the service account when its secret is set', () => {
     expect(selectAuthMode({ ...OAUTH, CWS_SERVICE_ACCOUNT_JSON: '{}', CWS_PUBLISHER_ID: 'p' }).mode).toBe('sa')
   })
   it('fails closed on a partial service-account config instead of silently using OAuth', () => {
-    expect(selectAuthMode({ ...OAUTH, CWS_SERVICE_ACCOUNT_JSON: '{}' })).toEqual({ mode: 'invalid', missing: ['CWS_PUBLISHER_ID'] })
+    expect(selectAuthMode({ ...OAUTH_SECRETS, CWS_SERVICE_ACCOUNT_JSON: '{}' })).toEqual({ mode: 'invalid', via: 'CWS_SERVICE_ACCOUNT_JSON', missing: ['CWS_PUBLISHER_ID'] })
+  })
+  it('refuses the OAuth secrets without a publisher id instead of sending them to the v1.1 API', () => {
+    const sel = selectAuthMode(OAUTH_SECRETS)
+    expect(sel).toEqual({ mode: 'invalid', via: 'the CHROME_* OAuth secrets', missing: ['CWS_PUBLISHER_ID'] })
+    expect(selectAuthMode({ ...OAUTH_SECRETS, CWS_PUBLISHER_ID: '  ' }).mode).toBe('invalid')
+    const msg = invalidModeMessage(sel)
+    expect(msg).toContain('CWS_PUBLISHER_ID is missing')
+    expect(msg).toContain('2026-10-15')
+    expect(msg).toContain('repo variable')
   })
   it('keeps the OAuth fallback when no service account is set', () => {
     expect(selectAuthMode(OAUTH).mode).toBe('oauth')
@@ -28,6 +39,7 @@ describe('selectAuthMode', () => {
   it('is none without credentials', () => {
     expect(selectAuthMode({}).mode).toBe('none')
     expect(selectAuthMode({ CHROME_EXTENSION_ID: 'e' }).mode).toBe('none')
+    expect(selectAuthMode({ CWS_PUBLISHER_ID: 'p' }).mode).toBe('none')
   })
 })
 
@@ -158,17 +170,34 @@ describe('publish retry on transient reachability errors', () => {
 
 describe('workflow wiring', () => {
   const engine = wf('store-publish.yml')
-  it('selects the path in the credential guard and gates each path on it', () => {
-    expect(engine).toContain('node scripts/cws-v2.mjs mode')
-    expect(engine).toContain("steps.creds.outputs.auth == 'sa'")
-    expect(engine).toContain("steps.creds.outputs.auth == 'oauth'")
-    expect(engine).toContain('chrome-webstore-upload-cli@3.5.0 upload')
-    expect(engine).toContain("steps.publish.outputs.published == 'yes' || steps.v2.outputs.published == 'yes'")
+  const cws = engine.slice(engine.indexOf('\n  cws:'), engine.indexOf('\n  edge:'))
+  it('selects the path in the credential guard and publishes only through the v2 script', () => {
+    expect(cws).toContain('node scripts/cws-v2.mjs mode')
+    expect(cws).toContain("id: v2")
+    expect(cws).toContain("if: steps.creds.outputs.ready == 'yes' && steps.state.outputs.status == 'pending'")
+    expect(cws).toContain('node scripts/cws-v2.mjs "${ARGS[@]}"')
+    expect(cws).toContain('--cancel-pending')
+    expect(cws).toContain("if: steps.v2.outputs.published == 'yes'")
   })
-  it('retries the OAuth publish once after 10 min on a reachability error only', () => {
-    expect(engine).toContain("grep -qiE 'not reachable|Timeout while connecting'")
-    expect(engine).toContain('sleep 600')
-    expect(engine).toContain('retried once after 10 min')
+  it('no longer calls the v1.1 upload CLI anywhere', () => {
+    expect(engine).not.toContain('chrome-webstore-upload')
+    expect(cws).not.toContain('bun x')
+    expect(cws).not.toContain("auth == 'oauth'")
+    expect(cws).not.toContain('steps.publish.outputs')
+    expect(cws).not.toContain('steps.upload.outputs')
+  })
+  it('passes the OAuth secrets and the publisher id (repo variable or secret) to the guard and the publish step', () => {
+    for (const name of ['Credential guard', 'Publish via Chrome Web Store API v2']) {
+      const step = cws.slice(cws.indexOf(`- name: ${name}`), cws.indexOf('run: ', cws.indexOf(`- name: ${name}`)))
+      for (const k of ['CHROME_CLIENT_ID', 'CHROME_CLIENT_SECRET', 'CHROME_REFRESH_TOKEN', 'CHROME_EXTENSION_ID']) expect(step).toContain(`${k}: \${{ secrets.${k} }}`)
+      expect(step).toContain('CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}')
+    }
+  })
+  it('keeps the store-state branch logic: skip when recorded, record only after a v2 readback', () => {
+    expect(cws).toContain('node scripts/store-state.mjs pending cws')
+    expect(cws).toContain("steps.state.outputs.status != 'pending'")
+    expect(cws).toContain('node scripts/store-state.mjs set cws')
+    expect(cws.indexOf("steps.v2.outputs.published == 'yes'")).toBeGreaterThan(cws.indexOf('id: v2'))
   })
   it('exposes cancel_pending only through the manual CWS dispatch, default off', () => {
     expect(engine).toMatch(/cancel_pending:[\s\S]*?type: boolean\n\s+default: false/)
@@ -176,6 +205,69 @@ describe('workflow wiring', () => {
     expect(wf('publish-cws.yml')).toContain('cancel_pending: ${{ inputs.cancel_pending }}')
     expect(wf('store-retry.yml')).not.toContain('cancel_pending')
     expect(wf('publish-stores.yml')).not.toContain('cancel_pending')
+  })
+})
+
+describe('default publish on the OAuth path (v2 API)', () => {
+  type Seen = { label: string; headers: Record<string, string>; body?: unknown }
+  it('mints a token from the refresh token and sends the v2 requests with it', async () => {
+    const seen: Seen[] = []
+    const fetchImpl = async (url: string, init: { method: string; body?: unknown; headers?: Record<string, string> }) => {
+      if (url === 'https://oauth2.googleapis.com/token') {
+        seen.push({ label: `${init.method} token`, headers: init.headers ?? {}, body: init.body })
+        return new Response(JSON.stringify({ access_token: 'AT' }))
+      }
+      const label = `${init.method} ${url.replace(API_BASE, '')}`
+      seen.push({ label, headers: init.headers ?? {}, body: init.body })
+      if (label.endsWith(':upload')) return new Response(JSON.stringify({ uploadState: 'SUCCEEDED', crxVersion: '3.6.0' }))
+      if (label.endsWith(':fetchStatus') && seen.filter((x) => x.label.endsWith(':fetchStatus')).length > 1) {
+        return new Response(JSON.stringify({ submittedItemRevisionStatus: { state: 'PENDING_REVIEW' } }))
+      }
+      return new Response('{}')
+    }
+    const token = await mintOAuthAccessToken({ clientId: 'cid', clientSecret: 'sec', refreshToken: 'ref' }, fetchImpl as never)
+    const r = await publishV2({ ...base, token, fetchImpl: fetchImpl as never })
+    expect(r).toMatchObject({ outcome: 'published', itemState: 'PENDING_REVIEW', crxVersion: '3.6.0', staged: false })
+    expect(seen.map((x) => x.label)).toEqual([
+      'POST token',
+      `GET /v2/${N}:fetchStatus`,
+      `POST /upload/v2/${N}:upload`,
+      `POST /v2/${N}:publish`,
+      `GET /v2/${N}:fetchStatus`,
+    ])
+    expect(new URLSearchParams(seen[0].body as string).get('grant_type')).toBe('refresh_token')
+    for (const x of seen.slice(1)) expect(x.headers.Authorization).toBe('Bearer AT')
+    expect(seen[2].headers['Content-Type']).toBe('application/zip')
+    expect(seen[3].body).toBeUndefined()
+  })
+})
+
+describe('cws-v2.mjs command line', () => {
+  const script = fileURLToPath(new URL('../scripts/cws-v2.mjs', import.meta.url))
+  const run = (args: string[], env: Record<string, string>) =>
+    spawnSync(process.execPath, [script, ...args], { env: { PATH: process.env.PATH ?? '', ...env }, encoding: 'utf8' })
+  it('prints oauth when the publisher id is present', () => {
+    const r = run(['mode'], OAUTH)
+    expect(r.status).toBe(0)
+    expect(r.stdout.trim()).toBe('oauth')
+  })
+  it('fails with a clear message when only the OAuth secrets are set, echoing no secret', () => {
+    const r = run(['mode'], OAUTH_SECRETS)
+    expect(r.status).toBe(1)
+    expect(r.stderr).toContain('::error::')
+    expect(r.stderr).toContain('CWS_PUBLISHER_ID is missing')
+    expect(r.stderr).not.toContain('"c"')
+    expect(r.stdout.trim()).toBe('')
+  })
+  it('prints none without credentials, so the job skips as before', () => {
+    const r = run(['mode'], {})
+    expect(r.status).toBe(0)
+    expect(r.stdout.trim()).toBe('none')
+  })
+  it('publish refuses a missing publisher id before any request', () => {
+    const r = run(['publish', '--zip', script], OAUTH_SECRETS)
+    expect(r.status).toBe(1)
+    expect(r.stderr).toContain('CWS_PUBLISHER_ID is missing')
   })
 })
 
@@ -269,5 +361,67 @@ describe('staged workflow wiring', () => {
     expect(staged).not.toContain('cancel-pending')
     expect(staged).not.toContain('store-state')
     expect(staged).toContain('permissions:\n      contents: read')
+  })
+})
+
+describe('read-only status', () => {
+  const json = (body: unknown, status = 200) => ({ ok: status < 400, status, text: async () => JSON.stringify(body) })
+  const fake = (routes: Record<string, unknown>) => {
+    const calls: { method: string; url: string }[] = []
+    const fetchImpl = async (url: string, init: { method: string }) => {
+      calls.push({ method: init.method, url })
+      const hit = Object.entries(routes).find(([k]) => url.includes(k))
+      return hit ? (hit[1] as ReturnType<typeof json>) : json({}, 404)
+    }
+    return { fetchImpl, calls }
+  }
+  const draft = { kind: 'chromewebstore#item', id: 'e', publicKey: 'SECRET-LOOKING-KEY', uploadState: 'FAILURE', crxVersion: '3.0.2', itemError: [{ error_code: 'PKG_UNKNOWN_ERROR', error_detail: 'bad zip' }] }
+  const v2 = {
+    name: 'publishers/p/items/e', itemId: 'e', publicKey: 'ANOTHER-KEY', lastAsyncUploadState: 'SUCCEEDED',
+    submittedItemRevisionStatus: { state: 'PENDING_REVIEW', distributionChannels: [{ crxVersion: '3.0.2' }] },
+    publishedItemRevisionStatus: { state: 'PUBLISHED', distributionChannels: [{ crxVersion: '3.0.1', deployPercentage: 100 }] },
+  }
+  it('reads items.get with projection DRAFT and v2 fetchStatus, GET only', async () => {
+    const { fetchImpl, calls } = fake({ 'v1.1/items/e?projection=DRAFT': json(draft), ':fetchStatus': json(v2) })
+    const r = await readStatus({ token: 't', publisherId: 'p', itemId: 'e', fetchImpl })
+    expect(calls.every((c) => c.method === 'GET')).toBe(true)
+    expect(calls.map((c) => c.url)).toEqual([
+      'https://www.googleapis.com/chromewebstore/v1.1/items/e?projection=DRAFT',
+      `${API_BASE}/v2/publishers/p/items/e:fetchStatus`,
+    ])
+    expect(r.draft).toEqual({ uploadState: 'FAILURE', crxVersion: '3.0.2', itemError: [{ code: 'PKG_UNKNOWN_ERROR', detail: 'bad zip' }] })
+    expect(r.v2.submitted).toEqual({ state: 'PENDING_REVIEW', versions: ['3.0.2'] })
+    expect(r.v2.published).toEqual({ state: 'PUBLISHED', versions: ['3.0.1'] })
+    const text = formatStatus(r).join('\n')
+    expect(text).toContain('uploadState: FAILURE')
+    expect(text).toContain('itemError: PKG_UNKNOWN_ERROR (bad zip)')
+    expect(text).toContain('submitted revision: PENDING_REVIEW version 3.0.2')
+    expect(text).not.toContain('KEY')
+  })
+  it('keeps the other read when one fails, and notes the failure', async () => {
+    const { fetchImpl } = fake({ ':fetchStatus': json(v2) })
+    const r = await readStatus({ token: 't', publisherId: 'p', itemId: 'e', fetchImpl })
+    expect(r.draft).toBeNull()
+    expect(r.errors[0]).toContain('items.get (v1.1, projection DRAFT) failed (HTTP 404)')
+    expect(formatStatus(r).join('\n')).toContain('PENDING_REVIEW')
+  })
+  it('skips v2 without a publisher id and fails when nothing could be read', async () => {
+    const ok = fake({ 'v1.1/items/e': json({ uploadState: 'SUCCESS', crxVersion: '3.0.1' }) })
+    const r = await readStatus({ token: 't', publisherId: '', itemId: 'e', fetchImpl: ok.fetchImpl })
+    expect(r.draft?.itemError).toEqual([])
+    expect(formatStatus(r).join('\n')).toContain('itemError: none')
+    expect(ok.calls).toHaveLength(1)
+    await expect(readStatus({ token: 't', publisherId: 'p', itemId: 'e', fetchImpl: fake({}).fetchImpl })).rejects.toThrow(/failed \(HTTP 404\)/)
+  })
+  it('workflow is manual, read-only, self-hosted and passes only the existing credentials', () => {
+    const w = wf('cws-status.yml')
+    expect(w).toMatch(/on:\n  workflow_dispatch:\n/)
+    expect(w).toContain('contents: read')
+    expect(w).toContain('runs-on: sylphx-linux-standard')
+    expect(w).not.toMatch(/ubuntu|macos|windows/)
+    expect(w).toContain('node scripts/cws-v2.mjs status')
+    expect(w).toContain('CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}')
+    for (const k of ['CHROME_CLIENT_ID', 'CHROME_CLIENT_SECRET', 'CHROME_REFRESH_TOKEN', 'CHROME_EXTENSION_ID', 'CWS_SERVICE_ACCOUNT_JSON']) expect(w).toContain(`${k}: \${{ secrets.${k} }}`)
+    expect(w).not.toContain("cws-v2.mjs publish")
   })
 })
