@@ -48,3 +48,19 @@ jobs:
 
       - name: Size budget (content.js and store zip, 5% over budgets/size.json fails)
         run: bun run size:check
+
+  # The org-wide required check name. Skipped lanes pass; a failed or
+  # cancelled lane fails.
+  ci-ok:
+    if: always()
+    needs: [check]
+    # The reserved gate pool (Kueue queue scale-set-gate, never lends): an
+    # `if: always()` verdict still runs after its run is cancelled, and that run
+    # keeps its concurrency group until it does, so on a busy build pool a
+    # superseded run held the next one (SylphxAI/agents#4222, 2026-10-02).
+    runs-on: sylphx-linux-control
+    timeout-minutes: 5
+    steps:
+      - uses: SylphxAI/.github/.github/actions/needs-pass@46ec433892bca8693193049b5ee7441bb916a7ad # main
+        with:
+          needs: ${{ toJSON(needs) }}
