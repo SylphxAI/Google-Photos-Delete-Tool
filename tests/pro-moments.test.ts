@@ -20,7 +20,7 @@ describe('dry-run teaser', () => {
     expect(t!.countsLine).toBe('This view has 1 photo, 1 video, 2 screenshots.')
     expect(t!.ctaLine).toBe('Delete only the types you choose with Pro — US$9.99 once')
     const u = new URL(t!.url)
-    expect(u.hash).toBe('#pro')
+    expect(u.origin + u.pathname).toBe('https://buy.sylphx.com/buy/gpdt')
     expect(u.searchParams.get('utm_source')).toBe('extension')
     expect(u.searchParams.get('utm_medium')).toBe('dryrun_teaser')
     expect(u.searchParams.get('utm_campaign')).toBe('pro')
@@ -85,10 +85,10 @@ describe('date filter report line and link', () => {
       .toBe('3 of 9 items match the date filter. 2 items skipped: date not readable.')
     expect(dateReportLine({ matched: 3, skippedUnreadable: 0, total: 9 })).toBe('3 of 9 items match the date filter.')
   })
-  it('the Get Pro link carries utm_medium=date_filter and the #pro anchor', () => {
+  it('the Get Pro link carries utm_medium=date_filter and the checkout URL', () => {
     const u = new URL(proUrl('date_filter'))
     expect(u.searchParams.get('utm_medium')).toBe('date_filter')
-    expect(u.hash).toBe('#pro')
+    expect(u.origin + u.pathname).toBe('https://buy.sylphx.com/buy/gpdt')
   })
 })
 
@@ -140,7 +140,7 @@ describe('copy A/B variant', () => {
       expect(labelsNow).toContain(PRO_COPY[v].linkLabel)
     }
   })
-  it('puts utm_content on every Pro link, from the one PRO_URL', async () => {
+  it('puts utm_content on every Pro link, from the one checkout URL', async () => {
     const result = { dryRun: false, stopped: false, status: 'done' as const, deleted: 5, filterKind: 'all' as const }
     for (const v of ['a', 'b'] as const) {
       const urls = [
@@ -154,14 +154,14 @@ describe('copy A/B variant', () => {
         expect(u.searchParams.get('utm_content')).toBe(v)
         expect(u.searchParams.get('utm_source')).toBe('extension')
         expect(u.searchParams.get('utm_campaign')).toBe('pro')
-        expect(url.startsWith(PRO_URL.split('#')[0]!)).toBe(true)
+        expect(url.startsWith(SELF_SERVE_CHECKOUT_URL)).toBe(true)
       }
     }
   })
-  it('ships with self-serve checkout off and routes every link to it when on', () => {
-    expect(SELF_SERVE_CHECKOUT).toBe(false)
-    expect(proUrl('license_box', 'a').startsWith(PRO_URL.split('#')[0]!)).toBe(true)
-    const on = new URL(proUrl('license_box', 'b', true))
+  it('ships with self-serve checkout on and routes every link to it; off keeps the README path', () => {
+    expect(SELF_SERVE_CHECKOUT).toBe(true)
+    expect(proUrl('license_box', 'a', false).startsWith(PRO_URL.split('#')[0]!)).toBe(true)
+    const on = new URL(proUrl('license_box', 'b'))
     expect(on.origin + on.pathname).toBe(SELF_SERVE_CHECKOUT_URL)
     expect(on.searchParams.get('utm_content')).toBe('b')
   })

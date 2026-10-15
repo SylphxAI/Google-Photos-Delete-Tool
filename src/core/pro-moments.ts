@@ -21,10 +21,10 @@ export const PRO_URL = 'https://github.com/SylphxAI/Google-Photos-Delete-Tool#pr
  * Self-serve checkout switch. false: every Buy link keeps the current purchase
  * path (PRO_URL above). true: every Buy link goes to SELF_SERVE_CHECKOUT_URL,
  * where Money mints the offline licence and the success page shows the token.
- * Ship false; flip after the live purchase readback. The site has the same
+ * Shipped true (live since the checkout went live). The site has the same
  * switch as `selfServeCheckout` in site/config.json (docs/PRO.md).
  */
-export const SELF_SERVE_CHECKOUT = false
+export const SELF_SERVE_CHECKOUT = true
 export const SELF_SERVE_CHECKOUT_URL = 'https://buy.sylphx.com/buy/gpdt'
 export const SELF_SERVE_RECOVER_URL = 'https://buy.sylphx.com/recover?product=gpdt'
 

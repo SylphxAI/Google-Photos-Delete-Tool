@@ -3,7 +3,7 @@
   "default_locale": "en",
   "name": "__MSG_appName__",
   "short_name": "__MSG_appShortName__",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "description": "__MSG_appDescription__",
   "permissions": [
     "storage"

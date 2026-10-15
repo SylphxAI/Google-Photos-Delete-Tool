@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "appliesTo": "3.6.0",
+  "appliesTo": "3.6.1",
   "shared": {
     "name": "Google Photos Delete Tool",
     "tagline": "Find duplicate photos and bulk delete in Google Photos",

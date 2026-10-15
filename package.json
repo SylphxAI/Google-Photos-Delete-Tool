@@ -2,7 +2,7 @@
   "packageManager": "bun@1.4.0",
   "engines": { "bun": ">=1.4.0" },
   "name": "google-photos-delete-tool",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "private": true,
   "description": "Find and delete duplicate photos in Google Photos, and bulk delete safely — Chrome/Firefox extension and userscript",
   "author": "Sylphx <hi@sylphx.com>",

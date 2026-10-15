@@ -66,7 +66,7 @@ describe('free users', () => {
       for (const a of links) {
         expect(a.textContent).toBe('Pro')
         const u = new URL(a.href)
-        expect(u.hash).toBe('#pro')
+        expect(u.origin + u.pathname).toBe('https://buy.sylphx.com/buy/gpdt')
         expect(u.searchParams.get('utm_medium')).toBe('dupes')
       }
       // Forced events change nothing.

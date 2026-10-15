@@ -88,8 +88,8 @@ Nothing is sent anywhere. The variant only appears as `utm_content=a|b` on the
 Pro link a user chooses to click, next to `utm_source=extension`,
 `utm_medium` (`dryrun_teaser`, `post_run`, `date_filter`, `license_box`) and
 `utm_campaign=pro`. All links are built from `PRO_URL` in
-`src/core/pro-moments.ts`; point that constant at the Stripe Payment Link to
-have Stripe record the UTM parameters on each checkout.
+`src/core/pro-moments.ts`; `SELF_SERVE_CHECKOUT_URL` is the live target, and the UTM parameters
+ride on it.
 
 Reading results:
 
@@ -116,61 +116,51 @@ and personalization are denied by default in the EEA, UK and CH and granted
 elsewhere, and a small banner updates them. No email, name or other personal
 data is sent.
 
-- **Payment Link redirect:** in Stripe, set the Payment Link's after-payment
-  redirect to
-  `https://sylphxai.github.io/Google-Photos-Delete-Tool/thanks.html?session_id={CHECKOUT_SESSION_ID}`.
+- **Purchase event:** `thanks.html?session_id=cs_...` fires `purchase` once. It
+  only counts when the checkout success flow sends the buyer to that page with
+  the Checkout Session id; confirm on the first live order.
 - **`site/config.json`:** `ga4MeasurementId` (`G-...`), `adsConversionId`
   (`AW-...`), `addToChromeSendTo` and `purchaseSendTo` (each `AW-.../label`, one
   Ads conversion action per event). While any value is a placeholder
   (`XXXX`), no tag loads at all.
 - **Flow:** ad click, then landing page (`page_view`, UTM kept); the
   **Add to Chrome** click fires `add_to_chrome_click` (Ads micro conversion)
-  and opens the store listing with the same UTM; after payment Stripe sends
-  the buyer to `thanks.html`, which fires `purchase` (US$9.99) once, with the
+  and opens the store listing with the same UTM; after payment the checkout
+  sends the buyer to `thanks.html`, which fires `purchase` (US$9.99) once, with the
   Checkout Session id as `transaction_id` so a reload is not counted twice.
 - **Public statistics:** users and rating come only from `site/stats.json`;
   update it with its source and date.
 - **Test:** `tests/site.test.ts`.
 
-## Self-serve checkout (shipped off)
+## Self-serve checkout and sales
 
-Pro can be bought instantly at <https://buy.sylphx.com/buy/gpdt>: Money mints
-the offline licence (payload `plan: "pro"`, `product: "gpdt"`, `order`, `grant`,
-`seats: 1`, `expiresAt`), the success page shows the token and an emailed signed
-link repeats it. Activation is unchanged: paste the token. Two switches, both
-shipped off, flipped together:
+Pro is bought instantly at <https://buy.sylphx.com/buy/gpdt>: Money mints the
+offline licence (payload `plan: "pro"`, `email`, `issuedAt`, `product: "gpdt"`,
+`order`, `grant`), the success page shows the token and an emailed signed link
+repeats it. Activation is unchanged: paste the token. Both switches are on:
 
 - `SELF_SERVE_CHECKOUT` in `src/core/pro-moments.ts` (every extension and
-  userscript Buy link, via `proUrl()`).
+  userscript Buy link, via `proUrl()`; the static popup links already point at
+  the checkout).
 - `selfServeCheckout` in `site/config.json` (the landing page Pro button, and
   it reveals the "Lost your licence?" link to
   <https://buy.sylphx.com/recover?product=gpdt>).
 
-Wording that changes on the flip (kept as is until then): README `#pro`
-(`PRO_CHECKOUT_URL` comment becomes the buy link; the "Activation" paragraph
-loses "we send"), `site/thanks.html` ("We send each Pro token by hand ..."
-becomes "your token is shown on the checkout success page and emailed"),
-`site/index.html` Pro button label "See Pro details" becomes "Buy Pro", and
-this Sales section.
+Verifier: a token with `product` `gpdt` verifies, as does one with no product
+(seller CLI) and one with the legacy slug `gpdt-pro` (kept so no issued token
+can stop working); any other product is `wrong-plan`. The signature is always
+required.
 
-## Sales
-
-1. **Product:** Pro is sold as a Stripe Payment Link, US$9.99 one-time and
-   lifetime, a convenience unlock for power users of a free tool. The
-   README `#pro` section carries the buy link (`PRO_CHECKOUT_URL` placeholder
-   until the link is live), and both the popup and the userscript panel point
-   to that anchor, so the link can change without a store release.
-2. **Issuance is manual.** After Stripe confirms payment, the operator runs
-   `bun run license:issue --email=<the email the buyer paid with> --order=<Stripe payment or session id>`
-   and emails the token to that address. Email and order id are both required
-   in practice: they bind the token to the purchaser record and are how a
-   reissue is matched. Delivery is promised as "usually
-   within a few hours" with no deadline (`site/thanks.html`); do not
-   promise faster until issuance is automated. The seller key stays in
-   1Password.
-3. **Support:** the order record (email, date, id) lives in Stripe; reissue
-   with `--email` and the same `--order` after checking both match the Stripe
-   payment.
+1. **Product:** Pro is US$9.99, one-time and lifetime, a convenience unlock for
+   power users of a free tool. The README `#pro` section carries the buy link.
+2. **Issuance is automatic.** Money fulfils the payment and the licence service
+   signs the token from Money's grant; the buyer sees it on the success page
+   and by email, and `/recover` re-issues it. `bun run license:issue`
+   remains the seller CLI for comps and manual reissue (always pass `--email`
+   and `--order`); the seller key stays in 1Password.
+3. **Support:** the order record (email, date, id) lives in Money and Stripe;
+   a lost token is recovered at `/recover?product=gpdt`, and manual reissue
+   uses `--email` and the same `--order` after checking both match the payment.
 4. **Refunds:** Pro is digital content supplied at the buyer's express
    request at checkout, so the 14-day right to cancel ends on delivery. Beyond
    that we only offer the legal minimum: if Pro does not work as described and

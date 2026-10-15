@@ -17,7 +17,7 @@ export interface ProLicensePayload {
   email?: string
   /** Present on tokens from the seller CLI and from Money; a Money token may carry only expiresAt. */
   issuedAt?: number
-  /** Money tokens: product slug ("gpdt"), checked when present. */
+  /** Money tokens: product slug ("gpdt"; legacy "gpdt-pro"), checked when present. */
   product?: string
   /** Money tokens: entitlement grant id, seats and expiry (ms); informational, expiry is not enforced (Pro does not expire). */
   grant?: string
@@ -47,6 +47,14 @@ export const PRO_PUBLIC_KEYS_BASE64URL: readonly string[] = [
   'BkfyaOx0U3p8-KeUbF2WE924czXvfAoBdQ-trkO_3Vk',
   '-LFAzRTKamgPJ57qEW8-XdOpzFZ50JhT6b7thTQe8GQ',
 ]
+
+/**
+ * Product slugs a token may carry. Money mints "gpdt"; "gpdt-pro" is the slug
+ * an earlier local issuer used, kept so a token that carries it never stops
+ * working. A token with no product (seller CLI) is accepted too. The signature
+ * is still required in every case.
+ */
+const ACCEPTED_PRODUCTS: readonly string[] = ['gpdt', 'gpdt-pro']
 
 /** The current (newest) public key; the one `license:issue` tokens verify under. */
 export const PRO_PUBLIC_KEY_BASE64URL: string =
@@ -113,7 +121,7 @@ export async function verifyLicense(
   if (!payload || typeof payload !== 'object') return { ok: false, reason: 'malformed' }
 
   const hasTime = typeof payload.issuedAt === 'number' || typeof payload.expiresAt === 'number'
-  if (payload.plan !== 'pro' || !hasTime || (payload.product !== undefined && payload.product !== 'gpdt')) {
+  if (payload.plan !== 'pro' || !hasTime || (payload.product !== undefined && !ACCEPTED_PRODUCTS.includes(payload.product))) {
     return { ok: false, reason: 'wrong-plan' }
   }
 

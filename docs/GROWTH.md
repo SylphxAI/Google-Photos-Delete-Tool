@@ -66,8 +66,8 @@ Optimize the loop, not the star count: an install with a review is the loop.
 ### Reading Pro orders
 
 Orders come from the Money/Stripe checkout at <https://buy.sylphx.com/buy/gpdt>
-(self-serve, see [PRO.md](PRO.md#self-serve-checkout-shipped-off); live once the
-switch is flipped). Every Buy link carries `utm_source=extension`, `utm_medium`
+(self-serve, see [PRO.md](PRO.md#self-serve-checkout-and-sales)). Every Buy link
+carries `utm_source=extension`, `utm_medium`
 (the moment) and `utm_content` (paywall copy variant `a` or `b`). Export
 Checkout sessions from the Stripe dashboard as CSV, then:
 

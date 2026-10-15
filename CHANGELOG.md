@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+## [3.6.1] - 2026-10-03
+
+### Changed
+- Pro is now bought at a self-serve checkout: the token is shown right after
+  payment and emailed, and a lost token can be recovered online. The Buy links
+  in the extension, userscript and site go to the checkout.
+
 ## [3.6.0] - 2026-10-02
 
 ### Fixed
