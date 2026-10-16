@@ -7,6 +7,23 @@ on:
     branches: [main, master]
 
 jobs:
+  # Fails a change that adds a direct chat-API host (Telegram, Slack, Discord)
+  # outside the action's allow-list: chat messages go through Notify. The
+  # action compares the lines the change adds, so the job needs the full
+  # history of the pull request or merge group. Pinned by commit: a caller
+  # moves deliberately when the allow-list widens.
+  chat-senders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - uses: SylphxAI/.github/.github/actions/chat-senders@5cfd55a41435cca8e4b7caf6506faf04ca08d200
+        with:
+          mode: fail
+
   check:
     name: Lint, Type Check, Test, Build & Verify
     runs-on: ubuntu-latest
@@ -53,7 +70,7 @@ jobs:
   # cancelled lane fails.
   ci-ok:
     if: always()
-    needs: [check]
+    needs: [chat-senders, check]
     # The reserved gate pool (Kueue queue scale-set-gate, never lends): an
     # `if: always()` verdict still runs after its run is cancelled, and that run
     # keeps its concurrency group until it does, so on a busy build pool a
