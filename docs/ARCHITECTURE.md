@@ -67,3 +67,13 @@ header, pack integrity); `scripts/zip.ts` produces the two zips;
 verify → zip → GitHub release → CWS publish.
 
 Every release also passes the live run in `docs/RELEASE_GATE.md`.
+
+## CI gate
+
+`.github/workflows/ci.yml` is the one required check: `ci-ok` aggregates every
+lane, so a red lane is a red merge. It runs the `check` lane (typecheck → lint
+→ test → build → verify → zip → size) and `chat-senders`, which fails a change
+that adds a direct Telegram, Slack or Discord chat-API host outside the
+allow-list owned by `SylphxAI/.github` — chat messages go through Notify, and
+the tool makes no such call. Both jobs are listed in `ci-ok`'s `needs:`, so a
+run that finishes after `ci-ok` can never be admitted unseen.
