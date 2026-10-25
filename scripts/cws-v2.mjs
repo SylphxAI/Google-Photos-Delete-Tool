@@ -2,9 +2,11 @@
  * Chrome Web Store publishing through the CWS API v2 with a Google service
  * account (zero-dependency, node:crypto RS256 JWT).
  *
- * Contract (read 2026-10-01 from developer.chrome.com):
+ * Contract (read 2026-10-01 from developer.chrome.com; publish/fetchStatus
+ * re-read 2026-10-25):
  *   docs/webstore/api, docs/webstore/using-api, docs/webstore/service-accounts,
- *   docs/webstore/api/reference/rest (+ /v2/ItemState, /v2/UploadState)
+ *   docs/webstore/api/reference/rest (+ /v2/ItemState, /v2/UploadState,
+ *   /v2/publishers.items/publish, /v2/publishers.items/fetchStatus)
  *
  *   base                https://chromewebstore.googleapis.com
  *   scope               https://www.googleapis.com/auth/chromewebstore
@@ -35,6 +37,7 @@
  * Commands (all read the environment; nothing secret is ever printed):
  *   node scripts/cws-v2.mjs mode                  # prints sa | oauth | none, exit 1 if the config is partial
  *   node scripts/cws-v2.mjs publish --zip <file> [--cancel-pending] [--staged]
+ *   node scripts/cws-v2.mjs publish-staged --version <version>  # existing STAGED only; never uploads
  *   node scripts/cws-v2.mjs status                # read-only: v1.1 items.get (projection DRAFT) + v2 fetchStatus
  *
  * --staged submits with publishType STAGED_PUBLISH and accepts only a
@@ -246,6 +249,47 @@ export async function publishV2(opts) {
   return { outcome: 'published', itemState, crxVersion: crxVersion ?? '', cancelled, staged, readback: after.json }
 }
 
+const revisionVersions = (revision) => (revision?.distributionChannels ?? []).map((channel) => channel.crxVersion).filter(Boolean)
+
+/**
+ * Publish an already-approved STAGED revision without uploading another zip.
+ * The preflight makes a repeat call a no-op once that version is live. Exactly
+ * one publish POST is attempted; every outcome is reconciled with fetchStatus.
+ */
+export async function publishStagedV2(opts) {
+  const { token, publisherId, itemId, version, fetchImpl = fetch, log = () => {} } = opts
+  if (!version) throw new Error('version is required')
+  const name = itemName(publisherId, itemId)
+  const status = () => call(fetchImpl, token, 'GET', `${API_BASE}/v2/${name}:fetchStatus`)
+
+  const first = await status()
+  if (!first.ok) throw new Error(`fetchStatus failed (HTTP ${first.status})`)
+  const firstPublished = first.json?.publishedItemRevisionStatus
+  if (revisionVersions(firstPublished).includes(version)) {
+    return { outcome: 'already_published', itemState: firstPublished.state, crxVersion: version, readback: first.json }
+  }
+  const submitted = first.json?.submittedItemRevisionStatus
+  const stagedVersions = revisionVersions(submitted)
+  if (submitted?.state !== 'STAGED') {
+    throw new Error(`expected STAGED version ${version}; submitted state is ${submitted?.state ?? 'unset'}`)
+  }
+  if (!stagedVersions.length || stagedVersions.some((candidate) => candidate !== version)) {
+    throw new Error(`expected STAGED version ${version}; found ${stagedVersions.join(', ') || 'no version'}`)
+  }
+  log(`status before: submitted=STAGED version=${version} published=${revisionVersions(firstPublished).join(', ') || 'none'}`)
+
+  const pub = await call(fetchImpl, token, 'POST', `${API_BASE}/v2/${name}:publish`).catch((error) => ({ ok: false, status: 0, error }))
+  const after = await status()
+  if (!after.ok) throw new Error(`publish response HTTP ${pub.status}; readback fetchStatus failed (HTTP ${after.status}); no automatic retry`)
+  const published = after.json?.publishedItemRevisionStatus
+  if (revisionVersions(published).includes(version)) {
+    log(`publish response HTTP ${pub.status}; published version ${version}`)
+    return { outcome: 'published', itemState: published.state, crxVersion: version, publishStatus: pub.status, readback: after.json }
+  }
+  if (!pub.ok) throw new Error(`publish failed (HTTP ${pub.status}); version ${version} is not live; no automatic retry`)
+  throw new Error(`publish returned HTTP ${pub.status}, but version ${version} is not live`)
+}
+
 export const V1_ITEMS_BASE = 'https://www.googleapis.com/chromewebstore/v1.1/items'
 
 /**
@@ -326,8 +370,9 @@ async function main(argv, env) {
     return 0
   }
   if (cmd === 'status') return statusCommand(env)
+  if (cmd === 'publish-staged') return publishStagedCommand(rest, env)
   if (cmd !== 'publish') {
-    console.error('usage: cws-v2.mjs mode | status | publish --zip <file> [--cancel-pending] [--staged]')
+    console.error('usage: cws-v2.mjs mode | status | publish --zip <file> [--cancel-pending] [--staged] | publish-staged --version <version>')
     return 2
   }
   const zipIdx = rest.indexOf('--zip')
@@ -372,6 +417,46 @@ async function main(argv, env) {
     return 0
   } catch (err) {
     console.error(`::error::CWS v2 failed: ${err instanceof Error ? err.message : 'unknown error'}; state not advanced`)
+    return 1
+  }
+}
+
+async function publishStagedCommand(rest, env) {
+  if (rest.length !== 2 || rest[0] !== '--version' || !rest[1]) {
+    console.error('::error::publish-staged requires exactly --version <version>')
+    return 2
+  }
+  const version = rest[1]
+  const sel = selectAuthMode(env)
+  if (sel.mode === 'invalid') {
+    console.error(`::error::${invalidModeMessage(sel)}`)
+    return 1
+  }
+  if (sel.mode !== 'sa' && sel.mode !== 'oauth') {
+    console.error('::error::v2 needs the service account, or the OAuth secrets plus CWS_PUBLISHER_ID')
+    return 1
+  }
+  try {
+    const token = sel.mode === 'sa'
+      ? await mintAccessToken(env.CWS_SERVICE_ACCOUNT_JSON)
+      : await mintOAuthAccessToken({ clientId: env.CHROME_CLIENT_ID.trim(), clientSecret: env.CHROME_CLIENT_SECRET.trim(), refreshToken: env.CHROME_REFRESH_TOKEN.trim() })
+    console.log(`::add-mask::${token}`)
+    const result = await publishStagedV2({
+      token,
+      publisherId: (env.CWS_PUBLISHER_ID ?? '').trim(),
+      itemId: env.CHROME_EXTENSION_ID.trim(),
+      version,
+      log: (message) => console.log(message),
+    })
+    console.log(`::notice::CWS ${result.outcome === 'already_published' ? 'already live' : 'staged revision published'}: state=${result.itemState} version=${result.crxVersion}`)
+    console.log(JSON.stringify(result.readback))
+    writeOutputs({ uploaded: 'no', published: 'yes', item_state: result.itemState, crx_version: result.crxVersion, staged: 'no' })
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      appendFileSync(process.env.GITHUB_STEP_SUMMARY, `CWS staged publish readback: outcome \`${result.outcome}\`, state \`${result.itemState}\`, version \`${result.crxVersion}\`, upload: no\n`)
+    }
+    return 0
+  } catch (err) {
+    console.error(`::error::CWS staged publish failed: ${err instanceof Error ? err.message : 'unknown error'}; read status before any retry`)
     return 1
   }
 }

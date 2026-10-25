@@ -147,6 +147,22 @@ auth paths (v2 has `:cancelSubmission`). v2 documents no
 call to withdraw a `STAGED` (approved, unpublished) submission other than
 `:publish`.
 
+**Publish an existing approved STAGED package**
+
+First reconcile the accepted submission receipt and intended source package by
+content digest; `fetchStatus` exposes the staged version, not its content
+digest. Then publish that exact staged version without uploading or tagging:
+
+```bash
+gh workflow run "Publish to Chrome Web Store (manual)" -f publish_staged_version=3.6.1
+```
+
+The command reads `fetchStatus`, refuses a missing, wrong-version or non-STAGED
+submission, makes at most one `:publish` POST and reads back the live version.
+It never calls `:upload` or `store-state`. Once that version is live, repeating
+the command is a read-only no-op; an uncertain result needs a fresh status read,
+never a blind retry.
+
 ### Microsoft Edge Add-ons (~30 min, once)
 
 1. [Register as an Edge extension developer](https://partner.microsoft.com/dashboard/microsoftedge/overview) (developer account).

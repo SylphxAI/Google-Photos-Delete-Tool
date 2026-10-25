@@ -16,6 +16,14 @@ name: Publish to Chrome Web Store (manual)
 #
 #   gh workflow run "Publish to Chrome Web Store (manual)" \
 #     -f staged_ref=<40-hex commit> -f content_digest=<64-hex> -f publisher_id=<CWS publisher id>
+#
+# Existing approved STAGED revision (publish_staged_version set): reads
+# fetchStatus, publishes that exact staged version once and reads it back. It
+# never uploads a zip, creates a tag or touches store-state. Repeating it after
+# the version is live is a read-only no-op.
+#
+#   gh workflow run "Publish to Chrome Web Store (manual)" \
+#     -f publish_staged_version=3.6.1
 
 on:
   workflow_dispatch:
@@ -41,6 +49,10 @@ on:
         description: 'Staged submission: CWS publisher id (dashboard Account page; not a secret). Blank = the CWS_PUBLISHER_ID repo variable or secret'
         required: false
         default: ''
+      publish_staged_version:
+        description: 'Publish this existing approved STAGED version without uploading (exclusive with tag, cancel_pending and staged_ref)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -51,6 +63,7 @@ concurrency:
 
 jobs:
   publish:
+    if: inputs.publish_staged_version == ''
     uses: ./.github/workflows/store-publish.yml
     with:
       stores: cws
@@ -60,3 +73,41 @@ jobs:
       content_digest: ${{ inputs.content_digest }}
       publisher_id: ${{ inputs.publisher_id }}
     secrets: inherit
+
+  publish-staged:
+    name: Publish existing STAGED revision
+    if: inputs.publish_staged_version != ''
+    runs-on: sylphx-linux-standard
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '22'
+
+      - name: Validate exclusive inputs
+        env:
+          TAG: ${{ inputs.tag }}
+          CANCEL: ${{ inputs.cancel_pending }}
+          STAGED_REF: ${{ inputs.staged_ref }}
+          CONTENT_DIGEST: ${{ inputs.content_digest }}
+        run: |
+          set -euo pipefail
+          [ -z "$TAG" ] || { echo "::error::tag and publish_staged_version are exclusive"; exit 1; }
+          [ "$CANCEL" = false ] || { echo "::error::cancel_pending does not apply to an approved STAGED revision"; exit 1; }
+          [ -z "$STAGED_REF" ] || { echo "::error::staged_ref submits a new package; publish_staged_version publishes the existing one"; exit 1; }
+          [ -z "$CONTENT_DIGEST" ] || { echo "::error::content_digest belongs to staged_ref; the store readback pins the staged version"; exit 1; }
+
+      - name: Publish the existing revision and read it back
+        env:
+          VERSION: ${{ inputs.publish_staged_version }}
+          CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
+          CWS_PUBLISHER_ID: ${{ inputs.publisher_id || secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: node scripts/cws-v2.mjs publish-staged --version "$VERSION"
