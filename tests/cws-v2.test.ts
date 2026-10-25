@@ -406,12 +406,12 @@ describe('staged workflow wiring', () => {
   const staged = engine.slice(engine.indexOf('\n  cws-staged:'))
   it('forwards the staged inputs from the manual CWS dispatch to the shared engine', () => {
     const caller = wf('publish-cws.yml')
-    for (const k of ['staged_ref', 'content_digest', 'publisher_id']) expect(caller).toContain(`${k}: \${{ inputs.${k} }}`)
+    for (const k of ['staged_ref', 'content_digest', 'publisher_id', 'publish_staged_version']) expect(caller).toContain(`${k}: \${{ inputs.${k} }}`)
     expect(wf('store-retry.yml')).not.toContain('staged_ref')
     expect(wf('publish-stores.yml')).not.toContain('staged_ref')
   })
   it('skips every tag job when staged_ref is set and runs the staged job only then', () => {
-    expect(engine).toContain("name: Resolve target tag & pending stores\n    if: inputs.staged_ref == ''")
+    expect(engine).toContain("name: Resolve target tag & pending stores\n    if: inputs.staged_ref == '' && inputs.publish_staged_version == ''")
     expect(staged).toContain("if: inputs.staged_ref != ''")
   })
   it('pins the package by content digest before any upload and submits only with --staged', () => {
@@ -425,14 +425,15 @@ describe('staged workflow wiring', () => {
   })
   it('publishes an existing staged version without an upload, tag or state write', () => {
     const caller = wf('publish-cws.yml')
-    expect(caller).toContain("if: inputs.publish_staged_version == ''")
-    const job = caller.slice(caller.indexOf('\n  publish-staged:'))
+    expect(caller).not.toContain('runs-on:')
+    const job = engine.slice(engine.indexOf('\n  cws-publish-staged:'))
     expect(job).toContain("if: inputs.publish_staged_version != ''")
     expect(job).toContain('run: node scripts/cws-v2.mjs publish-staged --version "$VERSION"')
     expect(job).toContain('permissions:\n      contents: read')
     expect(job).not.toContain(':upload')
     expect(job).not.toContain('store-state')
     expect(job).not.toContain('git push')
+    expect(staged).toContain("if: inputs.staged_ref != '' && inputs.publish_staged_version == ''")
   })
 })
 

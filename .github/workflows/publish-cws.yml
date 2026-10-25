@@ -63,7 +63,6 @@ concurrency:
 
 jobs:
   publish:
-    if: inputs.publish_staged_version == ''
     uses: ./.github/workflows/store-publish.yml
     with:
       stores: cws
@@ -72,42 +71,5 @@ jobs:
       staged_ref: ${{ inputs.staged_ref }}
       content_digest: ${{ inputs.content_digest }}
       publisher_id: ${{ inputs.publisher_id }}
+      publish_staged_version: ${{ inputs.publish_staged_version }}
     secrets: inherit
-
-  publish-staged:
-    name: Publish existing STAGED revision
-    if: inputs.publish_staged_version != ''
-    runs-on: sylphx-linux-standard
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version: '22'
-
-      - name: Validate exclusive inputs
-        env:
-          TAG: ${{ inputs.tag }}
-          CANCEL: ${{ inputs.cancel_pending }}
-          STAGED_REF: ${{ inputs.staged_ref }}
-          CONTENT_DIGEST: ${{ inputs.content_digest }}
-        run: |
-          set -euo pipefail
-          [ -z "$TAG" ] || { echo "::error::tag and publish_staged_version are exclusive"; exit 1; }
-          [ "$CANCEL" = false ] || { echo "::error::cancel_pending does not apply to an approved STAGED revision"; exit 1; }
-          [ -z "$STAGED_REF" ] || { echo "::error::staged_ref submits a new package; publish_staged_version publishes the existing one"; exit 1; }
-          [ -z "$CONTENT_DIGEST" ] || { echo "::error::content_digest belongs to staged_ref; the store readback pins the staged version"; exit 1; }
-
-      - name: Publish the existing revision and read it back
-        env:
-          VERSION: ${{ inputs.publish_staged_version }}
-          CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
-          CWS_PUBLISHER_ID: ${{ inputs.publisher_id || secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}
-          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-        run: node scripts/cws-v2.mjs publish-staged --version "$VERSION"
