@@ -9,6 +9,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "site:build": "node scripts/site-build.mjs _site && bash scripts/build-storefront.sh",
     "build": "bun run scripts/build.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/ scripts/",

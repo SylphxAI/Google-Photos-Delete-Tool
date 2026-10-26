@@ -25,8 +25,8 @@ export const PRO_URL = 'https://github.com/SylphxAI/Google-Photos-Delete-Tool#pr
  * switch as `selfServeCheckout` in site/config.json (docs/PRO.md).
  */
 export const SELF_SERVE_CHECKOUT = true
-export const SELF_SERVE_CHECKOUT_URL = 'https://buy.sylphx.com/buy/gpdt'
-export const SELF_SERVE_RECOVER_URL = 'https://buy.sylphx.com/recover?product=gpdt'
+export const SELF_SERVE_CHECKOUT_URL = 'https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing'
+export const SELF_SERVE_RECOVER_URL = 'https://sylphxai.github.io/Google-Photos-Delete-Tool/recover'
 
 /**
  * Copy A/B test, measured without telemetry: each install gets a stable random

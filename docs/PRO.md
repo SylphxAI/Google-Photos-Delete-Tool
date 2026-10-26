@@ -134,7 +134,7 @@ data is sent.
 
 ## Self-serve checkout and sales
 
-Pro is bought instantly at <https://buy.sylphx.com/buy/gpdt>: Money mints the
+Pro is bought instantly at <https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing>: Money mints the
 offline licence (payload `plan: "pro"`, `email`, `issuedAt`, `product: "gpdt"`,
 `order`, `grant`), the success page shows the token and an emailed signed link
 repeats it. Activation is unchanged: paste the token. Both switches are on:
@@ -144,7 +144,7 @@ repeats it. Activation is unchanged: paste the token. Both switches are on:
   the checkout).
 - `selfServeCheckout` in `site/config.json` (the landing page Pro button, and
   it reveals the "Lost your licence?" link to
-  <https://buy.sylphx.com/recover?product=gpdt>).
+  <https://sylphxai.github.io/Google-Photos-Delete-Tool/recover>).
 
 Verifier: a token with `product` `gpdt` verifies, as does one with no product
 (seller CLI) and one with the legacy slug `gpdt-pro` (kept so no issued token

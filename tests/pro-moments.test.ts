@@ -20,7 +20,7 @@ describe('dry-run teaser', () => {
     expect(t!.countsLine).toBe('This view has 1 photo, 1 video, 2 screenshots.')
     expect(t!.ctaLine).toBe('Delete only the types you choose with Pro — US$9.99 once')
     const u = new URL(t!.url)
-    expect(u.origin + u.pathname).toBe('https://buy.sylphx.com/buy/gpdt')
+    expect(u.origin + u.pathname).toBe('https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing')
     expect(u.searchParams.get('utm_source')).toBe('extension')
     expect(u.searchParams.get('utm_medium')).toBe('dryrun_teaser')
     expect(u.searchParams.get('utm_campaign')).toBe('pro')
@@ -88,7 +88,7 @@ describe('date filter report line and link', () => {
   it('the Get Pro link carries utm_medium=date_filter and the checkout URL', () => {
     const u = new URL(proUrl('date_filter'))
     expect(u.searchParams.get('utm_medium')).toBe('date_filter')
-    expect(u.origin + u.pathname).toBe('https://buy.sylphx.com/buy/gpdt')
+    expect(u.origin + u.pathname).toBe('https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing')
   })
 })
 
