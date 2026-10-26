@@ -77,7 +77,7 @@ case "$url" in
 esac
 `
 const GRANTED = JSON.stringify({
-	api_key: 'sylphx_sk_fixture',
+	api_key: 'fixture-api-key',
 	key: { name: 'orgs/o/projects/p/envs/e/api_keys/k' },
 	active_after_ms: 0,
 })
@@ -299,7 +299,7 @@ describe('money catalogue workflow', () => {
 			expect(workflow.split(`'${path}'`).length - 1).toBeGreaterThanOrEqual(2)
 		}
 		expect(testJob).not.toContain('id-token')
-		expect(testJob).toContain('bunx vitest run tests/money-catalogue-apply.test.ts')
+		expect(testJob).toContain('bun run test -- tests/money-catalogue-apply.test.ts')
 		expect(preview).toContain('needs: test')
 		expect(production).toContain('needs: preview')
 		for (const job of [preview, production]) {
