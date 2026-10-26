@@ -4,6 +4,6 @@
   "addToChromeSendTo": "AW-XXXX/LABEL",
   "purchaseSendTo": "AW-XXXX/LABEL",
   "selfServeCheckout": true,
-  "checkoutUrl": "https://buy.sylphx.com/buy/gpdt",
-  "recoverUrl": "https://buy.sylphx.com/recover?product=gpdt"
+  "checkoutUrl": "https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing",
+  "recoverUrl": "https://sylphxai.github.io/Google-Photos-Delete-Tool/recover"
 }

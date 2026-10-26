@@ -58,14 +58,14 @@ for a product the submitter uses, no astroturfing. Drafts live in
 | Installs and velocity | store dashboards | week-over-week growth after each channel |
 | Store reviews | Chrome Web Store | 100% answered, rating 4.5 or higher |
 | GitHub stars | repository | velocity spikes after posts |
-| Pro orders | Stripe Checkout at buy.sylphx.com (Money) | first 10 orders |
+| Pro orders | Money Checkout on the product's pricing page | first 10 orders |
 | Referral sources | store and repository traffic | double down on the best channel |
 
 Optimize the loop, not the star count: an install with a review is the loop.
 
 ### Reading Pro orders
 
-Orders come from the Money/Stripe checkout at <https://buy.sylphx.com/buy/gpdt>
+Orders come from the Money/Stripe checkout at <https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing>
 (self-serve, see [PRO.md](PRO.md#self-serve-checkout-and-sales)). Every Buy link
 carries `utm_source=extension`, `utm_medium`
 (the moment) and `utm_content` (paywall copy variant `a` or `b`). Export

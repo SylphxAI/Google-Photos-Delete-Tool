@@ -234,15 +234,15 @@ describe('site live truth', () => {
   it('ships self-serve on: Pro button buys at checkout, thanks no longer says manual delivery', () => {
     const cfg = JSON.parse(read('config.json'))
     expect(cfg.selfServeCheckout).toBe(true)
-    expect(read('index.html')).toMatch(/data-cta="pro" href="https:\/\/buy\.sylphx\.com\/buy\/gpdt">Buy Pro</)
+    expect(read('index.html')).toMatch(/data-cta="pro" href="https:\/\/sylphxai\.github\.io\/Google-Photos-Delete-Tool\/pricing">Buy Pro</)
     expect(read('index.html')).not.toContain('See Pro details')
     expect(read('thanks.html')).not.toMatch(/by hand|few hours/)
-    expect(read('thanks.html')).toContain('buy.sylphx.com/recover?product=gpdt')
+    expect(read('thanks.html')).toContain('https://sylphxai.github.io/Google-Photos-Delete-Tool/recover')
   })
 
   it('with the switch off the recover link stays hidden and unlinked', async () => {
     expect(read('index.html')).toMatch(/id="recover" hidden/)
-    const r = await run('index', { selfServeCheckout: false, checkoutUrl: 'https://buy.sylphx.com/buy/gpdt', recoverUrl: 'https://buy.sylphx.com/recover?product=gpdt' })
+    const r = await run('index', { selfServeCheckout: false, checkoutUrl: 'https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing', recoverUrl: 'https://sylphxai.github.io/Google-Photos-Delete-Tool/recover' })
     expect(r.calls).toHaveLength(0)
   })
 
