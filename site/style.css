@@ -39,6 +39,7 @@ section{padding-block:64px}
 .top nav a{color:var(--mut);text-decoration:none;font-size:.9375rem}.top nav a:hover{color:var(--fg)}
 @media (min-width:900px){.top nav{display:flex}}
 @media (max-width:479px){.brand .by{display:none}.brand span{font-size:.875rem}}
+@media (max-width:639px){.top-in{flex-wrap:wrap;height:auto;min-height:60px;padding-block:8px;row-gap:8px}.top-in>.btn-sm{margin-left:auto;white-space:normal;text-align:center}}
 /* buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px;border-radius:10px;background:var(--acc);color:var(--accfg);font-weight:650;text-decoration:none;border:1px solid transparent;transition:background .15s}
 .btn:hover{background:var(--acc-h);color:var(--accfg)}
