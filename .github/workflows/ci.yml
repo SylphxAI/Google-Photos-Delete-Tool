@@ -55,6 +55,11 @@ jobs:
           CHROMIUM_PATH: /usr/bin/google-chrome
         run: node scripts/dupes-demo.mjs --check --no-screenshot
 
+      - name: Responsive localized storefront
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: node scripts/site-responsive.mjs
+
       - name: Verify storefront listing
         run: bun run listing:check
 
