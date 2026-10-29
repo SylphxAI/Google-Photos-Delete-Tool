@@ -1,0 +1,17 @@
+{
+  "environment": "preview",
+  "url": "https://api.sylphx.com/v1/money/orgs/org_fs01afbdccgn8xdk1ghj5y47w0vtph/projects/prj_fs01etb6sjwf33tcvmhf93jwppx8a0/envs/env_fs01mrzxcsmcvp9w6h3j040b6p02zt/licence_keys/jwks.json",
+  "fetchedAt": "2026-10-29T14:08:42Z",
+  "jwks": {
+    "keys": [
+      {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "lkey_fs0101m5yb6btq15hkvr1crc1461j6",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "dcYaq920p72aecSMSlZF4zPKhX9rkElp5Jlfto1uLBk"
+      }
+    ]
+  }
+}

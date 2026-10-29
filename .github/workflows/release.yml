@@ -57,11 +57,21 @@ jobs:
       - name: Create extension ZIPs
         run: bun run zip
 
+      - name: Build and verify isolated Test Mode packages
+        run: |
+          bun run build --environment=preview
+          bun run verify --environment=preview
+          bun run zip --environment=preview
+
       - name: Collect release assets and SHA-256 checksums
         run: |
           mkdir release-assets
           cp google-photos-delete-tool.zip google-photos-delete-tool-firefox.zip google-photos-delete-tool-edge.zip \
              dist/standalone/inject.js dist/userscript/google-photos-delete.user.js release-assets/
+          cp google-photos-delete-tool-preview.zip google-photos-delete-tool-firefox-preview.zip \
+             google-photos-delete-tool-edge-preview.zip release-assets/
+          cp dist/build-info.json release-assets/build-info.json
+          cp dist-preview/build-info.json release-assets/build-info-preview.json
           (cd release-assets && sha256sum -- * > SHA256SUMS && cat SHA256SUMS)
 
       - name: Attest build provenance

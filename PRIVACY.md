@@ -1,16 +1,18 @@
 # Privacy Policy — Google Photos Delete Tool
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-29
 
 ## Overview
 
 Google Photos Delete Tool is a browser extension and userscript that helps
 you find duplicate photos and bulk-delete photos in Google Photos. Your privacy is the product's
-core promise: this tool **collects, stores, and transmits nothing**.
+core promise: **photo and library information stays on your device**.
+The tool stores the preferences and licence you choose to save, as described below;
+there is no analytics, telemetry or remote licence check in the client.
 
 ## Data Collection
 
-We do not collect, store, or transmit any user data. Specifically:
+We do not collect your photo/library information or send it to our servers. Specifically:
 
 - No personally identifiable information is collected
 - No photo data leaves your browser
@@ -18,7 +20,11 @@ We do not collect, store, or transmit any user data. Specifically:
 - No data is sent to external servers
 - No cookies are set
 - Pro license verification happens **locally** (Ed25519 signature check in
-  your browser). The token is never sent to us. If you use your browser's sync account, the
+  your browser), using a public-key snapshot shipped with the package.
+  Activation and reload work offline and make no JWKS/entitlement request.
+  The build maintainer refreshes that snapshot from the target environment’s
+  public Money JWKS using anonymous GETs with no token, claim or library data.
+  A new signing key requires a client update. The token is never sent to us. If you use your browser's sync account, the
   browser itself copies the token to your other signed-in devices, like any
   extension setting
 

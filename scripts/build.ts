@@ -12,6 +12,9 @@
  */
 import { build } from 'vite'
 import { SUPPORTED_MATCH_PATTERN } from '../src/core/surface'
+import { licenseTrust } from '../src/core/license-trust'
+import { licenseEnvironment, distDirectory } from './lib/license-build'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'path'
 import {
@@ -27,6 +30,16 @@ import {
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8'))
+const define = { __GPDT_LICENSE_ENVIRONMENT__: JSON.stringify(licenseEnvironment) }
+const trust = licenseTrust(licenseEnvironment)
+const buildInfo = {
+  version: pkg.version,
+  commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+  licenseEnvironment,
+  publicJwks: trust.url,
+  trustCapturedAt: trust.fetchedAt,
+}
+console.log(`Building ${licenseEnvironment} licence trust into ${distDirectory}/`)
 
 // ─── Extension build (shared entries) ───────────────────────────
 
@@ -45,6 +58,7 @@ async function buildExtension(outDir: string): Promise<void> {
     await build({
       configFile: false,
       root,
+      define,
       build: {
         outDir,
         emptyOutDir: false, // we already wiped it; reuse the same dir across entries
@@ -69,8 +83,9 @@ async function buildExtension(outDir: string): Promise<void> {
   // popup.html
   writeFileSync(
     resolve(outDir, 'popup.html'),
-    readFileSync(resolve(root, 'src/extension/popup/popup.html'), 'utf-8'),
+    readFileSync(resolve(root, 'src/extension/popup/popup.html'), 'utf-8').replace('<body>', licenseEnvironment === 'preview' ? '<body><p role="note" style="margin:8px;color:#b45309">Preview build — Test Mode licences only</p>' : '<body>'),
   )
+  writeFileSync(resolve(outDir, 'build-info.json'), JSON.stringify(buildInfo, null, 2) + '\n')
 
   // Localized store name/description (manifest __MSG_*__ keys)
   cpSync(resolve(root, '_locales'), resolve(outDir, '_locales'), { recursive: true })
@@ -136,7 +151,7 @@ function firefoxManifest(): Record<string, unknown> {
 
 // ─── Chrome extension ───────────────────────────────────────────
 
-const chromeDir = resolve(root, 'dist/extension')
+const chromeDir = resolve(root, `${distDirectory}/extension`)
 await buildExtension(chromeDir)
 writeFileSync(
   resolve(chromeDir, 'manifest.json'),
@@ -148,7 +163,7 @@ console.log('✅ Chrome extension → dist/extension/')
 // Edge reads the extension name from the manifest and caps it at 45
 // characters per locale, so the Edge package is the Chrome build with the
 // short localized name (appNameEdge in _locales/*/messages.json).
-const edgeDir = resolve(root, 'dist/extension-edge')
+const edgeDir = resolve(root, `${distDirectory}/extension-edge`)
 rmSync(edgeDir, { recursive: true, force: true })
 cpSync(chromeDir, edgeDir, { recursive: true })
 writeFileSync(
@@ -159,7 +174,7 @@ console.log('✅ Edge extension → dist/extension-edge/')
 
 // ─── Firefox extension ──────────────────────────────────────────
 
-const firefoxDir = resolve(root, 'dist/extension-firefox')
+const firefoxDir = resolve(root, `${distDirectory}/extension-firefox`)
 await buildExtension(firefoxDir)
 writeFileSync(
   resolve(firefoxDir, 'manifest.json'),
@@ -173,8 +188,9 @@ console.log('[standalone] Building inject.js...')
 await build({
   configFile: false,
   root,
+  define,
   build: {
-    outDir: resolve(root, 'dist/standalone'),
+    outDir: resolve(root, `${distDirectory}/standalone`),
     emptyOutDir: true,
     target: 'es2022',
     lib: {
@@ -193,12 +209,13 @@ console.log('✅ Standalone → dist/standalone/inject.js')
 // ─── Userscript ─────────────────────────────────────────────────
 
 console.log('[userscript] Building...')
-const userscriptDir = resolve(root, 'dist/userscript')
+const userscriptDir = resolve(root, `${distDirectory}/userscript`)
 mkdirSync(userscriptDir, { recursive: true })
 
 await build({
   configFile: false,
   root,
+  define,
   build: {
     outDir: userscriptDir,
     emptyOutDir: true,
@@ -237,6 +254,8 @@ const userscriptCode = readFileSync(userscriptPath, 'utf-8')
 writeFileSync(userscriptPath, userscriptHeader + '\n' + userscriptCode)
 
 console.log('✅ Userscript → dist/userscript/google-photos-delete.user.js')
+
+writeFileSync(resolve(root, distDirectory, 'build-info.json'), JSON.stringify(buildInfo, null, 2) + '\n')
 
 // ─── Summary ────────────────────────────────────────────────────
 
