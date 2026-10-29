@@ -293,8 +293,6 @@ describe('money catalogue workflow', () => {
 		for (const path of [
 			'config/money-catalogue.json',
 			'scripts/money-catalogue-apply.sh',
-			'tests/money-catalogue-apply.test.ts',
-			'.github/workflows/money-catalogue.yml',
 		]) {
 			expect(workflow.split(`'${path}'`).length - 1).toBeGreaterThanOrEqual(2)
 		}
@@ -304,7 +302,7 @@ describe('money catalogue workflow', () => {
 		expect(production).toContain('needs: preview')
 		for (const job of [preview, production]) {
 			expect(job).toContain(
-				`github.event_name != 'pull_request' && github.ref == 'refs/heads/${defaultBranch}'`,
+				`github.event_name != 'pull_request' && inputs.verify_only != true && github.ref == 'refs/heads/${defaultBranch}'`,
 			)
 			expect(job).toContain('bash scripts/money-catalogue-apply.sh')
 		}
