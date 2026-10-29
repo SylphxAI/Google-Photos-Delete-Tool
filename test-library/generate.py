@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Deterministic synthetic photo library for GPDT live tests. Writes out/ and the zip."""
 import os, random, shutil, subprocess, zipfile, calendar
+from datetime import datetime, timezone
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "out"
@@ -11,14 +12,15 @@ W, H = 1600, 1200
 YEARS = [2019] * 14 + [2021] * 13 + [2024] * 13  # 40 photos
 DUP_SOURCES = [2, 7, 12, 17, 22, 27, 32, 37]      # 8 groups
 rng = random.Random(20261001)
+FONT_PATHS = ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+              "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf")
 
 
 def font(size):
-    for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-              "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf"):
+    for p in FONT_PATHS:
         if os.path.exists(p):
             return ImageFont.truetype(p, size)
-    return ImageFont.load_default(size)
+    raise RuntimeError("DejaVuSans-Bold.ttf not found: install fonts-dejavu-core")
 
 
 def color():
@@ -77,7 +79,18 @@ def save_jpeg(img, name, dt, quality=92):
 
 
 def main():
-    from datetime import datetime
+    # Fail before replacing any previous complete library. Never silently make
+    # a smaller archive or switch to a different font.
+    if not shutil.which("ffmpeg"):
+        raise RuntimeError("ffmpeg with libx264 is required for the complete 60-file library")
+    encoders = subprocess.run(["ffmpeg", "-hide_banner", "-encoders"],
+                              capture_output=True, text=True, check=True).stdout
+    if not any(len(row.split()) > 1 and row.split()[1] == "libx264"
+               for row in encoders.splitlines()):
+        raise RuntimeError("ffmpeg must include the libx264 encoder")
+    font(60)
+    rng.seed(20261001)
+    ZIP.unlink(missing_ok=True)
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir()
@@ -85,16 +98,17 @@ def main():
         n = i + 1
         month = rng.randint(1, 12)
         day = rng.randint(1, calendar.monthrange(year, month)[1])
-        dt = datetime(year, month, day, rng.randint(8, 19), rng.randint(0, 59), rng.randint(0, 59))
+        dt = datetime(year, month, day, rng.randint(8, 19), rng.randint(0, 59), rng.randint(0, 59),
+                      tzinfo=timezone.utc)
         img = scene(n)
         base = f"GPDT_{n:03d}"
         save_jpeg(img, base + ".jpg", dt)
         if i in DUP_SOURCES:
             k = DUP_SOURCES.index(i)
-            variants = ["half", "q60", "crop"] if False else (["half", "q60"] if k % 2 == 0 else ["crop"])
+            variants = ["half", "q60"] if k % 2 == 0 else ["crop"]
             for v in variants:
                 if v == "half":
-                    save_jpeg(img.resize((W // 2, H // 2), Image.LANCZOS), f"{base}_half.jpg", dt)
+                    save_jpeg(img.resize((W // 2, H // 2), Image.Resampling.LANCZOS), f"{base}_half.jpg", dt)
                 elif v == "q60":
                     save_jpeg(img, f"{base}_q60.jpg", dt, quality=60)
                 else:
@@ -118,29 +132,28 @@ def main():
         d.rounded_rectangle([385, 2440, 785, 2460], 10, fill=(40, 40, 40))
         p = OUT / f"Screenshot_2024-03-0{n}.png"
         img.save(p, "PNG")
-        touch(p, datetime(2024, 3, n, 12, 0, 0))
+        touch(p, datetime(2024, 3, n, 12, 0, 0, tzinfo=timezone.utc))
     # videos
-    if shutil.which("ffmpeg"):
-        for n, src in ((1, "smptebars"), (2, "testsrc2")):
-            p = OUT / f"GPDT_clip_{n}.mp4"
-            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi",
-                            "-i", f"{src}=size=640x360:rate=25:duration=3",
-                            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-threads", "1",
-                            "-fflags", "+bitexact", "-flags:v", "+bitexact",
-                            "-metadata", f"creation_time=2021-0{5 + n}-1{n}T10:00:00Z",
-                            "-movflags", "+faststart", str(p)], check=True)
-            touch(p, datetime(2021, 5 + n, 10 + n, 10, 0, 0))
-    else:
-        print("ffmpeg not found: videos skipped")
+    for n, src in ((1, "smptebars"), (2, "testsrc2")):
+        p = OUT / f"GPDT_clip_{n}.mp4"
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi",
+                        "-i", f"{src}=size=640x360:rate=25:duration=3",
+                        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-threads", "1",
+                        "-fflags", "+bitexact", "-flags:v", "+bitexact",
+                        "-metadata", f"creation_time=2021-0{5 + n}-1{n}T10:00:00Z",
+                        "-movflags", "+faststart", str(p)], check=True)
+        touch(p, datetime(2021, 5 + n, 10 + n, 10, 0, 0, tzinfo=timezone.utc))
     # zip, sorted, fixed timestamps
     if ZIP.exists():
         ZIP.unlink()
     with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_STORED) as z:
         for f in sorted(OUT.iterdir()):
             zi = zipfile.ZipInfo(f"out/{f.name}", (2024, 1, 1, 0, 0, 0))
+            zi.create_system = 3  # stable Unix permissions even on another host OS
             zi.external_attr = 0o644 << 16
             z.writestr(zi, f.read_bytes())
     print(len(list(OUT.iterdir())), "files in", OUT)
 
 
-main()
+if __name__ == "__main__":
+    main()
