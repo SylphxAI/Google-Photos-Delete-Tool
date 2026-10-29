@@ -7,11 +7,11 @@
  "ogLocale": "zh_CN",
  "strings": {
   "Bulk delete Google Photos and find duplicates | Google Photos Delete Tool": "批量删除 Google 相册并查找重复照片 | Google Photos Delete Tool",
-  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500, 60-day Trash. Free Chrome extension.": "一次运行即可删除数千张 Google 相册照片，并找出 Google 漏掉的相似重复照片。先试运行，每批 500 张，回收站保留 60 天。免费 Chrome 扩展程序。",
+  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500. Recovery is subject to Google Photos Trash policy. Free Chrome extension.": "一次运行即可删除数千张 Google 相册照片，并找出 Google 漏掉的相似重复照片。先试运行，每批 500 张。能否恢复取决于 Google 相册的回收站政策。免费 Chrome 扩展程序。",
   "Bulk delete Google Photos and find duplicates": "批量删除 Google 相册并查找重复照片",
   "Delete thousands of photos in one run and find the look-alike duplicates Google misses. Dry run first. Free Chrome extension.": "一次运行即可删除数千张照片，并找出 Google 漏掉的相似重复照片。先试运行。免费 Chrome 扩展程序。",
   "Google Photos Delete Tool: bulk delete and find duplicates, by Sylphx": "Google Photos Delete Tool：批量删除并查找重复照片，Sylphx 出品",
-  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500, deleted items go to the 60-day Trash. Runs in your browser.": "批量删除 Google 相册照片并查找相似重复照片。先试运行，每批最多 500 张，删除的内容进入保留 60 天的回收站。在浏览器中运行。",
+  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500. Recovery is subject to Google Photos Trash policy. Runs in your browser.": "批量删除 Google 相册照片并查找相似重复照片。先试运行，每批最多 500 张。能否恢复取决于 Google 相册的回收站政策。在浏览器中运行。",
   "Free": "免费",
   "Pro, one-time": "Pro，一次性付费",
   "Skip to content": "跳到正文",
@@ -42,8 +42,8 @@
   "Built so you never lose the wrong photo": "为不误删照片而设计",
   "Nothing runs until you confirm": "确认之前什么都不会运行",
   "The first real run asks you to confirm what is about to happen. Nothing is ever scheduled or unattended.": "首次正式运行前，需要你确认即将执行的操作。绝不会定时或无人值守地运行。",
-  "60 days to change your mind": "60 天内可以反悔",
-  "Deleted photos go to Google Photos Trash, where you can restore them for 60 days. Emptying Trash is optional and always asked first.": "删除的照片会进入 Google 相册回收站，你可以在 60 天内恢复。清空回收站为可选项，且每次都会先询问你。",
+  "Recovery has limits": "恢复有条件限制",
+  "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "只有内容仍在回收站中且符合 Google 相册当前的保留政策时，才可以恢复。清空回收站为可选操作，会先请求确认，而且无法撤销。",
   "Stops instead of guessing": "宁可停止，也不猜测",
   "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "如果 Google 更改了某个按钮，而该工具无法确定识别，它就会停止。它绝不会点击自己没有把握的内容。",
   "Your photos stay on your computer": "你的照片留在你的电脑上",
@@ -76,7 +76,7 @@
   "Lost your licence?": "丢失了授权？",
   "Questions": "常见问题",
   "Can I undo a delete?": "可以撤销删除吗？",
-  "Yes, for 60 days. Deleted photos go to Google Photos Trash and you can restore them from there. The only permanent step is the optional \"Empty trash afterwards\", which asks you first.": "可以，60 天内都行。删除的照片会进入 Google 相册回收站，你可以从那里恢复。唯一不可撤销的步骤是可选的“结束后清空回收站”，它会先询问你。",
+  "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "只有内容仍在回收站中且符合 Google 相册当前政策时才可以恢复。打开 Google 相册回收站，选择所需内容，然后点击“恢复”。清空回收站和任何永久删除操作都无法撤销。回收站已满时，系统可能会改为提示永久删除。删除前请查看 Google 的说明。",
   "Does it upload my photos?": "会上传我的照片吗？",
   "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "不会。它在浏览器中的 Google 相册页面内运行。查找重复照片只会从 Google 自己的服务器下载小缩略图，在内存中把每张转换成指纹，并在你关闭审核时丢弃。",
   "Can I delete only part of my library?": "可以只删除部分图库吗？",
@@ -101,6 +101,8 @@
   "Reject": "拒绝",
   "Cookie consent": "Cookie 同意",
   "Page": "页面",
-  "Legal": "法律信息"
+  "Legal": "法律信息",
+  "Google Photos desktop delete guidance (checked 2026-10-29)": "Google 相册电脑版删除说明（查阅日期：2026-10-29）",
+  "Google Photos desktop restore guidance (checked 2026-10-29)": "Google 相册电脑版恢复说明（查阅日期：2026-10-29）"
  }
 }

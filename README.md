@@ -33,8 +33,9 @@ stay in your library. **Find duplicates** finds them for you:
    values also group edits and burst shots, so check those groups.
 6. **Preview (dry run)** checks the chosen photos are still in the view
    without changing anything. **Move to Trash** hands them to the same safe
-   delete flow as the rest of the tool: a one-time confirmation, batches,
-   Stop at any time, and 60 days in Trash to change your mind.
+   delete flow as the rest of the tool: a one-time confirmation and batches.
+   Stop at any time. Restoration is limited to items still in Trash under
+   Google Photos’ current policy; see [recovery limits](#recovery-limits).
 7. **Pro review tools** (free review is unchanged; see [Pro](#pro)) save time on
    big libraries: a keep rule for every group at once, auto-accept for
    near-identical groups, and a CSV export of the groups.
@@ -78,9 +79,11 @@ Google Photos Library API has no delete endpoint.
   UI stops the run with an error; it never clicks a guess.
 - **Consent gate.** The first real run asks you to acknowledge what will
   happen. Nothing is scheduled or unattended.
-- **60-day Trash.** Deleted photos sit in Google Photos Trash for 60 days.
-  "Empty trash afterwards" is opt-in, permanent, and reported `done` only after
-  the trash is verified empty.
+- **Limited Trash recovery.** Restoration requires items still in Trash and
+  Google Photos’ current retention policy to allow it; no recovery period is
+  guaranteed. "Empty trash afterwards" is opt-in, cannot be undone, and is
+  reported `done` only after the trash is verified empty. See
+  [recovery limits](#recovery-limits).
 - **Accurate numbers.** The progress bar is indeterminate while the total is
   unknown; ETA appears once a dry run has established a total.
 - **No telemetry, no server.** Everything runs in your browser. Pro licence
@@ -263,10 +266,11 @@ evidence.
 ## FAQ
 
 **Is this safe?** It only clicks what a human would click, matching
-destructive actions by positive keywords (never guessing), and deleted
-photos sit in Trash for 60 days. The only permanent action is "Empty
-trash", which is opt-in, gated by the postcondition check, and never
-unattended.
+destructive actions by positive keywords (never guessing). Recovery is
+limited by Google Photos’ current Trash policy, not guaranteed by this tool.
+Empty Trash and any permanent deletion cannot be undone. The tool’s
+"Empty trash afterwards" is opt-in, gated by the postcondition check, and
+never unattended. Keep independent backups before deleting.
 
 **What happens when Google changes their UI?** The selector pack version
 is recorded in every diagnostic report. When a drift is reported, the fix
@@ -287,9 +291,24 @@ search to narrow it down.
 **How fast is it?** Deletion runs at Google's UI pace; each release's photos per
 minute is measured in the release gate and published in its notes.
 
-**What about the trash?** Deleted photos go to Trash for 60 days.
-"Empty trash afterwards" empties and permanently removes them — with your
-explicit opt-in.
+**What about the trash?** Restore only while items remain in Trash and
+Google Photos’ current retention policy allows it. "Empty trash afterwards"
+permanently removes them — with your explicit opt-in. It cannot be undone.
+See the current conditions below.
+
+### Recovery limits
+
+Open Google Photos Trash, select the items you need and choose **Restore**.
+If an item is no longer in Trash, do not assume it can be restored. Empty
+Trash and any permanent deletion cannot be undone; a full Trash may prompt
+permanent deletion instead. Do not approve a permanent deletion if you need
+the option to restore. Keep independent backups of photos you value.
+
+Google’s official [desktop delete guidance](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop)
+and [desktop restore guidance](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
+were checked on **2026-10-29**. Follow their current retention policy and
+conditions, not a fixed recovery window promised by this tool. See
+[the policy check and delivery boundaries](docs/RECOVERY.md).
 
 ## Support
 

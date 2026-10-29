@@ -7,11 +7,11 @@
  "ogLocale": "nl_NL",
  "strings": {
   "Bulk delete Google Photos and find duplicates | Google Photos Delete Tool": "Google Foto’s in bulk verwijderen en dubbele foto’s vinden | Google Photos Delete Tool",
-  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500, 60-day Trash. Free Chrome extension.": "Verwijder duizenden Google Foto’s in één run en vind de gelijkende duplicaten die Google mist. Eerst een proefrun, batches van 500, prullenbak van 60 dagen. Gratis Chrome-extensie.",
+  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500. Recovery is subject to Google Photos Trash policy. Free Chrome extension.": "Verwijder duizenden Google Foto’s in één run en vind de gelijkende duplicaten die Google mist. Eerst een proefrun, batches van 500. Herstel valt onder het prullenbakbeleid van Google Foto’s. Gratis Chrome-extensie.",
   "Bulk delete Google Photos and find duplicates": "Google Foto’s in bulk verwijderen en dubbele foto’s vinden",
   "Delete thousands of photos in one run and find the look-alike duplicates Google misses. Dry run first. Free Chrome extension.": "Verwijder duizenden foto’s in één run en vind de gelijkende duplicaten die Google mist. Eerst een proefrun. Gratis Chrome-extensie.",
   "Google Photos Delete Tool: bulk delete and find duplicates, by Sylphx": "Google Photos Delete Tool: bulk verwijderen en duplicaten vinden, door Sylphx",
-  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500, deleted items go to the 60-day Trash. Runs in your browser.": "Verwijder Google Foto’s in bulk en vind gelijkende duplicaten. Eerst een proefrun, batches van maximaal 500, verwijderde items gaan 60 dagen naar de prullenbak. Draait in je browser.",
+  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500. Recovery is subject to Google Photos Trash policy. Runs in your browser.": "Verwijder Google Foto’s in bulk en vind gelijkende duplicaten. Eerst een proefrun, batches van maximaal 500. Herstel valt onder het prullenbakbeleid van Google Foto’s. Draait in je browser.",
   "Free": "Gratis",
   "Pro, one-time": "Pro, eenmalig",
   "Skip to content": "Naar de inhoud",
@@ -42,8 +42,8 @@
   "Built so you never lose the wrong photo": "Zo gebouwd dat je nooit de verkeerde foto kwijtraakt",
   "Nothing runs until you confirm": "Er start niets voordat je bevestigt",
   "The first real run asks you to confirm what is about to happen. Nothing is ever scheduled or unattended.": "Vóór de eerste echte run bevestig je wat er gaat gebeuren. Er wordt nooit iets ingepland of onbeheerd uitgevoerd.",
-  "60 days to change your mind": "60 dagen om je te bedenken",
-  "Deleted photos go to Google Photos Trash, where you can restore them for 60 days. Emptying Trash is optional and always asked first.": "Verwijderde foto’s gaan naar de prullenbak van Google Foto’s, waar je ze 60 dagen kunt herstellen. De prullenbak legen is optioneel en er wordt altijd eerst om bevestiging gevraagd.",
+  "Recovery has limits": "Herstel heeft grenzen",
+  "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "Herstel is alleen mogelijk zolang items in de prullenbak staan en het huidige bewaarbeleid van Google Foto’s dit toestaat. De prullenbak legen is optioneel, vraagt eerst bevestiging en kan niet ongedaan worden gemaakt.",
   "Stops instead of guessing": "Stopt in plaats van te gokken",
   "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "Als Google een knop wijzigt die de tool niet met zekerheid herkent, stopt het. Het klikt nooit op iets waarvan het niet zeker is.",
   "Your photos stay on your computer": "Je foto’s blijven op je computer",
@@ -76,7 +76,7 @@
   "Lost your licence?": "Licentie kwijt?",
   "Questions": "Vragen",
   "Can I undo a delete?": "Kan ik een verwijdering ongedaan maken?",
-  "Yes, for 60 days. Deleted photos go to Google Photos Trash and you can restore them from there. The only permanent step is the optional \"Empty trash afterwards\", which asks you first.": "Ja, gedurende 60 dagen. Verwijderde foto’s gaan naar de prullenbak van Google Foto’s en je kunt ze daar herstellen. De enige permanente stap is het optionele “Prullenbak daarna legen”, dat eerst om bevestiging vraagt.",
+  "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "Alleen als de items nog in de prullenbak staan en het huidige beleid van Google Foto’s dit toestaat. Open de prullenbak van Google Foto’s, selecteer de items en kies Herstellen. De prullenbak legen en elke definitieve verwijdering kunnen niet ongedaan worden gemaakt. Bij een volle prullenbak kan in plaats daarvan definitieve verwijdering worden aangeboden. Lees de instructies van Google voordat je verwijdert.",
   "Does it upload my photos?": "Uploadt het mijn foto’s?",
   "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "Nee. Het draait binnen de Google Foto’s-pagina in je browser. Duplicaten vinden downloadt kleine miniaturen alleen van Googles eigen servers, zet elke miniatuur in het geheugen om in een vingerafdruk en vergeet die zodra je de controle sluit.",
   "Can I delete only part of my library?": "Kan ik maar een deel van mijn bibliotheek verwijderen?",
@@ -101,6 +101,8 @@
   "Reject": "Weigeren",
   "Cookie consent": "Cookietoestemming",
   "Page": "Pagina",
-  "Legal": "Juridisch"
+  "Legal": "Juridisch",
+  "Google Photos desktop delete guidance (checked 2026-10-29)": "Google Foto’s: verwijderen op de computer (gecontroleerd op 2026-10-29)",
+  "Google Photos desktop restore guidance (checked 2026-10-29)": "Google Foto’s: herstellen op de computer (gecontroleerd op 2026-10-29)"
  }
 }

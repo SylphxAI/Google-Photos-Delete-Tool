@@ -7,11 +7,11 @@
  "ogLocale": "it_IT",
  "strings": {
   "Bulk delete Google Photos and find duplicates | Google Photos Delete Tool": "Elimina Google Foto in blocco e trova i duplicati | Google Photos Delete Tool",
-  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500, 60-day Trash. Free Chrome extension.": "Elimina migliaia di foto di Google Foto in una sola esecuzione e trova i duplicati simili che Google non rileva. Prima prova a secco, lotti da 500, cestino di 60 giorni. Estensione Chrome gratuita.",
+  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500. Recovery is subject to Google Photos Trash policy. Free Chrome extension.": "Elimina migliaia di foto di Google Foto in una sola esecuzione e trova i duplicati simili che Google non rileva. Prima prova a secco, lotti da 500. Il recupero dipende dalle regole del cestino di Google Foto. Estensione Chrome gratuita.",
   "Bulk delete Google Photos and find duplicates": "Elimina Google Foto in blocco e trova i duplicati",
   "Delete thousands of photos in one run and find the look-alike duplicates Google misses. Dry run first. Free Chrome extension.": "Elimina migliaia di foto in una sola esecuzione e trova i duplicati simili che Google non rileva. Prima prova a secco. Estensione Chrome gratuita.",
   "Google Photos Delete Tool: bulk delete and find duplicates, by Sylphx": "Google Photos Delete Tool: eliminazione in blocco e ricerca dei duplicati, di Sylphx",
-  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500, deleted items go to the 60-day Trash. Runs in your browser.": "Elimina Google Foto in blocco e trova i duplicati simili. Prima prova a secco, lotti fino a 500, gli elementi eliminati restano nel cestino per 60 giorni. Funziona nel tuo browser.",
+  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500. Recovery is subject to Google Photos Trash policy. Runs in your browser.": "Elimina Google Foto in blocco e trova i duplicati simili. Prima prova a secco, lotti fino a 500. Il recupero dipende dalle regole del cestino di Google Foto. Funziona nel tuo browser.",
   "Free": "Gratis",
   "Pro, one-time": "Pro, una tantum",
   "Skip to content": "Vai al contenuto",
@@ -42,8 +42,8 @@
   "Built so you never lose the wrong photo": "Progettato perché tu non perda mai la foto sbagliata",
   "Nothing runs until you confirm": "Niente parte finché non confermi",
   "The first real run asks you to confirm what is about to happen. Nothing is ever scheduled or unattended.": "Prima della prima esecuzione reale confermi cosa sta per succedere. Niente viene mai pianificato né avviato senza di te.",
-  "60 days to change your mind": "60 giorni per ripensarci",
-  "Deleted photos go to Google Photos Trash, where you can restore them for 60 days. Emptying Trash is optional and always asked first.": "Le foto eliminate vanno nel cestino di Google Foto, dove puoi ripristinarle per 60 giorni. Svuotare il cestino è facoltativo e ti viene sempre chiesto prima.",
+  "Recovery has limits": "Il recupero ha dei limiti",
+  "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "Il ripristino è possibile solo finché gli elementi restano nel cestino e le attuali regole di conservazione di Google Foto lo consentono. Svuotare il cestino è facoltativo, richiede conferma e non può essere annullato.",
   "Stops instead of guessing": "Si ferma invece di tirare a indovinare",
   "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "Se Google cambia un pulsante che lo strumento non riesce a identificare con certezza, si ferma. Non clicca mai qualcosa di cui non è sicuro.",
   "Your photos stay on your computer": "Le tue foto restano sul tuo computer",
@@ -76,7 +76,7 @@
   "Lost your licence?": "Hai perso la licenza?",
   "Questions": "Domande",
   "Can I undo a delete?": "Posso annullare un’eliminazione?",
-  "Yes, for 60 days. Deleted photos go to Google Photos Trash and you can restore them from there. The only permanent step is the optional \"Empty trash afterwards\", which asks you first.": "Sì, per 60 giorni. Le foto eliminate vanno nel cestino di Google Foto e puoi ripristinarle da lì. L’unico passaggio definitivo è l’opzione «Svuota il cestino dopo», che ti chiede prima conferma.",
+  "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "Solo se gli elementi sono ancora nel cestino e le regole attuali di Google Foto lo consentono. Apri il cestino di Google Foto, seleziona gli elementi e scegli Ripristina. Svuotare il cestino e qualsiasi eliminazione definitiva sono operazioni irreversibili. Se il cestino è pieno, potrebbe essere proposta invece l’eliminazione definitiva. Consulta le istruzioni di Google prima di eliminare.",
   "Does it upload my photos?": "Carica le mie foto?",
   "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "No. Funziona dentro la pagina di Google Foto nel tuo browser. Trova duplicati scarica piccole miniature solo dai server di Google, trasforma ciascuna in un’impronta in memoria e la dimentica quando chiudi la revisione.",
   "Can I delete only part of my library?": "Posso eliminare solo una parte della libreria?",
@@ -101,6 +101,8 @@
   "Reject": "Rifiuta",
   "Cookie consent": "Consenso ai cookie",
   "Page": "Pagina",
-  "Legal": "Note legali"
+  "Legal": "Note legali",
+  "Google Photos desktop delete guidance (checked 2026-10-29)": "Google Foto: eliminare dal computer (consultato il 2026-10-29)",
+  "Google Photos desktop restore guidance (checked 2026-10-29)": "Google Foto: ripristinare dal computer (consultato il 2026-10-29)"
  }
 }

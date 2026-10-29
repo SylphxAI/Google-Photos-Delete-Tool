@@ -7,11 +7,11 @@
  "ogLocale": "pt_BR",
  "strings": {
   "Bulk delete Google Photos and find duplicates | Google Photos Delete Tool": "Exclua o Google Fotos em massa e encontre duplicadas | Google Photos Delete Tool",
-  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500, 60-day Trash. Free Chrome extension.": "Exclua milhares de fotos do Google Fotos de uma só vez e encontre as duplicadas parecidas que o Google deixa passar. Primeiro um teste (dry run), lotes de 500, lixeira de 60 dias. Extensão do Chrome grátis.",
+  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500. Recovery is subject to Google Photos Trash policy. Free Chrome extension.": "Exclua milhares de fotos do Google Fotos de uma só vez e encontre as duplicadas parecidas que o Google deixa passar. Primeiro um teste (dry run), lotes de 500. A recuperação depende da política da lixeira do Google Fotos. Extensão do Chrome grátis.",
   "Bulk delete Google Photos and find duplicates": "Exclua o Google Fotos em massa e encontre duplicadas",
   "Delete thousands of photos in one run and find the look-alike duplicates Google misses. Dry run first. Free Chrome extension.": "Exclua milhares de fotos de uma só vez e encontre as duplicadas parecidas que o Google deixa passar. Primeiro um teste (dry run). Extensão do Chrome grátis.",
   "Google Photos Delete Tool: bulk delete and find duplicates, by Sylphx": "Google Photos Delete Tool: exclusão em massa e localizador de duplicadas, por Sylphx",
-  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500, deleted items go to the 60-day Trash. Runs in your browser.": "Exclua o Google Fotos em massa e encontre duplicadas parecidas. Primeiro um teste (dry run), lotes de até 500, os itens excluídos vão para a lixeira por 60 dias. Roda no seu navegador.",
+  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500. Recovery is subject to Google Photos Trash policy. Runs in your browser.": "Exclua o Google Fotos em massa e encontre duplicadas parecidas. Primeiro um teste (dry run), lotes de até 500. A recuperação depende da política da lixeira do Google Fotos. Roda no seu navegador.",
   "Free": "Grátis",
   "Pro, one-time": "Pro, pagamento único",
   "Skip to content": "Pular para o conteúdo",
@@ -42,8 +42,8 @@
   "Built so you never lose the wrong photo": "Feito para você nunca perder a foto errada",
   "Nothing runs until you confirm": "Nada roda até você confirmar",
   "The first real run asks you to confirm what is about to happen. Nothing is ever scheduled or unattended.": "Antes da primeira execução real você confirma o que vai acontecer. Nada é agendado nem roda sem supervisão.",
-  "60 days to change your mind": "60 dias para mudar de ideia",
-  "Deleted photos go to Google Photos Trash, where you can restore them for 60 days. Emptying Trash is optional and always asked first.": "As fotos excluídas vão para a lixeira do Google Fotos, onde você pode restaurá-las por 60 dias. Esvaziar a lixeira é opcional e sempre pergunta antes.",
+  "Recovery has limits": "A recuperação tem limites",
+  "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "Só é possível restaurar enquanto os itens estiverem na lixeira e a política de retenção atual do Google Fotos permitir. Esvaziar a lixeira é opcional, pede confirmação e não pode ser desfeito.",
   "Stops instead of guessing": "Para em vez de adivinhar",
   "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "Se o Google mudar um botão que a ferramenta não consegue identificar com certeza, ela para. Nunca clica em algo de que não tenha certeza.",
   "Your photos stay on your computer": "Suas fotos ficam no seu computador",
@@ -76,7 +76,7 @@
   "Lost your licence?": "Perdeu sua licença?",
   "Questions": "Perguntas",
   "Can I undo a delete?": "Posso desfazer uma exclusão?",
-  "Yes, for 60 days. Deleted photos go to Google Photos Trash and you can restore them from there. The only permanent step is the optional \"Empty trash afterwards\", which asks you first.": "Sim, por 60 dias. As fotos excluídas vão para a lixeira do Google Fotos e você pode restaurá-las de lá. A única etapa permanente é o opcional “Esvaziar a lixeira depois”, que pergunta antes.",
+  "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "Somente se os itens ainda estiverem na lixeira e a política atual do Google Fotos permitir. Abra a lixeira do Google Fotos, selecione os itens e escolha Restaurar. Esvaziar a lixeira e qualquer exclusão permanente não podem ser desfeitos. Se a lixeira estiver cheia, a exclusão permanente poderá ser oferecida em vez disso. Consulte as instruções do Google antes de excluir.",
   "Does it upload my photos?": "Ele envia minhas fotos?",
   "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "Não. Ele roda dentro da página do Google Fotos no seu navegador. O localizador de duplicadas baixa pequenas miniaturas apenas dos servidores do próprio Google, transforma cada uma em uma impressão digital na memória e a esquece quando você fecha a revisão.",
   "Can I delete only part of my library?": "Posso excluir só uma parte da minha biblioteca?",
@@ -101,6 +101,8 @@
   "Reject": "Recusar",
   "Cookie consent": "Consentimento de cookies",
   "Page": "Página",
-  "Legal": "Informações legais"
+  "Legal": "Informações legais",
+  "Google Photos desktop delete guidance (checked 2026-10-29)": "Google Fotos: excluir no computador (consultado em 2026-10-29)",
+  "Google Photos desktop restore guidance (checked 2026-10-29)": "Google Fotos: restaurar no computador (consultado em 2026-10-29)"
  }
 }

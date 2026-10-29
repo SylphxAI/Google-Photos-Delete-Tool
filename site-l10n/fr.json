@@ -7,11 +7,11 @@
  "ogLocale": "fr_FR",
  "strings": {
   "Bulk delete Google Photos and find duplicates | Google Photos Delete Tool": "Supprimer Google Photos en masse et trouver les doublons | Google Photos Delete Tool",
-  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500, 60-day Trash. Free Chrome extension.": "Supprimez des milliers de photos Google Photos en une seule exécution et trouvez les doublons quasi identiques que Google ne détecte pas. Simulation d’abord, lots de 500, corbeille de 60 jours. Extension Chrome gratuite.",
+  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500. Recovery is subject to Google Photos Trash policy. Free Chrome extension.": "Supprimez des milliers de photos Google Photos en une seule exécution et trouvez les doublons quasi identiques que Google ne détecte pas. Simulation d’abord, lots de 500. La restauration dépend des règles de la corbeille Google Photos. Extension Chrome gratuite.",
   "Bulk delete Google Photos and find duplicates": "Supprimer Google Photos en masse et trouver les doublons",
   "Delete thousands of photos in one run and find the look-alike duplicates Google misses. Dry run first. Free Chrome extension.": "Supprimez des milliers de photos en une seule exécution et trouvez les doublons quasi identiques que Google ne détecte pas. Simulation d’abord. Extension Chrome gratuite.",
   "Google Photos Delete Tool: bulk delete and find duplicates, by Sylphx": "Google Photos Delete Tool : suppression en masse et recherche de doublons, par Sylphx",
-  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500, deleted items go to the 60-day Trash. Runs in your browser.": "Supprimez Google Photos en masse et trouvez les doublons quasi identiques. Simulation d’abord, lots de 500 maximum, les éléments supprimés vont dans la corbeille pendant 60 jours. Fonctionne dans votre navigateur.",
+  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500. Recovery is subject to Google Photos Trash policy. Runs in your browser.": "Supprimez Google Photos en masse et trouvez les doublons quasi identiques. Simulation d’abord, lots de 500 maximum. La restauration dépend des règles de la corbeille Google Photos. Fonctionne dans votre navigateur.",
   "Free": "Gratuit",
   "Pro, one-time": "Pro, une seule fois",
   "Skip to content": "Aller au contenu",
@@ -42,8 +42,8 @@
   "Built so you never lose the wrong photo": "Conçu pour que vous ne perdiez jamais la mauvaise photo",
   "Nothing runs until you confirm": "Rien ne démarre avant votre confirmation",
   "The first real run asks you to confirm what is about to happen. Nothing is ever scheduled or unattended.": "Avant la première exécution réelle, vous confirmez ce qui va se passer. Rien n’est jamais planifié ni lancé sans vous.",
-  "60 days to change your mind": "60 jours pour changer d’avis",
-  "Deleted photos go to Google Photos Trash, where you can restore them for 60 days. Emptying Trash is optional and always asked first.": "Les photos supprimées vont dans la corbeille de Google Photos, où vous pouvez les restaurer pendant 60 jours. Vider la corbeille est facultatif et toujours demandé au préalable.",
+  "Recovery has limits": "La restauration a des limites",
+  "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "La restauration n’est possible que si les éléments sont encore dans la corbeille et si les règles de conservation actuelles de Google Photos le permettent. Vider la corbeille est facultatif, demande confirmation et ne peut pas être annulé.",
   "Stops instead of guessing": "S’arrête au lieu de deviner",
   "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "Si Google modifie un bouton que l’outil ne peut pas identifier avec certitude, il s’arrête. Il ne clique jamais sur un élément dont il n’est pas sûr.",
   "Your photos stay on your computer": "Vos photos restent sur votre ordinateur",
@@ -76,7 +76,7 @@
   "Lost your licence?": "Licence perdue ?",
   "Questions": "Questions",
   "Can I undo a delete?": "Puis-je annuler une suppression ?",
-  "Yes, for 60 days. Deleted photos go to Google Photos Trash and you can restore them from there. The only permanent step is the optional \"Empty trash afterwards\", which asks you first.": "Oui, pendant 60 jours. Les photos supprimées vont dans la corbeille de Google Photos et vous pouvez les y restaurer. La seule étape définitive est l’option « Vider la corbeille ensuite », qui demande d’abord votre accord.",
+  "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "Uniquement si les éléments sont encore dans la corbeille et si les règles actuelles de Google Photos le permettent. Ouvrez la corbeille Google Photos, sélectionnez les éléments et choisissez Restaurer. Vider la corbeille et toute suppression définitive sont irréversibles. Une corbeille pleine peut proposer une suppression définitive à la place. Consultez les instructions de Google avant de supprimer.",
   "Does it upload my photos?": "Envoie-t-il mes photos ?",
   "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "Non. Il fonctionne dans la page Google Photos de votre navigateur. La recherche de doublons télécharge de petites miniatures uniquement depuis les serveurs de Google, transforme chacune en empreinte en mémoire et l’oublie quand vous fermez la revue.",
   "Can I delete only part of my library?": "Puis-je supprimer seulement une partie de ma bibliothèque ?",
@@ -101,6 +101,8 @@
   "Reject": "Refuser",
   "Cookie consent": "Consentement aux cookies",
   "Page": "Page",
-  "Legal": "Mentions légales"
+  "Legal": "Mentions légales",
+  "Google Photos desktop delete guidance (checked 2026-10-29)": "Google Photos : supprimer sur ordinateur (consulté le 2026-10-29)",
+  "Google Photos desktop restore guidance (checked 2026-10-29)": "Google Photos : restaurer sur ordinateur (consulté le 2026-10-29)"
  }
 }

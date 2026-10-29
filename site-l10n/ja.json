@@ -7,11 +7,11 @@
  "ogLocale": "ja_JP",
  "strings": {
   "Bulk delete Google Photos and find duplicates | Google Photos Delete Tool": "Google フォトを一括削除して重複写真を見つける | Google Photos Delete Tool",
-  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500, 60-day Trash. Free Chrome extension.": "1回の実行で数千枚の Google フォトを削除し、Google が見逃すそっくりな重複写真を見つけます。まずドライラン、500枚ずつのバッチ、ゴミ箱は60日間。無料の Chrome 拡張機能。",
+  "Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500. Recovery is subject to Google Photos Trash policy. Free Chrome extension.": "1回の実行で数千枚の Google フォトを削除し、Google が見逃すそっくりな重複写真を見つけます。まずドライラン、500枚ずつのバッチ。復元は Google フォトのゴミ箱ポリシーに従います。無料の Chrome 拡張機能。",
   "Bulk delete Google Photos and find duplicates": "Google フォトを一括削除して重複写真を見つける",
   "Delete thousands of photos in one run and find the look-alike duplicates Google misses. Dry run first. Free Chrome extension.": "1回の実行で数千枚の写真を削除し、Google が見逃すそっくりな重複写真を見つけます。まずドライラン。無料の Chrome 拡張機能。",
   "Google Photos Delete Tool: bulk delete and find duplicates, by Sylphx": "Google Photos Delete Tool：一括削除と重複写真の検出、Sylphx 提供",
-  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500, deleted items go to the 60-day Trash. Runs in your browser.": "Google フォトを一括削除し、そっくりな重複写真を見つけます。まずドライラン、最大500枚ずつのバッチ、削除した項目は60日間ゴミ箱に残ります。ブラウザ内で動作します。",
+  "Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500. Recovery is subject to Google Photos Trash policy. Runs in your browser.": "Google フォトを一括削除し、そっくりな重複写真を見つけます。まずドライラン、最大500枚ずつのバッチ。復元は Google フォトのゴミ箱ポリシーに従います。ブラウザ内で動作します。",
   "Free": "無料",
   "Pro, one-time": "Pro（買い切り）",
   "Skip to content": "本文へスキップ",
@@ -42,8 +42,8 @@
   "Built so you never lose the wrong photo": "間違った写真を失わないための設計",
   "Nothing runs until you confirm": "確認するまで何も実行されません",
   "The first real run asks you to confirm what is about to happen. Nothing is ever scheduled or unattended.": "最初の実行の前に、これから行う内容を確認します。予約実行や無人実行は一切ありません。",
-  "60 days to change your mind": "60日間は取り消せます",
-  "Deleted photos go to Google Photos Trash, where you can restore them for 60 days. Emptying Trash is optional and always asked first.": "削除した写真は Google フォトのゴミ箱に移動し、60日間は復元できます。ゴミ箱を空にするのは任意で、必ず事前に確認します。",
+  "Recovery has limits": "復元には制限があります",
+  "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "復元できるのは、項目がゴミ箱に残っており、Google フォトの現在の保存ポリシーで認められる場合だけです。ゴミ箱を空にする操作は任意で、事前に確認を求めますが、元に戻すことはできません。",
   "Stops instead of guessing": "推測せず、止まります",
   "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "Google がボタンを変更し、ツールが確実に識別できなくなった場合は停止します。確信が持てない場所は決してクリックしません。",
   "Your photos stay on your computer": "写真はお使いのパソコンから出ません",
@@ -76,7 +76,7 @@
   "Lost your licence?": "ライセンスをなくしましたか？",
   "Questions": "よくある質問",
   "Can I undo a delete?": "削除を取り消せますか？",
-  "Yes, for 60 days. Deleted photos go to Google Photos Trash and you can restore them from there. The only permanent step is the optional \"Empty trash afterwards\", which asks you first.": "はい、60日間は可能です。削除した写真は Google フォトのゴミ箱に移動し、そこから復元できます。元に戻せないのは、任意の「完了後にゴミ箱を空にする」だけで、実行前に必ず確認します。",
+  "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "項目がゴミ箱に残っており、Google フォトの現在のポリシーで認められる場合だけです。Google フォトのゴミ箱を開き、項目を選択して「復元」を押してください。ゴミ箱を空にする操作や完全な削除は元に戻せません。ゴミ箱がいっぱいの場合、代わりに完全な削除を求められることがあります。削除前に Google の説明をご確認ください。",
   "Does it upload my photos?": "写真はアップロードされますか？",
   "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "いいえ。ブラウザ内の Google フォトのページの中で動作します。重複写真の検出は、Google 自身のサーバーから小さなサムネイルだけをダウンロードし、メモリ内でそれぞれをフィンガープリントに変換して、レビューを閉じると破棄します。",
   "Can I delete only part of my library?": "ライブラリの一部だけを削除できますか？",
@@ -101,6 +101,8 @@
   "Reject": "拒否",
   "Cookie consent": "Cookie の同意",
   "Page": "ページ",
-  "Legal": "法的情報"
+  "Legal": "法的情報",
+  "Google Photos desktop delete guidance (checked 2026-10-29)": "Google フォトのパソコン向け削除手順（確認日：2026-10-29）",
+  "Google Photos desktop restore guidance (checked 2026-10-29)": "Google フォトのパソコン向け復元手順（確認日：2026-10-29）"
  }
 }

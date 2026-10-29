@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bulk delete Google Photos and find duplicates | Google Photos Delete Tool</title>
-<meta name="description" content="Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500, 60-day Trash. Free Chrome extension.">
+<meta name="description" content="Delete thousands of Google Photos in one run and find the look-alike duplicates Google misses. Dry run first, batches of 500. Recovery is subject to Google Photos Trash policy. Free Chrome extension.">
 <link rel="canonical" href="https://sylphxai.github.io/Google-Photos-Delete-Tool/">
 <meta name="theme-color" content="#faf8f6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
@@ -26,7 +26,7 @@
 <link rel="preload" as="image" type="image/webp" imagesrcset="img/find-duplicates-480.webp 480w, img/find-duplicates.webp 960w, img/find-duplicates-1280.webp 1280w" imagesizes="(min-width: 1024px) 600px, 100vw" fetchpriority="high">
 <link rel="stylesheet" href="style.css">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Google Photos Delete Tool","applicationCategory":"UtilitiesApplication","applicationSubCategory":"Browser extension","operatingSystem":"Chrome on Windows, macOS, Linux and ChromeOS","url":"https://sylphxai.github.io/Google-Photos-Delete-Tool/","downloadUrl":"https://chromewebstore.google.com/detail/google-photos-delete-tool/jiahfbbfpacpolomdjlpdpiljllcdenb","image":"https://sylphxai.github.io/Google-Photos-Delete-Tool/img/og.png","description":"Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500, deleted items go to the 60-day Trash. Runs in your browser.","offers":[{"@type":"Offer","name":"Free","price":"0","priceCurrency":"USD"},{"@type":"Offer","name":"Pro, one-time","price":"9.99","priceCurrency":"USD"}],"publisher":{"@type":"Organization","name":"Sylphx Limited","url":"https://sylphx.com","email":"hi@sylphx.com","telephone":"+443333357935","address":{"@type":"PostalAddress","streetAddress":"128 City Road","addressLocality":"London","postalCode":"EC1V 2NX","addressCountry":"GB"}}}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Google Photos Delete Tool","applicationCategory":"UtilitiesApplication","applicationSubCategory":"Browser extension","operatingSystem":"Chrome on Windows, macOS, Linux and ChromeOS","url":"https://sylphxai.github.io/Google-Photos-Delete-Tool/","downloadUrl":"https://chromewebstore.google.com/detail/google-photos-delete-tool/jiahfbbfpacpolomdjlpdpiljllcdenb","image":"https://sylphxai.github.io/Google-Photos-Delete-Tool/img/og.png","description":"Bulk delete Google Photos and find look-alike duplicates. Dry run first, batches of up to 500. Recovery is subject to Google Photos Trash policy. Runs in your browser.","offers":[{"@type":"Offer","name":"Free","price":"0","priceCurrency":"USD"},{"@type":"Offer","name":"Pro, one-time","price":"9.99","priceCurrency":"USD"}],"publisher":{"@type":"Organization","name":"Sylphx Limited","url":"https://sylphx.com","email":"hi@sylphx.com","telephone":"+443333357935","address":{"@type":"PostalAddress","streetAddress":"128 City Road","addressLocality":"London","postalCode":"EC1V 2NX","addressCountry":"GB"}}}
 </script>
 </head>
 <body>
@@ -75,7 +75,7 @@
   <h2>Built so you never lose the wrong photo</h2>
   <div class="grid grid-2">
     <div class="card"><h3>Nothing runs until you confirm</h3><p>The first real run asks you to confirm what is about to happen. Nothing is ever scheduled or unattended.</p></div>
-    <div class="card"><h3>60 days to change your mind</h3><p>Deleted photos go to Google Photos Trash, where you can restore them for 60 days. Emptying Trash is optional and always asked first.</p></div>
+    <div class="card"><h3>Recovery has limits</h3><p>Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.</p><p class="sub"><a href="https://support.google.com/photos/answer/6128858?hl=en&amp;co=GENIE.Platform%3DDesktop">Google Photos desktop delete guidance (checked 2026-10-29)</a> · <a href="https://support.google.com/photos/answer/9343482?hl=en&amp;co=GENIE.Platform%3DDesktop">Google Photos desktop restore guidance (checked 2026-10-29)</a></p></div>
     <div class="card"><h3>Stops instead of guessing</h3><p>If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.</p></div>
     <div class="card"><h3>Your photos stay on your computer</h3><p>Everything runs in your browser. No photo, thumbnail or fingerprint is uploaded to us or anyone else.</p></div>
   </div>
@@ -135,7 +135,7 @@
 <section id="faq" class="wrap">
   <h2>Questions</h2>
   <div class="faq">
-    <details><summary>Can I undo a delete?</summary><p>Yes, for 60 days. Deleted photos go to Google Photos Trash and you can restore them from there. The only permanent step is the optional "Empty trash afterwards", which asks you first.</p></details>
+    <details><summary>Can I undo a delete?</summary><p>Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.</p><p class="sub"><a href="https://support.google.com/photos/answer/6128858?hl=en&amp;co=GENIE.Platform%3DDesktop">Google Photos desktop delete guidance (checked 2026-10-29)</a> · <a href="https://support.google.com/photos/answer/9343482?hl=en&amp;co=GENIE.Platform%3DDesktop">Google Photos desktop restore guidance (checked 2026-10-29)</a></p></details>
     <details><summary>Does it upload my photos?</summary><p>No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.</p></details>
     <details><summary>Can I delete only part of my library?</summary><p>Yes. Open an album or a search and the tool acts on that view only. Pro adds type and date filters for finer control.</p></details>
     <details><summary>Which browsers does it work in?</summary><p>Desktop Chrome, and Chromium browsers that install from the Chrome Web Store. A userscript for Tampermonkey or Violentmonkey is on <a href="https://github.com/SylphxAI/Google-Photos-Delete-Tool/releases/latest">GitHub</a>. It does not run on phones.</p></details>
