@@ -61,6 +61,14 @@ function pixels(item: DupItem): number {
   return (item.width ?? 0) * (item.height ?? 0)
 }
 
+function isBetterItem(item: DupItem, best: DupItem): boolean {
+  const bp = pixels(best)
+  const cp = pixels(item)
+  if (cp > bp) return true
+  if (cp < bp) return false
+  return (item.takenAt ?? Number.POSITIVE_INFINITY) < (best.takenAt ?? Number.POSITIVE_INFINITY)
+}
+
 /**
  * Pick the item to keep: most pixels, then earliest capture time (unknown
  * sorts last), then the earliest in the list.
@@ -68,26 +76,17 @@ function pixels(item: DupItem): number {
 export function selectBestItem<T extends DupItem>(items: readonly T[]): T | null {
   let best: T | null = null
   for (const item of items) {
-    if (!best) { best = item; continue }
-    const bp = pixels(best)
-    const cp = pixels(item)
-    if (cp > bp) { best = item; continue }
-    if (cp < bp) continue
-    const bd = best.takenAt ?? Number.POSITIVE_INFINITY
-    const cd = item.takenAt ?? Number.POSITIVE_INFINITY
-    if (cd < bd) best = item
+    if (!best || isBetterItem(item, best)) best = item
   }
   return best
 }
 
 /** Extract bits [start, end) (end - start <= 32) of a 64-bit hash. */
 function bits(hash: Hash64, start: number, end: number): number {
-  let v = 0
-  for (let i = end - 1; i >= start; i--) {
-    const bit = i < 32 ? (hash.lo >>> i) & 1 : (hash.hi >>> (i - 32)) & 1
-    v = v * 2 + bit
-  }
-  return v
+  const mask = 0xffffffff >>> (32 - (end - start))
+  if (end <= 32) return ((hash.lo >>> start) & mask) >>> 0
+  if (start >= 32) return ((hash.hi >>> (start - 32)) & mask) >>> 0
+  return (((hash.lo >>> start) | (hash.hi << (32 - start))) & mask) >>> 0
 }
 
 const defaultYield = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
@@ -106,6 +105,18 @@ export async function groupDuplicates(items: readonly DupItem[], opts: GroupOpti
   const sliceMs = opts.sliceMs ?? 12
   const now = opts.now ?? (() => Date.now())
   const n = items.length
+  let sliceStart = now()
+  const checkSlice = (): boolean => {
+    if (opts.signal?.aborted) throw new GroupingAborted()
+    return now() - sliceStart >= sliceMs
+  }
+  const yieldSlice = async (done: number): Promise<void> => {
+    opts.onProgress?.(done, n)
+    await yieldToHost()
+    if (opts.signal?.aborted) throw new GroupingAborted()
+    sliceStart = now()
+  }
+  checkSlice()
 
   // Band index: (maxDistance + 1) contiguous bands over 64 bits; widths <= 32
   // except when maxDistance is 0, where the two halves are both required.
@@ -118,6 +129,7 @@ export async function groupDuplicates(items: readonly DupItem[], opts: GroupOpti
     const start = bounds[b]
     const end = bounds[b + 1]
     for (let i = 0; i < n; i++) {
+      if ((i & 1023) === 0 && checkSlice()) await yieldSlice(0)
       const h = items[i].hash
       const key = end - start > 32 ? `${h.lo}:${h.hi}` : bits(h, start, end)
       let list = map.get(key)
@@ -130,18 +142,9 @@ export async function groupDuplicates(items: readonly DupItem[], opts: GroupOpti
   const grouped = new Uint8Array(n)
   const stamp = new Int32Array(n).fill(-1)
   const groups: DupGroup[] = []
-  let sliceStart = now()
 
   for (let i = 0; i < n; i++) {
-    if ((i & 63) === 0) {
-      if (opts.signal?.aborted) throw new GroupingAborted()
-      if (now() - sliceStart >= sliceMs) {
-        opts.onProgress?.(i, n)
-        await yieldToHost()
-        if (opts.signal?.aborted) throw new GroupingAborted()
-        sliceStart = now()
-      }
-    }
+    if ((i & 63) === 0 && checkSlice()) await yieldSlice(i)
     if (grouped[i]) continue
     const seed = items[i]
 
@@ -154,7 +157,9 @@ export async function groupDuplicates(items: readonly DupItem[], opts: GroupOpti
       const key = end - start > 32 ? `${seed.hash.lo}:${seed.hash.hi}` : bits(seed.hash, start, end)
       const list = buckets[b].get(key)
       if (!list) continue
-      for (const j of list) {
+      for (let k = 0; k < list.length; k++) {
+        if ((k & 1023) === 0 && checkSlice()) await yieldSlice(i)
+        const j = list[k]
         if (j <= i || grouped[j] || stamp[j] === i) continue
         stamp[j] = i
         const d = hammingDistance(seed.hash, items[j].hash)
@@ -165,14 +170,25 @@ export async function groupDuplicates(items: readonly DupItem[], opts: GroupOpti
 
     found.sort((a, b) => b.similarity - a.similarity || a.index - b.index)
     grouped[i] = 1
-    for (const f of found) grouped[f.index] = 1
-    const members = [seed, ...found.map((f) => items[f.index])]
-    const best = selectBestItem(members) ?? seed
+    const itemIds = [seed.id]
+    const similarities = [1]
+    let best = seed
+    let totalSimilarity = 0
+    for (let k = 0; k < found.length; k++) {
+      if ((k & 1023) === 0 && checkSlice()) await yieldSlice(i)
+      const f = found[k]
+      grouped[f.index] = 1
+      const item = items[f.index]
+      itemIds.push(item.id)
+      similarities.push(f.similarity)
+      totalSimilarity += f.similarity
+      if (isBetterItem(item, best)) best = item
+    }
     groups.push({
-      itemIds: members.map((m) => m.id),
-      similarities: [1, ...found.map((f) => f.similarity)],
+      itemIds,
+      similarities,
       bestItemId: best.id,
-      averageSimilarity: found.reduce((sum, f) => sum + f.similarity, 0) / found.length,
+      averageSimilarity: totalSimilarity / found.length,
     })
   }
   opts.onProgress?.(n, n)
