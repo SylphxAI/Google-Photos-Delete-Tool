@@ -4,16 +4,16 @@ Synthetic photo library for live-testing the Google Photos Delete Tool (GPDT) on
 
 Moved here from the standalone `SylphxAI/gpdt-test-library` repository (archived; its v1 release below stays downloadable).
 
-Download: [gpdt-test-library-v1.zip](https://github.com/SylphxAI/gpdt-test-library/releases/download/v1/gpdt-test-library-v1.zip) (SHA-256 is in the [release notes](https://github.com/SylphxAI/gpdt-test-library/releases/tag/v1)).
+Legacy download: [gpdt-test-library-v1.zip](https://github.com/SylphxAI/gpdt-test-library/releases/download/v1/gpdt-test-library-v1.zip) (SHA-256 is in the [release notes](https://github.com/SylphxAI/gpdt-test-library/releases/tag/v1)). This archived release is not rebuilt by dependency updates here; regenerate below to test the current revision. Its historical hash need not match a newly generated archive.
 
 ## What is inside (60 files)
 
 | Kind | Count | Details |
 | --- | --- | --- |
 | Distinct photos | 40 | `GPDT_001.jpg` to `GPDT_040.jpg`, JPEG 1600x1200, big number label, EXIF Make/Model `GPDT Test` |
-| Near-duplicate variants | 12 | `_half` (50% size), `_q60` (JPEG quality 60), `_crop` (2% crop); same EXIF date as the original |
+| Near-duplicate variants | 12 | `_half` (800x600, Lanczos), `_q60` (1600x1200, JPEG quality 60), `_crop` (1568x1176, 1% removed from each edge); same camera EXIF and capture date as the original |
 | Screenshots | 6 | `Screenshot_2024-03-01.png` to `-06.png`, PNG 1170x2532, no camera EXIF |
-| Videos | 2 | `GPDT_clip_1.mp4`, `GPDT_clip_2.mp4`, 3 s colour bars, creation_time in 2021 |
+| Videos | 2 | `GPDT_clip_1.mp4` (SMPTE bars), `GPDT_clip_2.mp4` (test pattern), H.264/yuv420p 640x360, 25 fps, 75 frames/3 s; creation_time 2021-06-11 and 2021-07-12 at 10:00 UTC |
 
 Items per capture year (originals + variants + others):
 
@@ -36,7 +36,7 @@ Duplicate groups (8; original plus variants):
 | 7 | `GPDT_033` (2024-09-08) | `_half`, `_q60` |
 | 8 | `GPDT_038` (2024-09-17) | `_crop` |
 
-File modified times are also set to the capture date.
+Originals and half/crop variants use JPEG quality 92. JPEG EXIF includes Make/Model `GPDT Test` and matching DateTime, DateTimeOriginal and DateTimeDigitized. File modified times are set to the capture date **in UTC**, independent of the host timezone; screenshots use 12:00 UTC on the date in the filename.
 
 ## How to use
 
@@ -52,9 +52,38 @@ Caveat: Google decides what counts as a "screenshot" or a video itself, and how 
 
 ## Regenerate
 
-```
-python3 -m pip install -r requirements.txt   # Pillow==12.3.0
-python3 generate.py                          # writes out/ and gpdt-test-library-v1.zip
+Generation and verification are entirely local/offline after installing dependencies: they do not sign in, upload anything, run GPDT, or establish Google Photos selector/release health.
+
+Requirements:
+
+- **Python 3.11 or newer** (Pillow 13 dropped Python 3.10; verified with Python 3.13.5).
+- **Pillow==13.0.0**, pinned in `requirements.txt`.
+- `ffmpeg` with the **libx264** encoder on `PATH`. Verification also needs `ffprobe` (normally included with ffmpeg).
+- **DejaVu Sans Bold** at `/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf` or `/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf`. No substitute font is used.
+
+For example, on Debian/Ubuntu, install the system dependencies with `sudo apt-get install python3-venv ffmpeg fonts-dejavu-core` (and a supported Python interpreter). From the repository root:
+
+```sh
+cd test-library
+python3 --version                            # must be >= 3.11
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt     # Pillow==13.0.0
+python generate.py                           # replaces out/ and gpdt-test-library-v1.zip
 ```
 
-Output is seeded and deterministic: the same Pillow and ffmpeg produce identical files. The videos need `ffmpeg` (libx264) on PATH; without it they are skipped.
+The command succeeds only for the complete library, including both videos. Missing ffmpeg/libx264 or the required font fails before replacing existing outputs; videos are never silently skipped. A later encoding or filesystem failure also exits nonzero and must not be treated as a usable library.
+
+Output is seeded and reproducible **in the same environment**: use the same Python, Pillow, JPEG/zlib/FreeType libraries, DejaVu font bytes, and ffmpeg/libx264 build. This is not a promise of byte identity across different builds or with the legacy release. ZIP entries are sorted, uncompressed, and use fixed timestamps and permissions; the archive contains exactly the 60 files under `out/`.
+
+## Verify the current revision
+
+With the environment above activated, still in `test-library/`:
+
+```sh
+python verify.py --receipt /tmp/gpdt-fixture-receipt.json
+```
+
+This replaces the outputs with **two clean regenerations** using `python generate.py` and fails unless all 60 file hashes and the ZIP hash match. It checks the exact filenames/counts, image formats/dimensions/JPEG quality, camera EXIF, year distribution and all eight duplicate dates/family relationships (including pixel similarity), UTC modified times, decodable video streams/duration/creation metadata, and ZIP entries/bytes/metadata. Missing ffmpeg, libx264 and font are also tested to fail without destroying previous output. It does not access Google Photos.
+
+The JSON receipt (also printed to stdout) records the checkout revision and tracked-worktree state, environment/font versions and hash, commands and exit codes, per-file SHA-256 hashes, ZIP SHA-256, capture stamps and category counts. `manifest_sha256` hashes the UTF-8 bytes of Python's `json.dumps(file_sha256, sort_keys=True)`; it is a digest of the file-hash mapping, not the ZIP. Run this check whenever the generator or its dependencies change and keep the receipt with your test results; the repository's JavaScript CI does not run this verifier, and a passing JavaScript build alone does not verify this library.
