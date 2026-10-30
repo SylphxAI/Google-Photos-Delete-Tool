@@ -84,7 +84,9 @@ const nl: Translations = {
       activate: "Activeren",
       getPro: "Neem Pro — US$9.99, eenmalig",
       active: "Pro actief — filters ingeschakeld",
-      invalid: "Ongeldige licentietoken",
+      malformed: "Het licentietoken heeft een ongeldig formaat. Plak het volledige token uit je aankoopmail.",
+      wrongPlan: "Dit token is niet voor Google Photos Delete Tool Pro. Gebruik het token uit je GPDT-aankoopmail.",
+      badSignature: "De licentiehandtekening kon niet worden geverifieerd. Kopieer het originele token ongewijzigd uit je aankoopmail.",
     },
   },
   pro: {

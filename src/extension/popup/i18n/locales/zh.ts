@@ -84,7 +84,9 @@ const zh: Translations = {
       activate: "激活",
       getPro: "升级 Pro — 一次性 US$9.99",
       active: "Pro 已激活 — 筛选已启用",
-      invalid: "许可证令牌无效",
+      malformed: "许可证令牌格式无效。请粘贴购买邮件中的完整令牌。",
+      wrongPlan: "此令牌不适用于 Google Photos Delete Tool Pro。请使用 GPDT 购买邮件中的令牌。",
+      badSignature: "无法验证许可证签名。请从购买邮件复制原始令牌，不要修改。",
     },
   },
   pro: {
