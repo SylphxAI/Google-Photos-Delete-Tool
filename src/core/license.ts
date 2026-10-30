@@ -1,17 +1,20 @@
 /**
- * Pro license verification — zero-server by design.
+ * Pro license verification — local and offline by design.
  *
  * A Pro token is `${base64url(payload)}.${base64url(signature)}` where
  * payload is JSON `{ plan: "pro", email, issuedAt, order? }` (Money-minted
  * tokens add `product: "gpdt"`, `grant`, `seats`, `expiresAt`) and the signature
  * is an Ed25519 signature over the payload bytes, made with the seller's
- * private key. The public keys are embedded below; verification happens
+ * private key. Money public keys come from the target environment's published
+ * JWKS snapshot; production also retains both legacy keys. Verification happens
  * entirely on the user's device (WebCrypto SubtleCrypto). No license
  * data ever leaves the browser.
  *
  * Seller tooling (private key holder): `bun run license:issue`.
  * Key regeneration: `bun run license:keygen` (see docs/PRO.md).
  */
+import { LICENSE_ENVIRONMENT, licenseTrust, type LicenseEnvironment } from './license-trust'
+
 export interface ProLicensePayload {
   plan: 'pro'
   email?: string
@@ -28,7 +31,7 @@ export interface ProLicensePayload {
 }
 
 export type LicenseResult =
-  | { ok: true; payload: ProLicensePayload }
+  | { ok: true; payload: ProLicensePayload; authority: 'money' | 'legacy' | 'custom' }
   | { ok: false; reason: 'malformed' | 'bad-signature' | 'wrong-plan' }
 
 /**
@@ -91,23 +94,46 @@ export async function importProPublicKey(
 
 /**
  * Verify a Pro license token locally. Returns the payload when valid.
- * By default the token may be signed by any key in
- * {@link PRO_PUBLIC_KEYS_BASE64URL}. An explicitly passed
+ * By default the target environment’s public Money JWKS snapshot is used.
+ * Production additionally accepts {@link PRO_PUBLIC_KEYS_BASE64URL}. An explicitly passed
  * `publicKeyBase64Url` (tests) verifies against only that key.
  */
 export async function verifyLicense(
   token: string,
   publicKeyBase64Url?: string,
 ): Promise<LicenseResult> {
+  return verifyToken(token, publicKeyBase64Url === undefined
+    ? trustedKeys(LICENSE_ENVIRONMENT)
+    : [{ key: publicKeyBase64Url, authority: 'custom' }])
+}
+
+/** An explicit target selects published trust, never keys or URLs from a token. */
+export async function verifyLicenseForEnvironment(token: string, environment: LicenseEnvironment): Promise<LicenseResult> {
+  return verifyToken(token, trustedKeys(environment))
+}
+
+type TrustedKey = { key: string; authority: 'money' | 'legacy' | 'custom' }
+
+function trustedKeys(environment: LicenseEnvironment): TrustedKey[] {
+  const money: TrustedKey[] = licenseTrust(environment).keys.map((key) => ({ key, authority: 'money' }))
+  // Test-mode trust must not unlock production or inherit its seller keys.
+  return environment === 'production'
+    ? [...money, ...PRO_PUBLIC_KEYS_BASE64URL.map((key): TrustedKey => ({ key, authority: 'legacy' }))]
+    : money
+}
+
+async function verifyToken(token: string, keys: readonly TrustedKey[]): Promise<LicenseResult> {
   const trimmed = token.trim()
-  const dot = trimmed.lastIndexOf('.')
-  if (dot <= 0 || dot === trimmed.length - 1) return { ok: false, reason: 'malformed' }
+  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(trimmed)) return { ok: false, reason: 'malformed' }
+  const dot = trimmed.indexOf('.')
 
   let payloadBytes: Uint8Array
   let signatureBytes: Uint8Array
   try {
     payloadBytes = decodeBase64Url(trimmed.slice(0, dot))
     signatureBytes = decodeBase64Url(trimmed.slice(dot + 1))
+    if (signatureBytes.length !== 64 || encodeBase64Url(payloadBytes) !== trimmed.slice(0, dot)
+      || encodeBase64Url(signatureBytes) !== trimmed.slice(dot + 1)) return { ok: false, reason: 'malformed' }
   } catch {
     return { ok: false, reason: 'malformed' }
   }
@@ -120,22 +146,27 @@ export async function verifyLicense(
   }
   if (!payload || typeof payload !== 'object') return { ok: false, reason: 'malformed' }
 
-  const hasTime = typeof payload.issuedAt === 'number' || typeof payload.expiresAt === 'number'
+  const hasTime = (typeof payload.issuedAt === 'number' && Number.isFinite(payload.issuedAt))
+    || (typeof payload.expiresAt === 'number' && Number.isFinite(payload.expiresAt))
   if (payload.plan !== 'pro' || !hasTime || (payload.product !== undefined && !ACCEPTED_PRODUCTS.includes(payload.product))) {
     return { ok: false, reason: 'wrong-plan' }
   }
 
-  const keys = publicKeyBase64Url === undefined ? PRO_PUBLIC_KEYS_BASE64URL : [publicKeyBase64Url]
   for (const k of keys) {
     try {
-      const key = await importProPublicKey(k)
+      const key = await importProPublicKey(k.key)
       const valid = await crypto.subtle.verify(
         { name: 'Ed25519' },
         key,
         signatureBytes as unknown as ArrayBuffer,
         payloadBytes as unknown as ArrayBuffer,
       )
-      if (valid) return { ok: true, payload }
+      if (valid) {
+        // Product-less / old-slug tokens belong to the legacy seller path,
+        // never to the product-owned Money key for another entitlement.
+        if (k.authority === 'money' && payload.product !== 'gpdt') return { ok: false, reason: 'wrong-plan' }
+        return { ok: true, payload, authority: k.authority }
+      }
     } catch {
       // unusable key or signature shape: try the next key
     }

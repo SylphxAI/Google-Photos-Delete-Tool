@@ -1,4 +1,4 @@
-# Pro — Local License Verification (zero-server)
+# Pro — Local, offline licence verification
 
 Pro unlocks the convenience layer: type and date filters, saved presets,
 duplicate keep rules, auto-accept and CSV export. The feature list lives only in
@@ -6,8 +6,8 @@ duplicate keep rules, auto-accept and CSV export. The feature list lives only in
 finding and empty trash are free forever.
 
 The license is an Ed25519-signed token verified entirely in the user's
-browser (WebCrypto `SubtleCrypto`). There is **no account, no backend, no
-telemetry**. The token is never sent to us. The extension keeps it in
+browser (WebCrypto `SubtleCrypto`). Activation needs **no account, network connection or telemetry**. Money handles
+checkout and issuance, but verification is local: the token is never sent to us. The extension keeps it in
 `chrome.storage.local` and `chrome.storage.sync` (read sync first, then local,
 migrating local to sync), so it follows the user's Chrome sign-in; the
 userscript keeps it in `localStorage` only.
@@ -28,13 +28,17 @@ where `payload` is JSON:
   address the buyer paid with, `order` the Stripe payment or session id. The
   issuer (`bun run license:issue`) refuses to run without `--email`, and takes
   `--order=<id>`; always pass both. The same `{plan, email, issuedAt, order}`
-  shape is what the Money licence capability issues. The verifier ignores
-  `order` and accepts older tokens that lack it.
+  shape remains supported for legacy licences. Money tokens may instead omit
+  email/issuedAt and carry `product: "gpdt"`, `grant`, `seats` and `expiresAt`.
+  Money owns the native 100-calendar-year term; the client does not rewrite it.
+  The verifier ignores `order` and accepts older tokens that lack it.
 - The signature is Ed25519 over the payload bytes, made with the seller's
   private key.
 - Verification (see `src/core/license.ts`) checks format, plan, and
-  signature with the embedded public keys. Bad signature / wrong plan /
-  malformed → rejected, never crashed.
+  signature using the target environment’s published Money JWKS snapshot.
+  Production also accepts both historical seller keys. Bad signature / wrong
+  product / wrong plan / malformed → rejected, never crashed. An environment
+  is selected by the package or CLI, never by token contents.
 
 ## Seller tooling
 
@@ -45,8 +49,10 @@ bun run license:keygen
 # 2. Issue a Pro token for a buyer (email required; add the Stripe id)
 bun run license:issue --email=buyer@example.com --order=cs_live_...
 
-# 3. Verify a token against the embedded keys
-bun run license:verify <token>
+# 3. Verify locally without placing the token in argv or printing claims
+bun run license:verify --token-file=/private/path/to/token
+# Or pipe the token on stdin. Default trust is production.
+bun run license:verify --environment=preview < /private/path/to/test-token
 ```
 
 `$GPDT_PRO_PRIVATE_KEY` may be either a path to the key file or the key
@@ -58,15 +64,33 @@ rule, and the key is never printed.
 
 - The private key stays outside this repository, in 1Password: item
   "GPDT Pro license private key" in the Sylphx vault.
-- Two public keys are accepted, listed in `PRO_PUBLIC_KEYS_BASE64URL`
-  (`src/core/license.ts`), and a token is valid if either verifies it:
-  1. the original key, whose private half was lost. It stays so every token
-     ever issued under it keeps working;
-  2. the current key (`-LFAzRTKamgPJ57qEW8-XdOpzFZ50JhT6b7thTQe8GQ`), which
-     signs all new tokens.
-- Rotation: generate a new pair, append its public key, release. Never remove
-  a key that has issued tokens, because that invalidates them.
-- There is no revocation server by design, and tokens carry no expiry.
+- Product-owned Money trust is captured in `config/licence-trust/production.json`
+  and `preview.json`. Each file records the exact public JWKS URL and capture
+  time. `bun run license:trust:refresh` makes anonymous GETs to those URLs,
+  validates public Ed25519 keys and refuses to remove an existing key. No
+  token, claim, account credential or photo information is an input to a JWKS
+  request. The snapshots are source-reviewed and shipped with the client.
+- Production retains the two historical keys in `PRO_PUBLIC_KEYS_BASE64URL`
+  (`src/core/license.ts`), including the original whose private half was lost.
+  Existing valid production licences remain valid. A preview package accepts
+  only preview Money keys, not production or legacy production keys.
+- **Offline means offline:** neither activation nor reload calls a key or
+  entitlement server. The client verifies with its packaged trust snapshot.
+  A newly introduced signing key requires a client update carrying the refreshed
+  published JWKS; it cannot be learned from an untrusted token or page storage.
+  Retired signing keys must remain published for verification and retained in
+  client snapshots. There is no online revocation check.
+- Normal builds and unbundled `verifyLicense(token)` use production. Test Mode
+  is explicit: `bun run build --environment=preview`, followed by
+  `bun run verify --environment=preview` and `bun run zip --environment=preview`.
+  Those outputs live in `dist-preview/` and `*-preview.zip`; the popup labels
+  them **Preview build — Test Mode licences only**. Do not install a preview
+  package for a production purchase. The regular store/web packages stay
+  production-only.
+- Every extension ZIP includes `build-info.json` (source commit, version,
+  target environment and public JWKS provenance). Public web releases carry
+  separate production and preview ZIPs plus SHA-256 checksums. ZIP timestamps
+  are fixed so the downloaded bytes can be compared to the tested package.
 
 ## Testing
 
@@ -135,8 +159,8 @@ data is sent.
 ## Self-serve checkout and sales
 
 Pro is bought instantly at <https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing>: Money mints the
-offline licence (payload `plan: "pro"`, `email`, `issuedAt`, `product: "gpdt"`,
-`order`, `grant`), the success page shows the token and an emailed signed link
+offline licence (including `plan: "pro"`, `product: "gpdt"`, `order`,
+`grant`, `seats` and the native `expiresAt`; email and issuedAt may be absent), the success page shows the token and an emailed signed link
 repeats it. Activation is unchanged: paste the token. Both switches are on:
 
 - `SELF_SERVE_CHECKOUT` in `src/core/pro-moments.ts` (every extension and
@@ -171,14 +195,16 @@ required.
    never on the command line, where it would land in shell history and process
    lists; a token passed as an argument is refused:
    `read -rs T; printf %s "$T" | bun run scripts/license.ts verify-buyer [--email=<buyer email>]`.
-   It checks the signature against the embedded keys, `plan` and `product`
-   (`gpdt`), and prints only a verdict: `new` (signed by the current key, product
-   `gpdt`: a token from the self-serve checkout), `existing` (valid, but from the
-   original key or with no product) or `invalid`; exit code 1 only for `invalid`.
+   It uses the same target-environment verifier as the popup and checks `plan`
+   and `product` (`gpdt`). It prints only a verdict: `new` (signed by Money’s
+   published key for that environment, product `gpdt`), `existing` (valid, but
+   signed by a production legacy key or without the current product) or `invalid`; exit code 1 only for `invalid`.
    The email is optional because Money puts it in the token only when the buyer
    is identified by an email address: with `--email` it must match when the token
    has one, and a token without one prints `email: not in token (check the buyer
-   in Money)`. The token is never echoed.
+   in Money)`. Neither the token nor its claims are echoed. Add `--environment=preview` for
+   an existing Test Mode token; production is the default, and an invalid
+   environment is refused.
 
 ## Chrome Web Store compliance
 

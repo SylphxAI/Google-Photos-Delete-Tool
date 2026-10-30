@@ -5,7 +5,7 @@
  *                                     # key to ~/.gpdt/gpdt-license-private.pem
  *                                     # and prints the public key to embed.
  *   bun run license:issue --email=x [--order=pi_...]   # sign a Pro payload → token (email required)
- *   bun run license:verify <token>    # verify a token against the embedded keys
+ *   bun run license:verify < token-file # verify locally; never prints claims
  *   printf %s "$TOKEN" | bun run scripts/license.ts verify-buyer [--email=<expected>]
  *                                     # first-purchase readback; token on stdin
  *                                     # (or --token-file=<path>), never argv.
@@ -28,11 +28,6 @@ import { buildIssuePayload, type IssuePayload } from './license-payload'
  * to the same location (the env value must then be a file path).
  */
 const PRIVATE_KEY_PATH = privateKeyWritePath()
-
-function usage(command: string): never {
-  console.error(`Usage: bun run license:${command} ${command === 'issue' ? '--email=<email> [--order=<Stripe payment or session id>]' : '<token>'}`)
-  process.exit(1)
-}
 
 function b64url(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString('base64url')
@@ -82,27 +77,45 @@ async function issue(email?: string, order?: string): Promise<void> {
   console.log(token)
 }
 
-async function verify(token: string): Promise<void> {
-  const { verifyLicense } = await import('../src/core/license')
-  const result = await verifyLicense(token)
-  if (result.ok) {
-    console.log('VALID Pro license:', JSON.stringify(result.payload))
-    return
+async function verifyCommand(args: string[], buyer: boolean): Promise<void> {
+  const { verifyLicenseForEnvironment } = await import('../src/core/license')
+  const { parseLicenseEnvironment } = await import('../src/core/license-trust')
+  const { runVerifyBuyer, parseBuyerArgs } = await import('./license-buyer')
+  const targetArgs = args.filter((a) => a.startsWith('--environment='))
+  let environment
+  try {
+    if (targetArgs.length > 1) throw new Error('Duplicate environment')
+    environment = parseLicenseEnvironment(targetArgs[0]?.slice('--environment='.length))
+  } catch {
+    console.error('Licence environment must be production or preview (at most once).')
+    process.exit(2)
   }
-  console.error(`INVALID: ${result.reason}`)
-  process.exit(1)
-}
-
-async function verifyBuyerCommand(args: string[]): Promise<void> {
-  const { PRO_PUBLIC_KEYS_BASE64URL } = await import('../src/core/license')
-  const { runVerifyBuyer } = await import('./license-buyer')
-  const run = await runVerifyBuyer(args, PRO_PUBLIC_KEYS_BASE64URL, {
+  const inputArgs = args.filter((a) => !a.startsWith('--environment='))
+  const verifier = (token: string) => verifyLicenseForEnvironment(token, environment)
+  const io = {
     readStdin: () => (process.stdin.isTTY ? null : readFileSync(0, 'utf8')),
-    readFile: (path) => readFileSync(path, 'utf8'),
-  })
-  if (run.out) console.log(run.out)
-  if (run.err) console.error(run.err)
-  process.exit(run.code)
+    readFile: (path: string) => readFileSync(path, 'utf8'),
+  }
+  if (buyer) {
+    const run = await runVerifyBuyer(inputArgs, verifier, io)
+    if (run.out) console.log(run.out)
+    if (run.err) console.error(run.err)
+    process.exit(run.code)
+  }
+  const parsed = parseBuyerArgs(inputArgs)
+  if (!parsed.ok || parsed.email !== undefined) {
+    console.error('verify takes the token only on stdin or --token-file=<path>; not argv.')
+    process.exit(2)
+  }
+  let token: string | null
+  try { token = parsed.tokenFile === undefined ? io.readStdin() : io.readFile(parsed.tokenFile) }
+  catch { console.error('Could not read the token file.'); process.exit(2) }
+  if (token === null) { console.error('No token on stdin.'); process.exit(2) }
+  const result = await verifier(token)
+  // Never print the token or any of its claims, including buyer email and order.
+  if (result.ok) console.log('VALID Pro license')
+  else console.error(`INVALID: ${result.reason}`)
+  process.exit(result.ok ? 0 : 1)
 }
 
 const [command, ...rest] = process.argv.slice(2)
@@ -118,12 +131,11 @@ switch (command) {
     break
   }
   case 'verify': {
-    if (!rest[0]) usage('verify')
-    await verify(rest[0])
+    await verifyCommand(rest, false)
     break
   }
   case 'verify-buyer':
-    await verifyBuyerCommand(rest)
+    await verifyCommand(rest, true)
     break
   default:
     console.error('Unknown command. Use: keygen | issue | verify | verify-buyer')

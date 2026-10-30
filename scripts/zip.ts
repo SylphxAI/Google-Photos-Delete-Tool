@@ -11,6 +11,7 @@ import archiver from 'archiver'
 import { fileURLToPath } from 'node:url'
 import { createWriteStream, existsSync } from 'fs'
 import { resolve } from 'path'
+import { distDirectory, zipSuffix } from './lib/license-build'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 
@@ -21,12 +22,12 @@ const targets: Array<{ dir: string; zip: string }> = [
 ]
 
 for (const { dir, zip } of targets) {
-  const dirPath = resolve(root, dir)
+  const dirPath = resolve(root, dir.replace(/^dist\//, `${distDirectory}/`))
   if (!existsSync(dirPath)) {
     console.error(`[zip] ${dir} not found — run "bun run build" first`)
     process.exit(1)
   }
-  const zipPath = resolve(root, zip)
+  const zipPath = resolve(root, zip.replace(/\.zip$/, `${zipSuffix}.zip`))
   const output = createWriteStream(zipPath)
   const archive = archiver('zip', { zlib: { level: 9 } })
 
@@ -45,7 +46,8 @@ for (const { dir, zip } of targets) {
     })
     archive.on('error', reject)
     archive.pipe(output)
-    archive.directory(dirPath, false)
+    // Identical built bytes produce the exact same downloadable artifact.
+    archive.directory(dirPath, false, { date: new Date('1980-01-01T00:00:00Z') })
     void archive.finalize()
   })
 }

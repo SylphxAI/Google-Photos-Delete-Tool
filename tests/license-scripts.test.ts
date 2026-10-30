@@ -61,7 +61,7 @@ describe('issue payload (email + order id)', () => {
     const token = `${encodeBase64Url(bytes)}.${encodeBase64Url(sig)}`
     const r = await verifyLicense(token, pub)
     expect(r.ok && r.payload.order).toBe('cs_live_abc')
-    const report = await verifyBuyer(token, [pub], { email: 'Buyer@Example.com' })
+    const report = await verifyBuyer(token, (value) => verifyLicense(value, pub), { email: 'Buyer@Example.com' })
     expect(report).toEqual({ verdict: 'existing', email: 'match' })
   })
 })

@@ -14,6 +14,8 @@
  */
 import { readFileSync, existsSync } from 'fs'
 import { SUPPORTED_MATCH_PATTERN } from '../src/core/surface'
+import { licenseTrust } from '../src/core/license-trust'
+import { licenseEnvironment, distDirectory } from './lib/license-build'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'path'
 import { DEFAULT_LOCALE, MESSAGE_KEYS, MESSAGE_LIMITS, localeCodes, messageProblems, readMessages } from './lib/locales'
@@ -33,10 +35,17 @@ function check(ok: boolean, what: string): void {
 }
 
 function read(path: string): string {
-  return readFileSync(resolve(root, path), 'utf-8')
+  return readFileSync(resolve(root, path.replace(/^dist\//, `${distDirectory}/`)), 'utf-8')
 }
 
 console.log('verify: package version =', pkg.version)
+console.log('verify: licence environment =', licenseEnvironment)
+for (const variant of ['extension', 'extension-edge', 'extension-firefox']) {
+  const info = JSON.parse(read(`dist/${variant}/build-info.json`))
+  check(info.version === pkg.version && /^[0-9a-f]{40}$/.test(info.commit), `${variant}: source provenance present`)
+  check(info.licenseEnvironment === licenseEnvironment && info.publicJwks === licenseTrust(licenseEnvironment).url,
+    `${variant}: target-environment public JWKS provenance`)
+}
 
 {
   const m = JSON.parse(read('src/extension/manifest.json'))
@@ -109,7 +118,7 @@ console.log('verify: package version =', pkg.version)
     for (const p of problems) console.error(`    ${p}`)
     check(Object.keys(msgs).sort().join() === base, `_locales/${code}: same keys as ${DEFAULT_LOCALE}`)
     for (const dir of ['extension', 'extension-edge', 'extension-firefox']) {
-      check(existsSync(resolve(root, `dist/${dir}/_locales/${code}/messages.json`)), `dist/${dir}/_locales/${code}/messages.json shipped`)
+      check(existsSync(resolve(root, `${distDirectory}/${dir}/_locales/${code}/messages.json`)), `dist/${dir}/_locales/${code}/messages.json shipped`)
     }
   }
 }
@@ -162,10 +171,10 @@ for (const dir of ['extension', 'extension-edge', 'extension-firefox']) {
   }
   // Popup assets
   for (const asset of ['popup.html', 'popup.css']) {
-    check(existsSync(resolve(root, `dist/${dir}/${asset}`)), `dist/${dir}/${asset} exists`)
+    check(existsSync(resolve(root, `${distDirectory}/${dir}/${asset}`)), `dist/${dir}/${asset} exists`)
   }
   for (const size of [16, 32, 48, 128]) {
-    check(existsSync(resolve(root, `dist/${dir}/icons/icon-${size}.png`)), `dist/${dir}/icons/icon-${size}.png exists`)
+    check(existsSync(resolve(root, `${distDirectory}/${dir}/icons/icon-${size}.png`)), `dist/${dir}/icons/icon-${size}.png exists`)
   }
 }
 

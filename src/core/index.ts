@@ -80,6 +80,7 @@ export {
 } from './presets'
 export {
   verifyLicense,
+  verifyLicenseForEnvironment,
   importProPublicKey,
   encodeBase64Url,
   decodeBase64Url,
@@ -88,6 +89,7 @@ export {
   type ProLicensePayload,
   type LicenseResult,
 } from './license'
+export { LICENSE_ENVIRONMENT, type LicenseEnvironment } from './license-trust'
 export {
   PENDING_EMPTY_TTL_MS,
   TRASH_PATH,
