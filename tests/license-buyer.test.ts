@@ -25,7 +25,7 @@ const issue = async (priv: CryptoKey, payload: Record<string, unknown>): Promise
 }
 
 /** A Money-shaped token: product and grant, no email. */
-const moneyPayload = { plan: 'pro', product: 'gpdt', issuedAt: 1786300000000, grant: 'grant_1', seats: 1 }
+const moneyPayload = { plan: 'pro', product: 'gpdt', issuedAt: 1786300000000, grant: 'grant_1', seats: 1, expiresAt: 4_999_999_999_999 }
 
 const ioFor = (stdin: string | null, files: Record<string, string> = {}): BuyerIo => ({
   readStdin: () => stdin,

@@ -85,6 +85,7 @@ const it: Translations = {
       getPro: "Passa a Pro — US$9.99 una tantum",
       active: "Pro attivo — filtri abilitati",
       invalid: "Token di licenza non valido",
+      expired: "Licenza scaduta. Recupera la tua licenza.",
     },
   },
   pro: {

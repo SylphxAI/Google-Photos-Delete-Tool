@@ -85,6 +85,7 @@ const nl: Translations = {
       getPro: "Neem Pro — US$9.99, eenmalig",
       active: "Pro actief — filters ingeschakeld",
       invalid: "Ongeldige licentietoken",
+      expired: "Licentie verlopen. Haal je licentie opnieuw op.",
     },
   },
   pro: {

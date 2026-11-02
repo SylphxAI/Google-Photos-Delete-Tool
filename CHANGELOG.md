@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.6.3] - 2026-11-02
+
+### Fixed
+- Pro licences issued by checkout now honour their signed expiration time,
+  including the original long-lived term. Historical seller licences without
+  an expiration time remain valid.
+- An expired licence now shows a clear message in every popup language instead
+  of appearing active. Licence claims are checked only after their signature.
+
 ## [3.6.1] - 2026-10-03
 
 ### Changed

@@ -69,7 +69,7 @@ describe('verifyLicense', () => {
     if (result.ok) expect(result.payload.order).toBe('pi_test_123')
   })
 
-  it('accepts the exact Money token shape from the licence design (fixed key order, product, order, grant)', async () => {
+  it('keeps accepting a historical seller token carrying the current product slug without expiry', async () => {
     const token = await signPayload({
       plan: 'pro',
       email: 'buyer@example.com',

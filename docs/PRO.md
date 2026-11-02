@@ -31,13 +31,19 @@ where `payload` is JSON:
   shape remains supported for legacy licences. Money tokens may instead omit
   email/issuedAt and carry `product: "gpdt"`, `grant`, `seats` and `expiresAt`.
   Money owns the native 100-calendar-year term; the client does not rewrite it.
+  A Money-signed token must carry a finite numeric `expiresAt` in milliseconds.
+  The client accepts it strictly before that instant and rejects it at or after
+  that instant using the local device clock, even if `issuedAt` is also present.
+  A historical seller-signed token without `expiresAt` remains perpetual; if a
+  seller token carries an explicit expiry, that signed timestamp is honoured too.
   The verifier ignores `order` and accepts older tokens that lack it.
 - The signature is Ed25519 over the payload bytes, made with the seller's
   private key.
-- Verification (see `src/core/license.ts`) checks format, plan, and
-  signature using the target environment’s published Money JWKS snapshot.
+- Verification (see `src/core/license.ts`) checks format and signature using
+  the target environment’s published Money JWKS snapshot before trusting plan,
+  product or expiry claims.
   Production also accepts both historical seller keys. Bad signature / wrong
-  product / wrong plan / malformed → rejected, never crashed. An environment
+  product / wrong plan / malformed / expired → rejected, never crashed. An environment
   is selected by the package or CLI, never by token contents.
 
 ## Seller tooling
@@ -172,8 +178,9 @@ repeats it. Activation is unchanged: paste the token. Both switches are on:
 
 Verifier: a token with `product` `gpdt` verifies, as does one with no product
 (seller CLI) and one with the legacy slug `gpdt-pro` (kept so no issued token
-can stop working); any other product is `wrong-plan`. The signature is always
-required.
+can stop working); any other product is `wrong-plan`. The signature is verified before any product, plan or expiry decision. Money
+authority requires the current `gpdt` product and a finite signed expiration;
+legacy product compatibility applies only to seller tokens.
 
 1. **Product:** Pro is US$9.99, one-time and lifetime, a convenience unlock for
    power users of a free tool. The README `#pro` section carries the buy link.
