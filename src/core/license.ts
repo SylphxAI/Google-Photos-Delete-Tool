@@ -22,7 +22,7 @@ export interface ProLicensePayload {
   issuedAt?: number
   /** Money tokens: product slug ("gpdt"; legacy "gpdt-pro"), checked when present. */
   product?: string
-  /** Money tokens: entitlement grant id, seats and expiry (ms); informational, expiry is not enforced (Pro does not expire). */
+  /** Money tokens: entitlement grant id, seats and signed expiration time in milliseconds. */
   grant?: string
   seats?: number
   expiresAt?: number
@@ -32,7 +32,7 @@ export interface ProLicensePayload {
 
 export type LicenseResult =
   | { ok: true; payload: ProLicensePayload; authority: 'money' | 'legacy' | 'custom' }
-  | { ok: false; reason: 'malformed' | 'bad-signature' | 'wrong-plan' }
+  | { ok: false; reason: 'malformed' | 'bad-signature' | 'wrong-plan' | 'expired' }
 
 /**
  * Accepted Ed25519 public keys (raw, base64url), embedded at build time.
@@ -138,20 +138,6 @@ async function verifyToken(token: string, keys: readonly TrustedKey[]): Promise<
     return { ok: false, reason: 'malformed' }
   }
 
-  let payload: ProLicensePayload
-  try {
-    payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as ProLicensePayload
-  } catch {
-    return { ok: false, reason: 'malformed' }
-  }
-  if (!payload || typeof payload !== 'object') return { ok: false, reason: 'malformed' }
-
-  const hasTime = (typeof payload.issuedAt === 'number' && Number.isFinite(payload.issuedAt))
-    || (typeof payload.expiresAt === 'number' && Number.isFinite(payload.expiresAt))
-  if (payload.plan !== 'pro' || !hasTime || (payload.product !== undefined && !ACCEPTED_PRODUCTS.includes(payload.product))) {
-    return { ok: false, reason: 'wrong-plan' }
-  }
-
   for (const k of keys) {
     try {
       const key = await importProPublicKey(k.key)
@@ -162,14 +148,38 @@ async function verifyToken(token: string, keys: readonly TrustedKey[]): Promise<
         payloadBytes as unknown as ArrayBuffer,
       )
       if (valid) {
-        // Product-less / old-slug tokens belong to the legacy seller path,
-        // never to the product-owned Money key for another entitlement.
-        if (k.authority === 'money' && payload.product !== 'gpdt') return { ok: false, reason: 'wrong-plan' }
-        return { ok: true, payload, authority: k.authority }
+        return validateSignedPayload(payloadBytes, k.authority)
       }
     } catch {
       // unusable key or signature shape: try the next key
     }
   }
   return { ok: false, reason: 'bad-signature' }
+}
+
+/** Claims have no authority until their signature has verified against packaged trust. */
+function validateSignedPayload(payloadBytes: Uint8Array, authority: TrustedKey['authority']): LicenseResult {
+  let payload: ProLicensePayload
+  try {
+    payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as ProLicensePayload
+  } catch {
+    return { ok: false, reason: 'malformed' }
+  }
+  if (!payload || typeof payload !== 'object') return { ok: false, reason: 'malformed' }
+
+  // Product-less / old-slug seller licences remain supported, but Money must
+  // explicitly name this product. Neither an unsigned claim nor its shape selects trust.
+  if (payload.plan !== 'pro' || (payload.product !== undefined && !ACCEPTED_PRODUCTS.includes(payload.product))
+    || (authority === 'money' && payload.product !== 'gpdt')) return { ok: false, reason: 'wrong-plan' }
+
+  // Money always signs an expiry. An issuedAt must not turn an absent or invalid
+  // expiry into a perpetual grant. Historical seller tokens genuinely lack expiry.
+  if (payload.expiresAt !== undefined || authority === 'money') {
+    if (typeof payload.expiresAt !== 'number' || !Number.isFinite(payload.expiresAt)) return { ok: false, reason: 'malformed' }
+    // Compare the signed timestamp directly: do not recompute or cap Money's term.
+    if (Date.now() >= payload.expiresAt) return { ok: false, reason: 'expired' }
+  } else if (typeof payload.issuedAt !== 'number' || !Number.isFinite(payload.issuedAt)) {
+    return { ok: false, reason: 'wrong-plan' }
+  }
+  return { ok: true, payload, authority }
 }
