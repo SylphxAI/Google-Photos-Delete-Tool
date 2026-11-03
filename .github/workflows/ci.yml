@@ -7,6 +7,10 @@ on:
     branches: [main, master]
   merge_group:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Fails a change that adds a direct chat-API host (Telegram, Slack, Discord)
   # outside the action's allow-list: chat messages go through Notify. The
