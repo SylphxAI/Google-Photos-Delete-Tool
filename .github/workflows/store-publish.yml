@@ -57,6 +57,11 @@ on:
         required: false
         type: string
         default: ''
+      publish_staged_version:
+        description: 'CWS only: publish this existing approved STAGED version without uploading (manual publish-cws.yml dispatch only)'
+        required: false
+        type: string
+        default: ''
     secrets:
       CWS_SERVICE_ACCOUNT_JSON:
         required: false
@@ -84,7 +89,7 @@ on:
 jobs:
   resolve:
     name: Resolve target tag & pending stores
-    if: inputs.staged_ref == ''
+    if: inputs.staged_ref == '' && inputs.publish_staged_version == ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -542,7 +547,7 @@ jobs:
 
   cws-staged:
     name: Submit to Chrome Web Store as STAGED
-    if: inputs.staged_ref != ''
+    if: inputs.staged_ref != '' && inputs.publish_staged_version == ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -621,3 +626,43 @@ jobs:
         run: |
           echo "::error::CWS already has a submission in review; nothing was uploaded. Wait for it or cancel it in the dashboard, then re-run."
           exit 1
+
+  cws-publish-staged:
+    name: Publish existing STAGED revision
+    if: inputs.publish_staged_version != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '22'
+
+      - name: Validate exclusive inputs
+        env:
+          TAG: ${{ inputs.tag }}
+          CANCEL: ${{ inputs.cancel_pending }}
+          STAGED_REF: ${{ inputs.staged_ref }}
+          CONTENT_DIGEST: ${{ inputs.content_digest }}
+          STORES: ${{ inputs.stores }}
+        run: |
+          set -euo pipefail
+          [ "$STORES" = cws ] || { echo "::error::publish_staged_version is CWS only"; exit 1; }
+          [ -z "$TAG" ] || { echo "::error::tag and publish_staged_version are exclusive"; exit 1; }
+          [ "$CANCEL" = false ] || { echo "::error::cancel_pending does not apply to an approved STAGED revision"; exit 1; }
+          [ -z "$STAGED_REF" ] || { echo "::error::staged_ref submits a new package; publish_staged_version publishes the existing one"; exit 1; }
+          [ -z "$CONTENT_DIGEST" ] || { echo "::error::content_digest belongs to staged_ref; the store readback pins the staged version"; exit 1; }
+
+      - name: Publish the existing revision and read it back
+        env:
+          VERSION: ${{ inputs.publish_staged_version }}
+          CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
+          CWS_PUBLISHER_ID: ${{ inputs.publisher_id || secrets.CWS_PUBLISHER_ID || vars.CWS_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: node scripts/cws-v2.mjs publish-staged --version "$VERSION"

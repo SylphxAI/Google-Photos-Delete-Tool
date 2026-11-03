@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 // @ts-expect-error plain .mjs script, no type declarations
-import { selectAuthMode, signServiceAccountJwt, mintAccessToken, mintOAuthAccessToken, publishV2, readStatus, formatStatus, invalidModeMessage, API_BASE, SCOPE } from '../scripts/cws-v2.mjs'
+import { selectAuthMode, signServiceAccountJwt, mintAccessToken, mintOAuthAccessToken, publishV2, publishStagedV2, readStatus, formatStatus, invalidModeMessage, API_BASE, SCOPE } from '../scripts/cws-v2.mjs'
 
 const wf = (n: string) => readFileSync(fileURLToPath(new URL(`../.github/workflows/${n}`, import.meta.url)), 'utf8')
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
@@ -325,6 +325,67 @@ describe('staged publish (publishType STAGED_PUBLISH)', () => {
   })
 })
 
+describe('publish an existing STAGED revision', () => {
+  const staged = {
+    submittedItemRevisionStatus: { state: 'STAGED', distributionChannels: [{ crxVersion: '3.6.1', deployPercentage: 100 }] },
+    publishedItemRevisionStatus: { state: 'PUBLISHED', distributionChannels: [{ crxVersion: '3.5.1', deployPercentage: 100 }] },
+  }
+  const live = { publishedItemRevisionStatus: { state: 'PUBLISHED', distributionChannels: [{ crxVersion: '3.6.1', deployPercentage: 100 }] } }
+
+  it('publishes the exact staged version with one POST, no upload and a live readback', async () => {
+    const api = fakeApi([
+      { match: `${N}:fetchStatus`, body: staged },
+      { match: `/v2/${N}:publish`, body: { state: 'PUBLISHED' } },
+      { match: `${N}:fetchStatus`, body: live },
+    ])
+    const result = await publishStagedV2({ ...base, version: '3.6.1', fetchImpl: api.fetchImpl })
+    expect(result).toMatchObject({ outcome: 'published', itemState: 'PUBLISHED', crxVersion: '3.6.1', publishStatus: 200 })
+    expect(api.calls.map((call) => call.split(':').pop())).toEqual(['fetchStatus', 'publish', 'fetchStatus'])
+  })
+
+  it('is a no-op when that version is already live', async () => {
+    const api = fakeApi([{ match: `${N}:fetchStatus`, body: live }])
+    const result = await publishStagedV2({ ...base, version: '3.6.1', fetchImpl: api.fetchImpl })
+    expect(result.outcome).toBe('already_published')
+    expect(api.calls).toHaveLength(1)
+  })
+
+  it('refuses a wrong version or a revision that is not STAGED before publishing', async () => {
+    const wrong = fakeApi([{ match: `${N}:fetchStatus`, body: staged }])
+    await expect(publishStagedV2({ ...base, version: '3.6.2', fetchImpl: wrong.fetchImpl })).rejects.toThrow('expected STAGED version 3.6.2')
+    expect(wrong.calls).toHaveLength(1)
+
+    const pendingReview = { submittedItemRevisionStatus: { state: 'PENDING_REVIEW', distributionChannels: [{ crxVersion: '3.6.1' }] } }
+    const pendingApi = fakeApi([{ match: `${N}:fetchStatus`, body: pendingReview }])
+    await expect(publishStagedV2({ ...base, version: '3.6.1', fetchImpl: pendingApi.fetchImpl })).rejects.toThrow('submitted state is PENDING_REVIEW')
+    expect(pendingApi.calls).toHaveLength(1)
+  })
+
+  it('reconciles the publish response through fetchStatus and never retries blindly', async () => {
+    const ambiguous = fakeApi([
+      { match: `${N}:fetchStatus`, body: staged },
+      { match: `/v2/${N}:publish`, status: 400, body: { error: 'ambiguous' } },
+      { match: `${N}:fetchStatus`, body: live },
+    ])
+    const result = await publishStagedV2({ ...base, version: '3.6.1', fetchImpl: ambiguous.fetchImpl })
+    expect(result).toMatchObject({ outcome: 'published', publishStatus: 400, crxVersion: '3.6.1' })
+
+    const failed = fakeApi([
+      { match: `${N}:fetchStatus`, body: staged },
+      { match: `/v2/${N}:publish`, status: 400, body: { error: 'no' } },
+      { match: `${N}:fetchStatus`, body: staged },
+    ])
+    await expect(publishStagedV2({ ...base, version: '3.6.1', fetchImpl: failed.fetchImpl })).rejects.toThrow('no automatic retry')
+    expect(failed.calls.filter((call) => call.endsWith(':publish'))).toHaveLength(1)
+  })
+
+  it('requires an explicit version before any API call', async () => {
+    const api = fakeApi([])
+    await expect(publishStagedV2({ ...base, version: '', fetchImpl: api.fetchImpl })).rejects.toThrow('version is required')
+    expect(api.calls).toHaveLength(0)
+  })
+})
+
 describe('OAuth access token for the v2 calls', () => {
   it('exchanges the refresh token', async () => {
     let sent = ''
@@ -345,12 +406,12 @@ describe('staged workflow wiring', () => {
   const staged = engine.slice(engine.indexOf('\n  cws-staged:'))
   it('forwards the staged inputs from the manual CWS dispatch to the shared engine', () => {
     const caller = wf('publish-cws.yml')
-    for (const k of ['staged_ref', 'content_digest', 'publisher_id']) expect(caller).toContain(`${k}: \${{ inputs.${k} }}`)
+    for (const k of ['staged_ref', 'content_digest', 'publisher_id', 'publish_staged_version']) expect(caller).toContain(`${k}: \${{ inputs.${k} }}`)
     expect(wf('store-retry.yml')).not.toContain('staged_ref')
     expect(wf('publish-stores.yml')).not.toContain('staged_ref')
   })
   it('skips every tag job when staged_ref is set and runs the staged job only then', () => {
-    expect(engine).toContain("name: Resolve target tag & pending stores\n    if: inputs.staged_ref == ''")
+    expect(engine).toContain("name: Resolve target tag & pending stores\n    if: inputs.staged_ref == '' && inputs.publish_staged_version == ''")
     expect(staged).toContain("if: inputs.staged_ref != ''")
   })
   it('pins the package by content digest before any upload and submits only with --staged', () => {
@@ -361,6 +422,18 @@ describe('staged workflow wiring', () => {
     expect(staged).not.toContain('cancel-pending')
     expect(staged).not.toContain('store-state')
     expect(staged).toContain('permissions:\n      contents: read')
+  })
+  it('publishes an existing staged version without an upload, tag or state write', () => {
+    const caller = wf('publish-cws.yml')
+    expect(caller).not.toContain('runs-on:')
+    const job = engine.slice(engine.indexOf('\n  cws-publish-staged:'))
+    expect(job).toContain("if: inputs.publish_staged_version != ''")
+    expect(job).toContain('run: node scripts/cws-v2.mjs publish-staged --version "$VERSION"')
+    expect(job).toContain('permissions:\n      contents: read')
+    expect(job).not.toContain(':upload')
+    expect(job).not.toContain('store-state')
+    expect(job).not.toContain('git push')
+    expect(staged).toContain("if: inputs.staged_ref != '' && inputs.publish_staged_version == ''")
   })
 })
 

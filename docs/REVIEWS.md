@@ -25,8 +25,9 @@ drive Pro ([GROWTH.md](GROWTH.md)). This is the runbook for answering.
   reply, so keep it useful to the next reader too. Edit a reply to add the
   outcome once an issue is fixed.
 - The safety model in one line, for reference: nothing is deleted unless the
-  person chose or approved it, deleted photos sit in Google Photos Trash for 60
-  days, and only the opt-in "Empty trash afterwards" is permanent.
+  person chose or approved it; recovery requires items still in Trash under
+  Google Photos’ current policy. Empty Trash and any permanent deletion
+  cannot be undone. Never promise a fixed recovery window.
 
 ## Which template
 
@@ -76,29 +77,37 @@ Stay calm and factual. The tool only moves to Trash what the person chose or
 approved (in Find duplicates, each keep/Trash choice is reviewed, and the
 person presses Move to Trash and confirms). Do not argue about whether they
 chose it, and do not admit a defect without a report that shows one. The
-recovery step is concrete: Google Photos Trash holds items for 60 days, unless
-"Empty trash afterwards" was turned on, which is permanent. If Trash is
-already empty, say so honestly and do not promise recovery.
+recovery step is concrete: check Trash now and restore only items that are
+still there and eligible under Google Photos’ current policy. Empty Trash
+and any permanent deletion cannot be undone. If Trash is already empty,
+say so honestly and do not promise recovery. Never advise emptying Trash
+as a recovery step; if it is full, do not approve permanent deletion of
+items the person needs to restore.
 
-**en** We're sorry you're worried about your photos. The tool only moves photos to Trash that you chose or approved, and Google Photos keeps them there for 60 days. Please open Trash in Google Photos now and restore what you need (if "Empty trash afterwards" was switched on, that step is permanent). If something looks wrong, press "Report issue" in the extension so we can check what happened.
+Official desktop [delete guidance](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop)
+and [restore guidance](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
+checked 2026-10-29; re-read the current conditions before replying.
+[Policy notes and delivery boundaries](RECOVERY.md).
 
-**de** Es tut uns leid, dass du dir Sorgen um deine Fotos machst. Das Tool verschiebt nur Fotos in den Papierkorb, die du ausgewählt oder bestätigt hast, und Google Fotos bewahrt sie dort 60 Tage auf. Öffne bitte jetzt den Papierkorb in Google Fotos und stelle wieder her, was du brauchst (war "Papierkorb danach leeren" aktiv, ist dieser Schritt endgültig). Wirkt etwas falsch, klicke in der Erweiterung auf "Problem melden", damit wir prüfen können, was passiert ist.
+**en** We’re sorry you’re worried about your photos. Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting. [Google Photos desktop delete guidance (checked 2026-10-29)](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google Photos desktop restore guidance (checked 2026-10-29)](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
-**es** Lamentamos que estés preocupado por tus fotos. La herramienta solo envía a la papelera las fotos que elegiste o aprobaste, y Google Fotos las conserva allí 60 días. Abre ahora la papelera de Google Fotos y restaura lo que necesites (si activaste "Vaciar la papelera después", ese paso es permanente). Si algo no cuadra, pulsa "Informar de un problema" en la extensión para que podamos revisar qué pasó.
+**de** Es tut uns leid, dass du dir Sorgen um deine Fotos machst. Nur wenn die Elemente noch im Papierkorb sind und die aktuelle Richtlinie von Google Fotos es erlaubt. Öffne den Papierkorb von Google Fotos, wähle die Elemente und dann „Wiederherstellen“. Das Leeren des Papierkorbs und jede endgültige Löschung lassen sich nicht rückgängig machen. Bei vollem Papierkorb kann stattdessen eine endgültige Löschung angeboten werden. Lies vor dem Löschen die Hinweise von Google. [Google Fotos: Löschen am Computer (geprüft am 2026-10-29)](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google Fotos: Wiederherstellen am Computer (geprüft am 2026-10-29)](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
-**fr** Nous sommes désolés que vous vous inquiétiez pour vos photos. L'outil ne place dans la corbeille que les photos que vous avez choisies ou approuvées, et Google Photos les y garde 60 jours. Ouvrez dès maintenant la corbeille de Google Photos et restaurez ce dont vous avez besoin (si "Vider la corbeille ensuite" était activé, cette étape est définitive). Si quelque chose semble anormal, cliquez sur "Signaler un problème" dans l'extension pour que nous vérifiions ce qui s'est passé.
+**es** Lamentamos que estés preocupado por tus fotos. Solo si los elementos siguen en la papelera y lo permite la política vigente de Google Fotos. Abre la papelera de Google Fotos, selecciona los elementos y elige Restaurar. Vaciar la papelera y cualquier eliminación permanente no se pueden deshacer. Si la papelera está llena, puede ofrecerse la eliminación permanente en su lugar. Consulta las instrucciones de Google antes de borrar. [Google Fotos: eliminar en ordenador (consultado el 2026-10-29)](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google Fotos: restaurar en ordenador (consultado el 2026-10-29)](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
-**it** Ci dispiace che tu sia preoccupato per le tue foto. Lo strumento sposta nel cestino solo le foto che hai scelto o approvato, e Google Foto le conserva lì per 60 giorni. Apri subito il cestino di Google Foto e ripristina ciò che ti serve (se "Svuota il cestino dopo" era attivo, quel passaggio è definitivo). Se qualcosa non torna, premi "Segnala un problema" nell'estensione così possiamo verificare cos'è successo.
+**fr** Nous sommes désolés que vous vous inquiétiez pour vos photos. Uniquement si les éléments sont encore dans la corbeille et si les règles actuelles de Google Photos le permettent. Ouvrez la corbeille Google Photos, sélectionnez les éléments et choisissez Restaurer. Vider la corbeille et toute suppression définitive sont irréversibles. Une corbeille pleine peut proposer une suppression définitive à la place. Consultez les instructions de Google avant de supprimer. [Google Photos : supprimer sur ordinateur (consulté le 2026-10-29)](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google Photos : restaurer sur ordinateur (consulté le 2026-10-29)](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
-**nl** Het spijt ons dat je je zorgen maakt over je foto's. De tool zet alleen foto's in de prullenbak die jij hebt gekozen of goedgekeurd, en Google Foto's bewaart ze daar 60 dagen. Open nu de prullenbak in Google Foto's en herstel wat je nodig hebt (stond "Prullenbak daarna legen" aan, dan is die stap definitief). Lijkt er iets mis te zijn, druk dan in de extensie op "Probleem melden" zodat we kunnen nagaan wat er gebeurde.
+**it** Ci dispiace che tu sia preoccupato per le tue foto. Solo se gli elementi sono ancora nel cestino e le regole attuali di Google Foto lo consentono. Apri il cestino di Google Foto, seleziona gli elementi e scegli Ripristina. Svuotare il cestino e qualsiasi eliminazione definitiva sono operazioni irreversibili. Se il cestino è pieno, potrebbe essere proposta invece l’eliminazione definitiva. Consulta le istruzioni di Google prima di eliminare. [Google Foto: eliminare dal computer (consultato il 2026-10-29)](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google Foto: ripristinare dal computer (consultato il 2026-10-29)](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
-**pt_BR** Sentimos que você esteja preocupado com suas fotos. A ferramenta só envia para a lixeira as fotos que você escolheu ou aprovou, e o Google Fotos as mantém lá por 60 dias. Abra agora a lixeira do Google Fotos e restaure o que precisar (se "Esvaziar a lixeira depois" estava ativado, essa etapa é permanente). Se algo parecer errado, clique em "Relatar problema" na extensão para podermos verificar o que aconteceu.
+**nl** Het spijt ons dat je je zorgen maakt over je foto’s. Alleen als de items nog in de prullenbak staan en het huidige beleid van Google Foto’s dit toestaat. Open de prullenbak van Google Foto’s, selecteer de items en kies Herstellen. De prullenbak legen en elke definitieve verwijdering kunnen niet ongedaan worden gemaakt. Bij een volle prullenbak kan in plaats daarvan definitieve verwijdering worden aangeboden. Lees de instructies van Google voordat je verwijdert. [Google Foto’s: verwijderen op de computer (gecontroleerd op 2026-10-29)](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google Foto’s: herstellen op de computer (gecontroleerd op 2026-10-29)](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
-**zh_CN** 很抱歉让您担心照片。工具只会把您选择或确认过的照片移入回收站，Google 相册会在回收站保留 60 天。请现在打开 Google 相册的回收站，恢复您需要的照片（如果开启了"完成后清空回收站"，该步骤不可恢复）。如果发现异常，请在扩展中点击"报告问题"，我们会核查发生了什么。
+**pt_BR** Sentimos que você esteja preocupado com suas fotos. Somente se os itens ainda estiverem na lixeira e a política atual do Google Fotos permitir. Abra a lixeira do Google Fotos, selecione os itens e escolha Restaurar. Esvaziar a lixeira e qualquer exclusão permanente não podem ser desfeitos. Se a lixeira estiver cheia, a exclusão permanente poderá ser oferecida em vez disso. Consulte as instruções do Google antes de excluir. [Google Fotos: excluir no computador (consultado em 2026-10-29)](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google Fotos: restaurar no computador (consultado em 2026-10-29)](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
-**zh_TW** 很抱歉讓您擔心照片。工具只會把您選擇或確認過的照片移到垃圾桶，Google 相簿會在垃圾桶保留 60 天。請現在開啟 Google 相簿的垃圾桶，還原您需要的照片（若開啟了「完成後清空垃圾桶」，該步驟無法復原）。若發現異常，請在擴充功能中按「报告问题」，我們會查明發生了什麼事。
+**zh_CN** 很抱歉让您担心照片。 只有内容仍在回收站中且符合 Google 相册当前政策时才可以恢复。打开 Google 相册回收站，选择所需内容，然后点击“恢复”。清空回收站和任何永久删除操作都无法撤销。回收站已满时，系统可能会改为提示永久删除。删除前请查看 Google 的说明。 [Google 相册电脑版删除说明（查阅日期：2026-10-29）](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google 相册电脑版恢复说明（查阅日期：2026-10-29）](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
-**ja** 写真のことでご心配をおかけしました。このツールは、ご自身が選択または承認した写真だけをゴミ箱に移し、Google フォトはそれを 60 日間保管します。今すぐ Google フォトのゴミ箱を開き、必要な写真を復元してください（「完了後にゴミ箱を空にする」をオンにしていた場合、その操作は元に戻せません）。おかしな点があれば、拡張機能の「問題を報告」を押してください。状況を確認します。
+**zh_TW** 很抱歉讓您擔心照片。 只有內容仍在垃圾桶中且符合 Google 相簿目前政策時才可以復原。開啟 Google 相簿垃圾桶，選取所需內容，然後點選「還原」。清空垃圾桶和任何永久刪除操作都無法復原。垃圾桶已滿時，系統可能會改為提示永久刪除。刪除前請查看 Google 的說明。 [Google 相簿電腦版刪除說明（查閱日期：2026-10-29）](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google 相簿電腦版還原說明（查閱日期：2026-10-29）](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
+
+**ja** 写真のことでご心配をおかけしました。 項目がゴミ箱に残っており、Google フォトの現在のポリシーで認められる場合だけです。Google フォトのゴミ箱を開き、項目を選択して「復元」を押してください。ゴミ箱を空にする操作や完全な削除は元に戻せません。ゴミ箱がいっぱいの場合、代わりに完全な削除を求められることがあります。削除前に Google の説明をご確認ください。 [Google フォトのパソコン向け削除手順（確認日：2026-10-29）](https://support.google.com/photos/answer/6128858?hl=en&co=GENIE.Platform%3DDesktop) · [Google フォトのパソコン向け復元手順（確認日：2026-10-29）](https://support.google.com/photos/answer/9343482?hl=en&co=GENIE.Platform%3DDesktop)
 
 ## C. It's slow
 

@@ -1,0 +1,37 @@
+title = "Google Photos Delete Tool Pro"
+description = "Type and date filters, presets and duplicate power tools, with an offline licence."
+base_path = "/Google-Photos-Delete-Tool"
+origin = "https://sylphxai.github.io"
+lang = "en"
+host = "github-pages"
+include = ["pricing.md", "recover.md"]
+edit_url = "https://github.com/SylphxAI/Google-Photos-Delete-Tool/edit/master/docs/storefront/{path}"
+toc_max_level = 3
+
+[money]
+api_origin = "https://api.sylphx.com"
+parent = "orgs/org_fs01afbdccgn8xdk1ghj5y47w0vtph/projects/prj_fs01etb6sjwf33tcvmhf93jwppx8a0/envs/env_fs01kkyfapshabd01pdps7kf0f72cr"
+publishable_key = "sylphx_pk_live_fs011xLNiTif0SkaOCFx"
+
+[money.trader]
+name = "Sylphx Limited"
+contact = "hi@sylphx.com"
+address = "128 City Road, London EC1V 2NX, United Kingdom"
+
+[money.offers.pro]
+product = "gpdt_pro"
+token_product = "gpdt"
+title = "Buy Google Photos Delete Tool Pro"
+description = "Type and date filters, presets and duplicate power tools. Current one-time price comes from the live Money catalogue."
+consent_version = "waiver-v1"
+consent_text = "I ask for my licence to be supplied immediately after I pay. I understand that once it is supplied I lose my right to cancel this purchase and to a refund on that ground."
+success_url = "https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing?session_id={CHECKOUT_SESSION_ID}"
+cancel_url = "https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing?checkout=cancelled"
+recovery_url = "https://sylphxai.github.io/Google-Photos-Delete-Tool/recover"
+cta_label = "Buy Pro"
+recovery_label = "Email my licence recovery link"
+
+[[money.offers.pro.prices]]
+key = "gpdt_pro"
+label = "1 licence"
+quantity = 1

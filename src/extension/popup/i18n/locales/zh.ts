@@ -85,6 +85,7 @@ const zh: Translations = {
       getPro: "升级 Pro — 一次性 US$9.99",
       active: "Pro 已激活 — 筛选已启用",
       invalid: "许可证令牌无效",
+      expired: "许可证已过期。请重新找回许可证。",
     },
   },
   pro: {

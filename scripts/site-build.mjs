@@ -15,6 +15,7 @@
 // Usage: node scripts/site-build.mjs [outDir]
 import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -107,6 +108,9 @@ export function build({ outDir = join(ROOT, '_site'), siteDir = join(ROOT, 'site
 
   rmSync(outDir, { recursive: true, force: true })
   cpSync(siteDir, outDir, { recursive: true })
+  const { version } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+  const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim()
+  writeFileSync(join(outDir, 'build-info.json'), JSON.stringify({ version, commit }, null, 2) + '\n')
   writeFileSync(join(outDir, 'index.html'), pages.en)
   for (const l of locales) {
     mkdirSync(join(outDir, l.slug), { recursive: true })

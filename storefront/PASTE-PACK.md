@@ -1,6 +1,6 @@
 # Store listing paste pack
 
-For whoever has dashboard access. The Chrome Web Store API has no listing-metadata endpoint, so these fields are pasted by hand. Source of truth is `storefront/listing.json`; this file is a ready-to-paste copy for version 3.6.0. If the two differ, `listing.json` wins: re-run the copy from it.
+For whoever has dashboard access. The Chrome Web Store API has no listing-metadata endpoint, so these fields are pasted by hand. Source of truth is `storefront/listing.json`; this file is a ready-to-paste copy for version 3.6.1. If the two differ, `listing.json` wins: re-run the copy from it.
 
 Shared values:
 

@@ -9,6 +9,8 @@
  *
  *   bun run build && node scripts/dupes-demo.mjs           # screenshot → docs/images/find-duplicates.png
  *   bun run build && node scripts/dupes-demo.mjs --check   # also move the red copies and assert
+ *   bun run build && node scripts/dupes-demo.mjs --read-only-check --no-screenshot
+ *     # scan and verify review/consent; never select or move an item
  *
  * Browser: CHROMIUM_PATH, else /usr/bin/chromium.
  */
@@ -20,6 +22,9 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const out = resolve(root, 'docs/images/find-duplicates.png')
 const userscript = await readFile(resolve(root, 'dist/userscript/google-photos-delete.user.js'), 'utf-8')
+if (process.argv.includes('--check') && process.argv.includes('--read-only-check')) {
+  throw new Error('Choose either --check or --read-only-check')
+}
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium' })
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
@@ -104,6 +109,25 @@ await page.locator('#gpdt-dupes').click()
 await page.getByRole('button', { name: 'Scan this view' }).click()
 await page.locator('#gpdt-dupes-host').getByText('To Trash', { exact: true }).waitFor({ timeout: 60_000 })
 await page.waitForTimeout(800)
+if (process.argv.includes('--read-only-check')) {
+  const host = page.locator('#gpdt-dupes-host')
+  const move = host.getByRole('button', { name: /^Move \d+ to Trash$/ })
+  const planned = Number((await move.innerText()).match(/\d+/)[0])
+  // The button stays enabled; its handler must refuse without consent.
+  await move.click()
+  const state = {
+    planned,
+    consent: await host.locator('.consent input[type=checkbox]').isChecked(),
+    consentError: await host.locator('.err').innerText(),
+    tiles: await page.locator('.ckGgle').count(),
+    selected: await page.locator('.ckGgle[aria-checked=true]').count(),
+    trashed: await page.evaluate(() => (window.__trashed ?? []).length),
+  }
+  console.log(`dupes-demo read-only: ${JSON.stringify(state)}`)
+  if (planned <= 0 || state.consent || !state.consentError || state.tiles !== 36 || state.selected || state.trashed) {
+    throw new Error('Read-only scan must show candidates with consent required and every tile untouched')
+  }
+}
 if (!process.argv.includes('--no-screenshot')) {
   await mkdir(resolve(root, 'docs/images'), { recursive: true })
   await page.screenshot({ path: out })

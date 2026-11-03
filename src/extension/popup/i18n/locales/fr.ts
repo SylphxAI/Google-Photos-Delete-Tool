@@ -85,6 +85,7 @@ const fr: Translations = {
       getPro: "Passer à Pro — US$9.99, une seule fois",
       active: "Pro actif — filtres activés",
       invalid: "Jeton de licence invalide",
+      expired: "Licence expirée. Récupérez votre licence.",
     },
   },
   pro: {

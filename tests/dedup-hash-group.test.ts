@@ -157,7 +157,7 @@ describe('grouping (parity with photo-dedup group_duplicates)', () => {
         items.push({ id: `c${i}`, hash: { lo, hi } })
       }
     }
-    for (const threshold of [1, 0.95, 0.9, 0.85, 0.8]) {
+    for (const threshold of Array.from({ length: 65 }, (_, distance) => 1 - distance / 64)) {
       const maxD = maxDistanceFor(threshold)
       const grouped = new Set<number>()
       const expected: string[][] = []

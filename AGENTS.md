@@ -40,7 +40,11 @@ CI (`.github/workflows/ci.yml`) runs `bun run typecheck`, `bun run lint`,
 `bun run test`, `bun run build`, `node scripts/dupes-demo.mjs --check
 --no-screenshot`, `bun run listing:check`, `bun run verify`, `bun run zip` and `bun run size:check`
 (`dist/extension/content.js` and the store zip may not exceed `budgets/size.json`
-by more than 5%).
+by more than 5%). It also runs `chat-senders` in fail mode
+(`SylphxAI/.github` action pinned by commit, full-history checkout), which fails
+a change that adds a direct Telegram, Slack or Discord chat-API host: the tool
+sends chat through Notify, and `ci-ok` needs both jobs, so a red lane is a red
+merge.
 `bun run bench:engine` (PR job `bench-engine.yml`, paths `src/`) measures photos per minute and heap on a mock grid and fails only beyond 2x of `bench/engine-baseline.json`; N=5000 is measured in CI only. A release also carries the disposable-account live run in
 [docs/RELEASE_GATE.md](docs/RELEASE_GATE.md); green CI proves the source, only
 that run proves the product against live Google Photos.

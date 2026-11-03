@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+## [3.6.3] - 2026-11-02
+
+### Fixed
+- Pro licences issued by checkout now honour their signed expiration time,
+  including the original long-lived term. Historical seller licences without
+  an expiration time remain valid.
+- An expired licence now shows a clear message in every popup language instead
+  of appearing active. Licence claims are checked only after their signature.
+
+## [3.6.1] - 2026-10-03
+
+### Changed
+- Pro is now bought at a self-serve checkout: the token is shown right after
+  payment and emailed, and a lost token can be recovered online. The Buy links
+  in the extension, userscript and site go to the checkout.
+
 ## [3.6.0] - 2026-10-02
 
 ### Fixed

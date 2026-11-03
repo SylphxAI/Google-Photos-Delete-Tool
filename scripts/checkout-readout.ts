@@ -1,7 +1,7 @@
 /**
  * Growth readout: group paid Stripe Checkout sessions by utm_source,
  * utm_medium and utm_content so the Pro paywall A/B variants (utm_content
- * a|b) can be read out once checkout at buy.sylphx.com is live.
+ * a|b) can be read out once checkout on the product's pricing page is live.
  *
  *   bun run growth:readout path/to/checkout_sessions.csv
  *

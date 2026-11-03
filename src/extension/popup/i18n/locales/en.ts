@@ -85,6 +85,7 @@ const en: Translations = {
       getPro: "Get Pro — US$9.99 once",
       active: "Pro active — filters enabled",
       invalid: "Invalid license token",
+      expired: "Licence expired. Recover your licence.",
     },
   },
   pro: {

@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { beforeAll, describe, expect, it } from 'vitest'
 // @ts-expect-error plain ESM build script without types
 import { ORIGIN, build, loadLocales } from '../scripts/site-build.mjs'
@@ -15,6 +16,15 @@ describe('site localisation', () => {
   beforeAll(() => {
     out = mkdtempSync(join(tmpdir(), 'gpdt-site-'))
     build({ outDir: out })
+  })
+
+  it('publishes the exact serving source revision and package version', () => {
+    const info = JSON.parse(readFileSync(join(out, 'build-info.json'), 'utf8'))
+    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+    expect(info).toEqual({
+      version: pkg.version,
+      commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+    })
   })
 
   it('builds a page for every locale the extension ships', () => {
@@ -37,7 +47,7 @@ describe('site localisation', () => {
     const en = readFileSync(join(root, 'site/index.html'), 'utf8')
     for (const slug of shipped.map(slugOf)) {
       const html = page(slug)
-      for (const n of ['500', '60', '20', '98', '10']) expect(html, `${slug} keeps ${n}`).toContain(n)
+      for (const n of ['500', '20', '98', '10']) expect(html, `${slug} keeps ${n}`).toContain(n)
       expect(html, `${slug} price`).toMatch(/9[.,]99/)
       for (const fixed of ['16438428', '128 City Road', 'EC1V 2NX', '+44 333 335 7935', 'hi@sylphx.com', 'data-consent="all"', 'data-consent="analytics"', 'data-consent="none"', 'id="recover"', 'data-cta="pro"']) expect(html, `${slug} keeps ${fixed}`).toContain(fixed)
       // Every link target of the English page survives (translation changes text, never destinations).

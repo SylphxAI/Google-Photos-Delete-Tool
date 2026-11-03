@@ -85,6 +85,7 @@ const ja: Translations = {
       getPro: "Pro を入手 — 一度きり US$9.99",
       active: "Pro 有効 — フィルター利用可",
       invalid: "無効なライセンストークン",
+      expired: "ライセンス期限切れ。再取得してください。",
     },
   },
   pro: {

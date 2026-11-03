@@ -6,3 +6,6 @@ dist/
 .DS_Store
 bench-out/
 _site/
+
+# Explicit Test Mode packages
+dist-preview/

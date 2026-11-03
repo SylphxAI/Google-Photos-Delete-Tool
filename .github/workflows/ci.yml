@@ -5,12 +5,30 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  merge_group:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Fails a change that adds a direct chat-API host (Telegram, Slack, Discord)
+  # outside the action's allow-list: chat messages go through Notify. The
+  # action compares the lines the change adds, so the job needs the full
+  # history of the pull request or merge group. Pinned by commit: a caller
+  # moves deliberately when the allow-list widens.
+  chat-senders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - uses: SylphxAI/.github/.github/actions/chat-senders@5cfd55a41435cca8e4b7caf6506faf04ca08d200
+        with:
+          mode: fail
+
   check:
     name: Lint, Type Check, Test, Build & Verify
     runs-on: ubuntu-latest
@@ -41,6 +59,11 @@ jobs:
           CHROMIUM_PATH: /usr/bin/google-chrome
         run: node scripts/dupes-demo.mjs --check --no-screenshot
 
+      - name: Responsive localized storefront
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: node scripts/site-responsive.mjs
+
       - name: Verify storefront listing
         run: bun run listing:check
 
@@ -52,3 +75,20 @@ jobs:
 
       - name: Size budget (content.js and store zip, 5% over budgets/size.json fails)
         run: bun run size:check
+
+  # The org-wide required check name. Skipped lanes pass; a failed or
+  # cancelled lane fails.
+  ci-ok:
+    if: always()
+    needs: [chat-senders, check]
+    # The reserved gate pool (Kueue queue scale-set-gate, never lends): an
+    # `if: always()` verdict still runs after its run is cancelled, and that run
+    # keeps its concurrency group until it does, so on a busy build pool a
+    # superseded run held the next one (SylphxAI/agents#4222, 2026-10-02).
+    runs-on: sylphx-linux-control
+    timeout-minutes: 5
+    steps:
+      - uses: SylphxAI/.github/.github/actions/needs-pass@96195d86b550ab1205159acb1ae0d75b1fbed47f # main
+        with:
+          needs: ${{ toJSON(needs) }}
+          required: chat-senders,check
