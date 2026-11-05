@@ -167,7 +167,9 @@ data is sent.
 Pro is bought instantly at <https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing>: Money mints the
 offline licence (including `plan: "pro"`, `product: "gpdt"`, `order`,
 `grant`, `seats` and the native `expiresAt`; email and issuedAt may be absent), the success page shows the token and an emailed signed link
-repeats it. Activation is unchanged: paste the token. Both switches are on:
+repeats it. The installed extension verifies and saves the signed token automatically on
+the product-owned pricing/recovery page. Manual paste remains available, and
+is the userscript activation path. No photo controls run during activation. Both switches are on:
 
 - `SELF_SERVE_CHECKOUT` in `src/core/pro-moments.ts` (every extension and
   userscript Buy link, via `proUrl()`; the static popup links already point at
@@ -182,7 +184,12 @@ can stop working); any other product is `wrong-plan`. The signature is verified 
 authority requires the current `gpdt` product and a finite signed expiration;
 legacy product compatibility applies only to seller tokens.
 
-1. **Product:** Pro is US$9.99, one-time and lifetime, a convenience unlock for
+1. **Product:** Pro is one-time: Personal US$19 (1 seat), Family US$29.97
+   (3 seats), Team US$49 (10 seats). The old US$9.99 price remains in the
+   catalogue for existing checkout sessions. Signed seats are the checkout
+   line quantity; each tier price is a per-seat amount, not the pack total.
+   Seat scope is informational: no account fingerprint or online seat lock.
+   Existing licences remain unrestricted. Pro is a convenience unlock for
    power users of a free tool. The README `#pro` section carries the buy link.
 2. **Issuance is automatic.** Money fulfils the payment and the licence service
    signs the token from Money's grant; the buyer sees it on the success page
