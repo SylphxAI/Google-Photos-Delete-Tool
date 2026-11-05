@@ -317,8 +317,22 @@ export function openDuplicateFinder(host: FinderHost): void {
       downloadCsv(groupsToCsv(groups, trashed))
     })
 
+    const selectAll = h('button', { class: 'ghost' }, 'Select all duplicates, keep best copy')
+    selectAll.disabled = !pro || groups.length === 0
+    selectAll.addEventListener('click', () => {
+      if (!pro) return
+      overrides.clear()
+      manual.clear()
+      keepRule = 'default'
+      autoAccept = false
+      for (const group of groups) approved.add(groupKey(group))
+      toolsNote = 'Best copy kept in every group. Review the selection below; nothing has been deleted.'
+      renderReview()
+    })
+
     const tag = (): HTMLElement => h('a', { class: 'pro-tag', href: proUrl('dupes', variant), target: '_blank', rel: 'noopener' }, t('finder.proTag'))
     const rows: HTMLElement[] = [
+      h('div', { class: 'row' }, selectAll, ...(pro ? [] : [tag()])),
       h('div', { class: 'row' }, h('span', {}, t('finder.keep')), select, ...(pro ? [] : [tag()])),
       h('div', { class: 'row' },
         h('label', { class: 'opt' }, accept, h('span', {}, t('finder.autoAccept', { pct: Math.round(CONFIDENT_SIMILARITY * 100) }))),

@@ -9,7 +9,7 @@ export function isActivationUrl(raw: string): boolean {
     if (u.protocol !== 'https:') return false
     const path = u.origin === 'https://gpd.sylphx.com'
       ? u.pathname : u.origin === 'https://sylphxai.github.io'
-        ? u.pathname.replace(/^\/Google-Photos-Delete-Tool(?=\/)/, '') : ''
+        ? (u.pathname.startsWith('/Google-Photos-Delete-Tool/') ? u.pathname.slice('/Google-Photos-Delete-Tool'.length) : '') : ''
     return /^\/(pricing|recover)(\.html)?\/?$/.test(path)
   } catch { return false }
 }

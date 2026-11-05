@@ -17,6 +17,7 @@ if (isActivationUrl(location.href)) {
     const token = activationToken(node?.textContent) ?? activationToken(stored)
     if (!token || token === last) return
     running = true
+    last = token
     try {
       const result = await verifyLicense(token)
       if (!result.ok) {
