@@ -1,3 +1,4 @@
+import { licenceScope } from '../../core/activation'
 import './popup.css'
 import { setMarkup } from './set-markup'
 import { formatElapsed } from '../../core/utils'
@@ -411,7 +412,7 @@ async function refreshProState(): Promise<void> {
   } else {
     const result = await verifyLicense(token)
     proActive = result.ok
-    licenseStatus.textContent = t(licenseStatusKey(result))
+    licenseStatus.textContent = result.ok ? `${t(licenseStatusKey(result))} — ${licenceScope(result.payload)}` : t(licenseStatusKey(result))
     licenseStatus.className = result.ok ? 'license-status ok' : 'license-status bad'
   }
   refreshDryRunDependentFields()
@@ -432,11 +433,15 @@ licenseBtn.addEventListener('click', async () => {
   } catch (err) {
     console.warn(`${LOG} pro token persist failed:`, err)
   }
-  licenseStatus.textContent = t('settings.license.active')
+  licenseStatus.textContent = `${t('settings.license.active')} — ${licenceScope(result.payload)}`
   licenseStatus.className = 'license-status ok'
   proActive = true
   refreshDryRunDependentFields()
   void renderPresets()
+})
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if ((area === 'local' || area === 'sync') && changes.proToken) void refreshProState()
 })
 
 // ─── Content-script communication ───────────────────────────────
