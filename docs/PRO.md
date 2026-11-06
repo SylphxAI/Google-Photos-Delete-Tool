@@ -227,3 +227,19 @@ fully free. Pro adds convenience features through a token sold outside the
 store, the standard compliant shape for the Chrome Web
 Store: no in-extension payment and no paywalled core. The store listing
 discloses the paid Pro layer.
+
+### Conversion verification
+
+The activation bridge runs only on the owned pricing/recovery URLs and reads
+Keel's licence token DOM node or local token cache. Both inputs are untrusted:
+`verifyLicense` must succeed before extension storage or owned claims change.
+`tests/activation-bridge.test.ts` covers a checkout token appearing after page
+load and rejects a later forged token without overwriting the saved activation.
+Storage Saver fills filters only; it starts no run. Google Photos grid tiles do
+not provide original sizes, so GB freed is explicitly unavailable, not inferred
+from thumbnail bytes. The dry run still provides matching item counts.
+
+The conversion release records new size baselines: content 121,583 bytes and
+Chrome zip 104,417 bytes. The zip now includes an isolated activation bundle
+with the existing offline Ed25519 verifier, plus Storage Saver and duplicate
+selection UI; no new runtime dependency or remote verification was added.
