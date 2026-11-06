@@ -7,7 +7,7 @@ vi.mock('../src/core/license', () => ({ verifyLicense: verify }))
 vi.mock('../src/extension/api', () => ({ writeProToken: write }))
 
 it('automatically activates a verified checkout token and never replaces it with an invalid one', async () => {
-  window.happyDOM.setURL('https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing')
+  vi.stubGlobal('location', new URL('https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing'))
   document.body.innerHTML = '<section><pre data-keel-money-licence-token></pre></section>'
   localStorage.clear()
   verify.mockResolvedValueOnce({ ok: true, payload: { plan: 'pro', product: 'gpdt', seats: 3 } })
