@@ -32,6 +32,20 @@ cta_label = "Buy Pro"
 recovery_label = "Email my licence recovery link"
 
 [[money.offers.pro.prices]]
-key = "gpdt_pro"
-label = "1 licence"
+id = "1"
+key = "gpdt_pro_1"
+label = "Personal (1 seat)"
 quantity = 1
+
+[[money.offers.pro.prices]]
+id = "3"
+key = "gpdt_pro_3"
+label = "Family (3 seats)"
+quantity = 3
+
+[[money.offers.pro.prices]]
+id = "10"
+key = "gpdt_pro_10"
+label = "Team (10 seats)"
+quantity = 10
+

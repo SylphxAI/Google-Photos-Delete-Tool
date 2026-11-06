@@ -45,6 +45,7 @@ console.log(`Building ${licenseEnvironment} licence trust into ${distDirectory}/
 
 const extensionEntries = [
   { name: 'content', input: 'src/extension/content.ts' },
+  { name: 'activation', input: 'src/extension/activation.ts' },
   { name: 'background', input: 'src/extension/background.ts' },
   { name: 'popup', input: 'src/extension/popup/popup.ts' },
 ]

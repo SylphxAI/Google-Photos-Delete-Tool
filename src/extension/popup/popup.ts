@@ -1,3 +1,5 @@
+import { storageSaverPreset, STORAGE_ESTIMATE_NOTE } from '../../core/storage-saver'
+import { licenceScope } from '../../core/activation'
 import './popup.css'
 import { setMarkup } from './set-markup'
 import { formatElapsed } from '../../core/utils'
@@ -300,6 +302,23 @@ emptyTrashInput.addEventListener('change', () => {
 })
 filterSelect.addEventListener('change', saveSettings)
 
+const storageSaverSelect = document.getElementById('storage-saver') as HTMLSelectElement
+const storageEstimate = document.getElementById('storage-estimate') as HTMLElement
+storageEstimate.textContent = STORAGE_ESTIMATE_NOTE
+storageSaverSelect.addEventListener('change', () => {
+  if (!proActive || uiState !== 'idle') return
+  const preset = storageSaverPreset(storageSaverSelect.value)
+  if (!preset) return
+  filterSelect.value = preset.type
+  dateModeSelect.value = preset.dateMode
+  dateAInput.value = preset.dateA
+  dateBInput.value = preset.dateB
+  dryRunInput.checked = true
+  emptyTrashInput.checked = false
+  saveSettings()
+  refreshDryRunDependentFields()
+})
+
 // ─── Saved presets (Pro) ────────────────────────────────────────
 // Applying a preset only fills the controls; it never starts a run, so the
 // consent gate and the dry run are untouched. Nothing here runs on a timer.
@@ -411,7 +430,7 @@ async function refreshProState(): Promise<void> {
   } else {
     const result = await verifyLicense(token)
     proActive = result.ok
-    licenseStatus.textContent = t(licenseStatusKey(result))
+    licenseStatus.textContent = result.ok ? `${t(licenseStatusKey(result))} — ${licenceScope(result.payload)}` : t(licenseStatusKey(result))
     licenseStatus.className = result.ok ? 'license-status ok' : 'license-status bad'
   }
   refreshDryRunDependentFields()
@@ -432,11 +451,15 @@ licenseBtn.addEventListener('click', async () => {
   } catch (err) {
     console.warn(`${LOG} pro token persist failed:`, err)
   }
-  licenseStatus.textContent = t('settings.license.active')
+  licenseStatus.textContent = `${t('settings.license.active')} — ${licenceScope(result.payload)}`
   licenseStatus.className = 'license-status ok'
   proActive = true
   refreshDryRunDependentFields()
   void renderPresets()
+})
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if ((area === 'local' || area === 'sync') && changes.proToken) void refreshProState()
 })
 
 // ─── Content-script communication ───────────────────────────────
@@ -490,6 +513,7 @@ const refreshDryRunDependentFields = (): void => {
   dateAInput.disabled      = lockedByEngine || !proActive
   dateBInput.disabled      = lockedByEngine || !proActive
   dateProLink.classList.toggle('hidden', proActive)
+  storageSaverSelect.disabled = lockedByEngine || !proActive
   const presetsLocked = lockedByEngine || !proActive
   presetSelect.disabled = presetsLocked || presetList.length === 0
   presetName.disabled = presetsLocked

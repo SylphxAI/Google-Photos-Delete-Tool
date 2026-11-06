@@ -62,7 +62,7 @@ describe('free users', () => {
       expect(autoBox(root).disabled).toBe(true)
       expect(btn(root, /^Export CSV$/).disabled).toBe(true)
       const links = [...root.querySelectorAll<HTMLAnchorElement>('a.pro-tag')]
-      expect(links).toHaveLength(3)
+      expect(links).toHaveLength(4)
       for (const a of links) {
         expect(a.textContent).toBe('Pro')
         const u = new URL(a.href)
@@ -198,3 +198,14 @@ describe('auto-accept count and keep rule after regroup', () => {
     expect(trashLabel(root)).toBe('Move 1 to Trash')
   })
 })
+
+ it('selects all duplicate groups keeping best copies without running deletion', async () => {
+   const root = await open(true)
+   select(root).value = 'newest'
+   select(root).dispatchEvent(new Event('change'))
+   btn(root, /Select all duplicates, keep best copy/).click()
+   expect(root.querySelectorAll('.item.delete')).toHaveLength(2)
+   expect(select(root).value).toBe('default')
+   expect(calls).toEqual([])
+   expect(root.textContent).toContain('nothing has been deleted')
+ })

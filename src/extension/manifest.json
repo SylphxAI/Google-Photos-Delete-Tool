@@ -32,6 +32,18 @@
       "js": [
         "content.js"
       ]
+    },
+    {
+      "matches": [
+        "https://gpd.sylphx.com/pricing*",
+        "https://gpd.sylphx.com/recover*",
+        "https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing*",
+        "https://sylphxai.github.io/Google-Photos-Delete-Tool/recover*"
+      ],
+      "js": [
+        "activation.js"
+      ],
+      "run_at": "document_idle"
     }
   ],
   "icons": {

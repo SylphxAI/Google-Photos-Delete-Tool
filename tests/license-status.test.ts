@@ -25,6 +25,6 @@ describe('licence status in every popup locale', () => {
 
   it('uses the shared status mapping for both activation and stored-token refresh', () => {
     const popup = readFileSync(new URL('../src/extension/popup/popup.ts', import.meta.url), 'utf8')
-    expect(popup.match(/licenseStatus\.textContent = t\(licenseStatusKey\(result\)\)/g)).toHaveLength(2)
+    expect(popup.match(/t\(licenseStatusKey\(result\)\)/g)).toHaveLength(3)
   })
 })

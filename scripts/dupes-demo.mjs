@@ -140,12 +140,13 @@ if (process.argv.includes('--check')) {
   const host = page.locator('#gpdt-dupes-host')
   // Free users see the Pro review tools disabled, each with the Get Pro link.
   const tools = {
+    bestCopyOff: await host.getByRole('button', { name: 'Select all duplicates, keep best copy' }).isDisabled(),
     selectOff: await host.locator('.tools select').isDisabled(),
     autoOff: await host.locator('.tools input[type=checkbox]').isDisabled(),
     csvOff: await host.getByRole('button', { name: 'Export CSV' }).isDisabled(),
     links: await host.locator('a.pro-tag').evaluateAll((as) => as.map((a) => `${a.textContent}|${new URL(a.href).searchParams.get('utm_medium')}`)),
   }
-  const toolsOk = tools.selectOff && tools.autoOff && tools.csvOff && tools.links.length === 3 && tools.links.every((l) => l === 'Pro|dupes')
+  const toolsOk = tools.bestCopyOff && tools.selectOff && tools.autoOff && tools.csvOff && tools.links.length === 4 && tools.links.every((l) => l === 'Pro|dupes')
   console.log(`dupes-demo free gating: ${JSON.stringify(tools)}`)
   if (!toolsOk) {
     console.error('dupes-demo: FAILED — free users must see disabled Pro controls with the Get Pro link')

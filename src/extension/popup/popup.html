@@ -149,6 +149,18 @@
       <p class="consent-danger hidden" id="empty-trash-warning" role="alert" data-i18n="consent.permanentNote">"Empty trash afterwards" is PERMANENT — no recovery.</p>
 
       <div class="field">
+        <label for="storage-saver" class="field-label">Storage Saver · Pro</label>
+        <select id="storage-saver" class="field-input" disabled>
+          <option value="">Choose a safe cleanup preset…</option>
+          <option value="screenshots">Screenshots</option>
+          <option value="videos">Videos</option>
+          <option value="old-screenshots">Screenshots older than one year</option>
+        </select>
+        <p class="field-hint">Fills filters and turns on dry run. Review matched items before deleting. Large videos and bursts cannot be identified from tile metadata.</p>
+        <p class="field-hint" id="storage-estimate"></p>
+      </div>
+
+      <div class="field">
         <label class="field-label" for="filter">
           <span class="field-icon" id="field-icon-filter" aria-hidden="true"></span>
           <span class="field-text">

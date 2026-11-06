@@ -35,6 +35,39 @@
               "EUR": "899",
               "HKD": "7800"
             }
+          },
+          {
+            "key": "gpdt_pro_1",
+            "default_currency": "USD",
+            "tax_behavior": "inclusive",
+            "unit_amounts": {
+              "USD": "1900",
+              "GBP": "1500",
+              "EUR": "1700",
+              "HKD": "14800"
+            }
+          },
+          {
+            "key": "gpdt_pro_3",
+            "default_currency": "USD",
+            "tax_behavior": "inclusive",
+            "unit_amounts": {
+              "USD": "999",
+              "GBP": "799",
+              "EUR": "899",
+              "HKD": "7800"
+            }
+          },
+          {
+            "key": "gpdt_pro_10",
+            "default_currency": "USD",
+            "tax_behavior": "inclusive",
+            "unit_amounts": {
+              "USD": "490",
+              "GBP": "390",
+              "EUR": "450",
+              "HKD": "3800"
+            }
           }
         ]
       }
