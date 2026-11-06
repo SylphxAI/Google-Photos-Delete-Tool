@@ -49,11 +49,24 @@ describe('site localisation', () => {
       const html = page(slug)
       for (const n of ['500', '20', '98', '10']) expect(html, `${slug} keeps ${n}`).toContain(n)
       expect(html, `${slug} price`).toMatch(/9[.,]99/)
-      for (const fixed of ['16438428', '128 City Road', 'EC1V 2NX', '+44 333 335 7935', 'hi@sylphx.com', 'data-consent="all"', 'data-consent="analytics"', 'data-consent="none"', 'id="recover"', 'data-cta="pro"']) expect(html, `${slug} keeps ${fixed}`).toContain(fixed)
+      for (const fixed of ['16438428', '128 City Road', 'EC1V 2NX', '+44 7537 188 188', 'hi@sylphx.com', 'data-consent="all"', 'data-consent="analytics"', 'data-consent="none"', 'id="recover"', 'data-cta="pro"']) expect(html, `${slug} keeps ${fixed}`).toContain(fixed)
       // Every link target of the English page survives (translation changes text, never destinations).
       const hrefs = (h: string) => [...h.matchAll(/href="(https?:[^"]+|mailto:[^"]+|tel:[^"]+)"/g)].map((m) => m[1]).sort()
       expect(hrefs(html).filter((h) => !h.startsWith(ORIGIN))).toEqual(hrefs(en).filter((h) => !h.startsWith(ORIGIN)))
     }
+  })
+
+  it('uses the current contact number on every published page', () => {
+    const paths = ['index.html', 'privacy.html', 'terms.html', 'thanks.html', 'bye.html', '404.html', ...shipped.map((code) => `${slugOf(code)}/index.html`)]
+    for (const path of paths) {
+      const html = readFileSync(join(out, path), 'utf8')
+      expect(html, path).toContain('+44 7537 188 188')
+      expect(html, path).toContain('href="tel:+447537188188"')
+      const digits = html.replace(/[^0-9]/g, '')
+      for (const retired of ['443333357935', '03333357935']) expect(digits, path).not.toContain(retired)
+    }
+    const html = readFileSync(join(out, 'index.html'), 'utf8')
+    expect(html).toContain('"telephone":"+447537188188"')
   })
 
   it('points assets and legal pages at the root, and the sitemap lists every language with alternates', () => {

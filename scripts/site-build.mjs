@@ -25,7 +25,7 @@ export const ORIGIN = 'https://sylphxai.github.io/Google-Photos-Delete-Tool/'
 // not wording; they need no key.
 const KEEP = new Set([
   'Google Photos Delete Tool', 'by Sylphx', 'Sylphx', 'MIT', 'GitHub', '4.7', '10,000+', 'hi@sylphx.com',
-  '+44 333 335 7935', '1', '2', '3', '★★★★★', 'Chrome', 'Google Photos',
+  '+44 7537 188 188', '1', '2', '3', '★★★★★', 'Chrome', 'Google Photos',
 ])
 
 export function loadLocales(l10nDir = join(ROOT, 'site-l10n')) {

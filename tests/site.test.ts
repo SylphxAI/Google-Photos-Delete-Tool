@@ -190,7 +190,7 @@ describe('site tracking', () => {
   it('legal pages carry company details', () => {
     for (const f of PAGES) {
       const html = read(f)
-      for (const v of ['16438428', '128 City Road', 'EC1V 2NX', '+44 333 335 7935', 'hi@sylphx.com', 'privacy.html', 'terms.html']) expect(html).toContain(v)
+      for (const v of ['16438428', '128 City Road', 'EC1V 2NX', '+44 7537 188 188', 'hi@sylphx.com', 'privacy.html', 'terms.html']) expect(html).toContain(v)
     }
   })
 
