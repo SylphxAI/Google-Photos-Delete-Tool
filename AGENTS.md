@@ -33,6 +33,8 @@ surfaces. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Pro licence
 tooling: [docs/PRO.md](docs/PRO.md). Store publishing:
 [docs/STORE_AUTOMATION.md](docs/STORE_AUTOMATION.md). Store listing copy lives
 only in `storefront/listing.json`.
+Any visual work (popup, panel, product page, store images, posts) follows
+[DESIGN.md](DESIGN.md).
 
 ## Judged by
 
