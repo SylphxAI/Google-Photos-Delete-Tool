@@ -7,7 +7,7 @@ trash. Made by [Sylphx](https://sylphx.com).
 Get it on the [Chrome Web Store](https://chromewebstore.google.com/detail/google-photos-delete-tool/jiahfbbfpacpolomdjlpdpiljllcdenb)
 or as a userscript. It runs in your browser; nothing is uploaded.
 
-Product page: <https://sylphxai.github.io/Google-Photos-Delete-Tool/> (source in [`site/`](site/)).
+Product page: <https://sylphxai.github.io/Google-Photos-Delete-Tool/> (source in [`site/`](site/); [publication and recovery](docs/PAGES.md)).
 
 [![CI](https://github.com/SylphxAI/Google-Photos-Delete-Tool/actions/workflows/ci.yml/badge.svg)](https://github.com/SylphxAI/Google-Photos-Delete-Tool/actions/workflows/ci.yml)
 [![Release](https://github.com/SylphxAI/Google-Photos-Delete-Tool/actions/workflows/release.yml/badge.svg)](https://github.com/SylphxAI/Google-Photos-Delete-Tool/actions/workflows/release.yml)
