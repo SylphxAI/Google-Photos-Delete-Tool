@@ -82,7 +82,7 @@ FREE FOREVER
 • Pause, resume and stop
 • Interface in 10 languages
 
-PRO, US$9.99 ONCE (no subscription, no account)
+PRO, FROM US$19, ONE-TIME (Personal US$19, Family US$29.97, Team US$49) (no subscription, no account)
 • Type filters: delete only screenshots, videos, photos, animations or collages
 • Date filter: before, after or between two dates (reads dates shown in English or French)
 • Up to 20 saved presets for cleanups you repeat
@@ -137,7 +137,7 @@ Sofort stoppen: Pausieren, fortsetzen oder beenden jederzeit möglich.
 
 Funktionen: Stapellöschen mit Auto-Scroll, Testlauf, optionales Papierkorb-Leeren, Pausieren/Fortsetzen/Stoppen, Oberfläche in 10 Sprachen und eine „Problem melden“-Schaltfläche, die ein vorausgefülltes GitHub-Issue öffnet.
 
-Kostenlos und Pro: Löschfunktion, Testlauf, Duplikatsuche und Papierkorb-Leeren sind dauerhaft kostenlos. Pro (einmalig 9,99 US-Dollar, kein Abo) schaltet Typ- und Datumsfilter frei (Screenshots, Videos, Animationen, Collagen, Fotos; vor, nach oder zwischen Datumsangaben), gespeicherte Bereinigungs-Voreinstellungen und Werkzeuge für die Duplikatprüfung (Behalte-Regel, automatisches Übernehmen fast identischer Gruppen, CSV-Export). Die Lizenzprüfung läuft lokal: kein Konto, kein Server.
+Kostenlos und Pro: Löschfunktion, Testlauf, Duplikatsuche und Papierkorb-Leeren sind dauerhaft kostenlos. Pro (einmalig 19 US-Dollar, kein Abo) schaltet Typ- und Datumsfilter frei (Screenshots, Videos, Animationen, Collagen, Fotos; vor, nach oder zwischen Datumsangaben), gespeicherte Bereinigungs-Voreinstellungen und Werkzeuge für die Duplikatprüfung (Behalte-Regel, automatisches Übernehmen fast identischer Gruppen, CSV-Export). Die Lizenzprüfung läuft lokal: kein Konto, kein Server.
 
 Datenschutz: Läuft lokal in deinem Browser. Es wird nichts hochgeladen, es gibt keine Server und keine Telemetrie. Open Source (MIT).
 
@@ -183,7 +183,7 @@ Parada inmediata: pausa, reanuda o detén el proceso cuando quieras.
 
 Funciones: borrado por lotes con desplazamiento automático, prueba en seco, vaciado opcional de la papelera, pausar/reanudar/detener, interfaz en 10 idiomas y un botón de “Informar de un problema” que abre una incidencia de GitHub ya rellenada.
 
-Gratis y Pro: el motor de borrado, la prueba en seco, el buscador de duplicados y el vaciado de papelera son gratis para siempre. Pro (pago único de 9,99 US$, sin suscripción) desbloquea filtros por tipo y fecha (capturas de pantalla, vídeos, animaciones, collages, fotos; antes de, después de o entre fechas), ajustes guardados de limpieza y herramientas de revisión de duplicados (regla de conservar, aceptación automática de grupos casi idénticos, exportación a CSV). La licencia se verifica en local: sin cuenta y sin servidor.
+Gratis y Pro: el motor de borrado, la prueba en seco, el buscador de duplicados y el vaciado de papelera son gratis para siempre. Pro (pago único de 19 US$, sin suscripción) desbloquea filtros por tipo y fecha (capturas de pantalla, vídeos, animaciones, collages, fotos; antes de, después de o entre fechas), ajustes guardados de limpieza y herramientas de revisión de duplicados (regla de conservar, aceptación automática de grupos casi idénticos, exportación a CSV). La licencia se verifica en local: sin cuenta y sin servidor.
 
 Privacidad: funciona en local en tu navegador. No se sube nada, no hay servidores ni telemetría. Código abierto (MIT).
 
@@ -229,7 +229,7 @@ Arrêt immédiat : pause, reprise ou arrêt à tout moment.
 
 Fonctions : suppression par lots avec défilement automatique, simulation, vidage facultatif de la corbeille, pause/reprise/arrêt, interface en 10 langues et un bouton « Signaler un problème » qui ouvre un ticket GitHub prérempli.
 
-Gratuit et Pro : le moteur de suppression, la simulation, la recherche de doublons et le vidage de la corbeille sont gratuits pour toujours. Pro (9,99 $ US une seule fois, sans abonnement) débloque les filtres par type et par date (captures d’écran, vidéos, animations, collages, photos ; avant, après ou entre deux dates), les préréglages de nettoyage enregistrés et les outils de revue des doublons (règle de conservation, acceptation automatique des groupes quasi identiques, export CSV). La licence est vérifiée en local : ni compte ni serveur.
+Gratuit et Pro : le moteur de suppression, la simulation, la recherche de doublons et le vidage de la corbeille sont gratuits pour toujours. Pro (19 $ US une seule fois, sans abonnement) débloque les filtres par type et par date (captures d’écran, vidéos, animations, collages, photos ; avant, après ou entre deux dates), les préréglages de nettoyage enregistrés et les outils de revue des doublons (règle de conservation, acceptation automatique des groupes quasi identiques, export CSV). La licence est vérifiée en local : ni compte ni serveur.
 
 Confidentialité : fonctionne en local dans votre navigateur. Rien n’est envoyé, aucun serveur, aucune télémétrie. Open source (MIT).
 
@@ -275,7 +275,7 @@ Stop immediato: metti in pausa, riprendi o ferma quando vuoi.
 
 Funzioni: eliminazione a lotti con scorrimento automatico, prova a secco, svuotamento facoltativo del cestino, pausa/ripresa/stop, interfaccia in 10 lingue e un pulsante “Segnala un problema” che apre una segnalazione GitHub già compilata.
 
-Gratis e Pro: il motore di eliminazione, la prova a secco, la ricerca dei duplicati e lo svuotamento del cestino sono gratuiti per sempre. Pro (una tantum, 9,99 USD, nessun abbonamento) sblocca i filtri per tipo e data (screenshot, video, animazioni, collage, foto; prima di, dopo o tra due date), le impostazioni di pulizia salvate e gli strumenti di revisione dei duplicati (regola di conservazione, accettazione automatica dei gruppi quasi identici, esportazione CSV). La licenza si verifica in locale: nessun account, nessun server.
+Gratis e Pro: il motore di eliminazione, la prova a secco, la ricerca dei duplicati e lo svuotamento del cestino sono gratuiti per sempre. Pro (una tantum, 19 USD, nessun abbonamento) sblocca i filtri per tipo e data (screenshot, video, animazioni, collage, foto; prima di, dopo o tra due date), le impostazioni di pulizia salvate e gli strumenti di revisione dei duplicati (regola di conservazione, accettazione automatica dei gruppi quasi identici, esportazione CSV). La licenza si verifica in locale: nessun account, nessun server.
 
 Privacy: funziona in locale nel tuo browser. Non viene caricato nulla, nessun server, nessuna telemetria. Open source (MIT).
 
@@ -321,7 +321,7 @@ Direct stoppen: pauzeren, hervatten of stoppen kan altijd.
 
 Functies: batchgewijs verwijderen met automatisch scrollen, proefrun, optioneel prullenbak legen, pauzeren/hervatten/stoppen, interface in 10 talen en een knop “Probleem melden” die een ingevuld GitHub-issue opent.
 
-Gratis en Pro: de verwijderfunctie, proefrun, duplicatenzoeker en prullenbak legen zijn voor altijd gratis. Pro (eenmalig US$ 9,99, geen abonnement) ontgrendelt filters op type en datum (screenshots, video’s, animaties, collages, foto’s; voor, na of tussen datums), opgeslagen opruimvoorinstellingen en hulpmiddelen voor het controleren van duplicaten (bewaarregel, automatisch accepteren van bijna identieke groepen, CSV-export). De licentie wordt lokaal gecontroleerd: geen account, geen server.
+Gratis en Pro: de verwijderfunctie, proefrun, duplicatenzoeker en prullenbak legen zijn voor altijd gratis. Pro (eenmalig US$ 19, geen abonnement) ontgrendelt filters op type en datum (screenshots, video’s, animaties, collages, foto’s; voor, na of tussen datums), opgeslagen opruimvoorinstellingen en hulpmiddelen voor het controleren van duplicaten (bewaarregel, automatisch accepteren van bijna identieke groepen, CSV-export). De licentie wordt lokaal gecontroleerd: geen account, geen server.
 
 Privacy: draait lokaal in je browser. Er wordt niets geüpload, er zijn geen servers en geen telemetrie. Open source (MIT).
 
@@ -367,7 +367,7 @@ Parada imediata: pause, retome ou pare a qualquer momento.
 
 Recursos: exclusão em lotes com rolagem automática, teste, esvaziamento opcional da lixeira, pausar/retomar/parar, interface em 10 idiomas e um botão “Relatar problema” que abre uma issue do GitHub já preenchida.
 
-Grátis e Pro: o mecanismo de exclusão, o teste, o localizador de duplicadas e o esvaziamento da lixeira são grátis para sempre. O Pro (pagamento único de US$ 9,99, sem assinatura) libera filtros por tipo e data (capturas de tela, vídeos, animações, colagens, fotos; antes de, depois de ou entre datas), predefinições de limpeza salvas e ferramentas de revisão de duplicadas (regra de manter, aceitação automática de grupos quase idênticos, exportação em CSV). A licença é verificada localmente: sem conta, sem servidor.
+Grátis e Pro: o mecanismo de exclusão, o teste, o localizador de duplicadas e o esvaziamento da lixeira são grátis para sempre. O Pro (pagamento único de US$ 19, sem assinatura) libera filtros por tipo e data (capturas de tela, vídeos, animações, colagens, fotos; antes de, depois de ou entre datas), predefinições de limpeza salvas e ferramentas de revisão de duplicadas (regra de manter, aceitação automática de grupos quase idênticos, exportação em CSV). A licença é verificada localmente: sem conta, sem servidor.
 
 Privacidade: roda localmente no seu navegador. Nada é enviado, sem servidores e sem telemetria. Código aberto (MIT).
 
@@ -413,7 +413,7 @@ Google 相册批量删除、查找重复照片、一键清理：无需逐张点�
 
 功能：带自动滚动的分批删除、试运行、可选的清空回收站、暂停/继续/停止、10 种语言界面，以及可一键生成预填 GitHub issue 的“报告问题”按钮。
 
-免费版与 Pro：删除引擎、试运行、重复照片查找和清空回收站永久免费。Pro（一次性付费 9.99 美元，无订阅）可解锁类型和日期筛选（截图、视频、动画、拼贴、照片；早于、晚于或介于两个日期之间）、已保存的清理预设，以及重复照片审核工具（保留规则、近乎相同分组自动接受、CSV 导出）。授权在本地验证：无需账号，无需服务器。
+免费版与 Pro：删除引擎、试运行、重复照片查找和清空回收站永久免费。Pro（一次性付费 19 美元，无订阅）可解锁类型和日期筛选（截图、视频、动画、拼贴、照片；早于、晚于或介于两个日期之间）、已保存的清理预设，以及重复照片审核工具（保留规则、近乎相同分组自动接受、CSV 导出）。授权在本地验证：无需账号，无需服务器。
 
 隐私：在你的浏览器本地运行。不上传任何内容，没有服务器，也没有遥测。开源（MIT）。
 
@@ -459,7 +459,7 @@ Google 相簿批次刪除、尋找重複照片、快速清理：不必一張一�
 
 功能：具自動捲動的分批刪除、試跑、選用的清空垃圾桶、暫停/繼續/停止、10 種語言介面，以及可一鍵產生預先填寫 GitHub issue 的「回報問題」按鈕。
 
-免費版與 Pro：刪除引擎、試跑、重複照片尋找與清空垃圾桶永久免費。Pro（一次付費 9.99 美元，無需訂閱）可解鎖類型與日期篩選（螢幕截圖、影片、動畫、拼貼、照片；早於、晚於或介於兩個日期之間）、已儲存的清理預設，以及重複照片審核工具（保留規則、近乎相同群組自動接受、CSV 匯出）。授權在本機驗證：不需帳號，不需伺服器。
+免費版與 Pro：刪除引擎、試跑、重複照片尋找與清空垃圾桶永久免費。Pro（一次付費 19 美元，無需訂閱）可解鎖類型與日期篩選（螢幕截圖、影片、動畫、拼貼、照片；早於、晚於或介於兩個日期之間）、已儲存的清理預設，以及重複照片審核工具（保留規則、近乎相同群組自動接受、CSV 匯出）。授權在本機驗證：不需帳號，不需伺服器。
 
 隱私：在你的瀏覽器本機執行。不會上傳任何內容，沒有伺服器，也沒有遙測。開源（MIT）。
 
@@ -505,7 +505,7 @@ Google フォトの一括削除、重複写真の検出、整理を、1枚ずつ
 
 機能：自動スクロール付きのバッチ削除、ドライラン、任意のゴミ箱を空にする操作、一時停止/再開/停止、10言語のUI、入力済みの GitHub issue を開く「問題を報告」ボタン。
 
-無料版と Pro：削除エンジン、ドライラン、重複検出、ゴミ箱を空にする機能はずっと無料です。Pro（買い切り 9.99米ドル、サブスクなし）では、種類・日付フィルター（スクリーンショット、動画、アニメーション、コラージュ、写真。指定日より前、後、または2つの日付の間）、保存できるクリーンアッププリセット、重複レビューツール（残すコピーのルール、ほぼ同一のグループの自動承認、CSV エクスポート）が使えます。ライセンスの確認はローカルで行われ、アカウントもサーバーも不要です。
+無料版と Pro：削除エンジン、ドライラン、重複検出、ゴミ箱を空にする機能はずっと無料です。Pro（買い切り 19米ドル、サブスクなし）では、種類・日付フィルター（スクリーンショット、動画、アニメーション、コラージュ、写真。指定日より前、後、または2つの日付の間）、保存できるクリーンアッププリセット、重複レビューツール（残すコピーのルール、ほぼ同一のグループの自動承認、CSV エクスポート）が使えます。ライセンスの確認はローカルで行われ、アカウントもサーバーも不要です。
 
 プライバシー：ブラウザ内でローカルに動作します。何もアップロードせず、サーバーもテレメトリーもありません。オープンソース（MIT）。
 

@@ -21,7 +21,7 @@ function proSection(): string {
 describe('README #pro buy entry', () => {
   it('links the self-serve checkout and the licence recovery page', () => {
     const pro = proSection()
-    expect(pro).toContain(`**[Buy Pro for US$9.99](${SELF_SERVE_CHECKOUT_URL})**`)
+    expect(pro).toContain(`**[Buy Pro from US$19](${SELF_SERVE_CHECKOUT_URL})**`)
     expect(pro).toContain(`<${SELF_SERVE_RECOVER_URL}>`)
   })
 

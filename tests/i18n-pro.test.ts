@@ -53,7 +53,7 @@ describe('Pro and paywall copy is translated', () => {
       for (const k of proKeys) {
         expect(pick(f[k], /\{\w+\}/g), `${locale.code}:${k}`).toEqual(pick(en[k], /\{\w+\}/g))
         expect(pick(f[k], /<\/?\w+[^>]*>/g), `${locale.code}:${k}`).toEqual(pick(en[k], /<\/?\w+[^>]*>/g))
-        if (en[k].includes('US$9.99')) expect(f[k], `${locale.code}:${k}`).toContain('US$9.99')
+        if (en[k].includes('from US$19')) expect(f[k], `${locale.code}:${k}`).toMatch(/19/)
       }
     })
   }

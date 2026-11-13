@@ -43,7 +43,7 @@ describe('public photo recovery copy', () => {
       expect(html, slug).not.toMatch(fixedWindow)
       expect(html).toContain('jiahfbbfpacpolomdjlpdpiljllcdenb')
       const data = JSON.parse(html.match(/<script type="application\/ld\+json">\s*([\s\S]*?)<\/script>/)![1])
-      expect(data.offers.map((o: { price: string; priceCurrency: string }) => [o.price, o.priceCurrency])).toEqual([['0', 'USD'], ['9.99', 'USD']])
+      expect(data.offers).toEqual([{ '@type': 'Offer', name: loc.strings.Free ?? 'Free', price: '0', priceCurrency: 'USD' }, { '@type': 'AggregateOffer', name: loc.strings['Pro, one-time'] ?? 'Pro, one-time', lowPrice: '19', highPrice: '49', priceCurrency: 'USD', offerCount: '3' }])
     }
   })
 

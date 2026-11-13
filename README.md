@@ -195,9 +195,9 @@ nothing. **Pro** adds the analysis layer on top:
 - **Dry-run report and export** - see exactly what a run would remove, and
   export it as CSV before you commit.
 
-**US$9.99, one time, lifetime.** No subscription, no account.
+**from US$19, one-time. Personal US$19, Family US$29.97, Team US$49.** No subscription, no account.
 
-**[Buy Pro for US$9.99](https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing)** - your token is shown
+**[Buy Pro from US$19](https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing)** - your token is shown
 on the success page right after payment and emailed to you. Lost it? Recover it
 at <https://sylphxai.github.io/Google-Photos-Delete-Tool/recover>.
 

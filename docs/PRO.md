@@ -155,9 +155,10 @@ data is sent.
   (`XXXX`), no tag loads at all.
 - **Flow:** ad click, then landing page (`page_view`, UTM kept); the
   **Add to Chrome** click fires `add_to_chrome_click` (Ads micro conversion)
-  and opens the store listing with the same UTM; after payment the checkout
-  sends the buyer to `thanks.html`, which fires `purchase` (US$9.99) once, with the
-  Checkout Session id as `transaction_id` so a reload is not counted twice.
+  and opens the store listing with the same UTM. The approved verified-redeem
+  purchase design is not shipped yet: it still depends on Money returning
+  verified amount and currency fields and on the Keel integration. Do not
+  treat the current legacy thanks-page tag as a verified paid-order signal.
 - **Public statistics:** users and rating come only from `site/stats.json`;
   update it with its source and date.
 - **Test:** `tests/site.test.ts`.
@@ -185,8 +186,7 @@ authority requires the current `gpdt` product and a finite signed expiration;
 legacy product compatibility applies only to seller tokens.
 
 1. **Product:** Pro is one-time: Personal US$19 (1 seat), Family US$29.97
-   (3 seats), Team US$49 (10 seats). The old US$9.99 price remains in the
-   catalogue for existing checkout sessions. Signed seats are the checkout
+   (3 seats), Team US$49 (10 seats). These amounts are the existing checkout totals; the catalogue stores per-seat amounts for Family and Team. Signed seats are the checkout
    line quantity; each tier price is a per-seat amount, not the pack total.
    Seat scope is informational: no account fingerprint or online seat lock.
    Existing licences remain unrestricted. Pro is a convenience unlock for

@@ -51,6 +51,6 @@ copy/release correction. Do not claim this website deployment fixes them.
 No extension or live Google Photos run, Google account/library/session,
 package release, store submission, checkout, merchant or licence mutation,
 or new spending is part of this work. Store identity/URLs, the public
-US$9.99 offer, Free/Pro behavior, consent and destructive safeguards stay
+from US$19 offer, Free/Pro behavior, consent and destructive safeguards stay
 unchanged. Licence-error locale work, CI concurrency work and the synthetic
 library dependency work are not touched.
