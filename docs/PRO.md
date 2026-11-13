@@ -135,33 +135,26 @@ Reading results:
 - Keep both variants until the gap is larger than noise at the observed
   purchase counts; then set the winner as the only copy and drop the other.
 
-## Paid-ads tracking
+## Website measurement
 
-Google Ads cannot measure a click that lands straight on the Chrome Web Store,
-so ads point at the landing page (`site/`, published by
-`.github/workflows/pages.yml` at
-<https://sylphxai.github.io/Google-Photos-Delete-Tool/>). It uses gtag.js
-(GA4 plus Google Ads) with Consent Mode v2: analytics and ad storage, user data
-and personalization are denied by default in the EEA, UK and CH and granted
-elsewhere, and a small banner updates them. No email, name or other personal
-data is sent.
+`site/config.json` supplies GA4 `G-BQ1GKMWND2`. Ads destinations are unset;
+no Google Ads conversion or purchase event is emitted. `site/tracking.js` uses
+global opt-in: no Google script, request or queued event before Accept all or
+Analytics only. Reject is the default everywhere, including on return pages.
+Cookie settings can withdraw consent; collection is disabled, analytics cookies
+are cleared and the page reloads to unload the tag. The saved rejection survives
+reload. Storage changes revoke collection in other open tabs too.
 
-- **Purchase event:** `thanks.html?session_id=cs_...` fires `purchase` once. It
-  only counts when the checkout success flow sends the buyer to that page with
-  the Checkout Session id; confirm on the first live order.
-- **`site/config.json`:** `ga4MeasurementId` (`G-...`), `adsConversionId`
-  (`AW-...`), `addToChromeSendTo` and `purchaseSendTo` (each `AW-.../label`, one
-  Ads conversion action per event). While any value is a placeholder
-  (`XXXX`), no tag loads at all.
-- **Flow:** ad click, then landing page (`page_view`, UTM kept); the
-  **Add to Chrome** click fires `add_to_chrome_click` (Ads micro conversion)
-  and opens the store listing with the same UTM. The approved verified-redeem
-  purchase design is not shipped yet: it still depends on Money returning
-  verified amount and currency fields and on the Keel integration. Do not
-  treat the current legacy thanks-page tag as a verified paid-order signal.
-- **Public statistics:** users and rating come only from `site/stats.json`;
-  update it with its source and date.
-- **Test:** `tests/site.test.ts`.
+GA4 page measurement and consented `add_to_chrome_click` / `pro_click` events are
+measured on pages using `tracking.js`. Measurement removes URL query/hash and
+referrer values. The pinned Keel pricing/recovery runtime is not instrumented by
+this website script. Checkout and recovery remain independent of analytics.
+
+A `session_id`, entitlement, access token or visit to `thanks.html` is not proof
+of payment. Purchase reporting requires a verified paid-order receipt with its
+actual transaction ID, amount and currency; none is fabricated here. The public
+Money catalogue remains authoritative for checkout prices. No charged prices,
+entitlements or store-package bytes are changed by website tracking.
 
 ## Self-serve checkout and sales
 

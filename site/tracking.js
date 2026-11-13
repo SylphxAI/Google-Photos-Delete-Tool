@@ -1,30 +1,27 @@
-/* GPDT landing tracking. gtag.js (GA4 + Google Ads) with Consent Mode v2.
-   Ids come from config.json. While any id is a placeholder, no tag loads.
-   Events carry no email, name or free text. Cookies and identifiers follow the visitor's choice. */
+/* Website analytics: global opt-in (basic consent mode), never a payment authority.
+   No Google script or collection until an affirmative choice. No purchase inference. */
 (function () {
   'use strict'
   var CWS = 'https://chromewebstore.google.com/detail/google-photos-delete-tool/jiahfbbfpacpolomdjlpdpiljllcdenb'
-  var PRO_VALUE = 9.99
+  if (window.__gpdtTracking) return
+  window.__gpdtTracking = true
   var STORE_KEY = 'gpdt_consent'
-  var REGIONS = ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH']
   var script = document.currentScript
-  var page = (script && script.getAttribute('data-page')) || 'index'
 
   // Resolve a data file next to this script, so localised pages in /<lang>/ read the shared root files.
   function sibling(name) { return script && script.src ? new URL(name, script.src).href : name }
 
   function placeholder(v) { return !v || /X{4}/.test(String(v)) }
   function read() { try { return localStorage.getItem(STORE_KEY) } catch (e) { return null } }
-  function write(k, v) { try { localStorage.setItem(k, v) } catch (e) { /* ignore */ } }
-  // Choice: 'all' | 'analytics' | 'none'. Old values migrate: granted -> all, denied -> none.
+  function write(k, v) { try { localStorage.setItem(k, v); return localStorage.getItem(k) === v } catch (e) { return false } }
+  // Only affirmative stored choices enable collection; ambiguous legacy values do not.
   function normalize(v) {
-    if (v === 'granted') return 'all'
     if (v === 'denied') return 'none'
     return v === 'all' || v === 'analytics' || v === 'none' ? v : null
   }
   function state(choice) {
     var ad = choice === 'all' ? 'granted' : 'denied'
-    return { ad_storage: ad, ad_user_data: ad, ad_personalization: ad, analytics_storage: choice === 'none' ? 'denied' : 'granted' }
+    return { ad_storage: ad, ad_user_data: ad, ad_personalization: ad, analytics_storage: choice === 'all' || choice === 'analytics' ? 'granted' : 'denied' }
   }
 
   // UTM carry-through: the Add to Chrome link keeps this page's utm_* values.
@@ -44,20 +41,6 @@
     })
   }
 
-  // Paid-click attribution for Stripe: with "Accept all" only, the Google click id from this page's URL
-  // rides on buy.stripe.com links as client_reference_id. Hrefs only; no listeners are added.
-  function stripeRef(choice) {
-    var links = document.querySelectorAll ? Array.prototype.slice.call(document.querySelectorAll('a[href^="https://buy.stripe.com/"]')) : []
-    var gclid = new URLSearchParams(location.search).get('gclid') || ''
-    var ok = /^[A-Za-z0-9_-]{1,200}$/.test(gclid)
-    links.forEach(function (l) {
-      var out = new URL(l.href)
-      if (choice === 'all' && ok) out.searchParams.set('client_reference_id', gclid)
-      else out.searchParams.delete('client_reference_id')
-      l.href = out.toString()
-    })
-  }
-
   // The banner shows when no choice is stored, and reopens from the footer "Cookie settings" link.
   // Reopening marks the current choice (aria-pressed); a new choice updates consent at once.
   function banner(update, current, autoOpen) {
@@ -71,7 +54,11 @@
     }
     ;['all', 'analytics', 'none'].forEach(function (choice) {
       el.querySelector('[data-consent="' + choice + '"]').addEventListener('click', function () {
-        write(STORE_KEY, choice); cur = choice; update(choice); mark(); el.hidden = true
+        var saved = write(STORE_KEY, choice)
+        // A failed change is not consent. Remove a stale grant where storage permits.
+        if (!saved) { try { localStorage.removeItem(STORE_KEY) } catch (e) { /* enable also fails closed */ } }
+        cur = saved ? choice : 'none'
+        update(cur); mark(); el.hidden = true
       })
     })
     var open = function () { mark(); el.hidden = false }
@@ -83,70 +70,100 @@
   }
 
   function start(cfg) {
-    var ga4 = cfg.ga4MeasurementId
-    var ads = cfg.adsConversionId
-    var useGa = !placeholder(ga4)
-    var useAds = !placeholder(ads)
-    if (!useGa && !useAds) { // placeholders: load nothing; Cookie settings still records a choice
-      banner(function () {}, normalize(read()), false)
-      return
-    }
+    var ga4 = /^G-[A-Z0-9]+$/.test(cfg.ga4MeasurementId || '') && !placeholder(cfg.ga4MeasurementId) ? cfg.ga4MeasurementId : null
+    var ads = /^AW-[0-9]+$/.test(cfg.adsConversionId || '') ? cfg.adsConversionId : null
+    var choice = normalize(read())
+    var loaded = false
+    var activeAds = false
+    var cleanLocation = location.origin + location.pathname
 
-    window.dataLayer = window.dataLayer || []
     function gtag() { window.dataLayer.push(arguments) }
-    window.gtag = gtag
-
-    // Consent defaults go first, before gtag('config'). Most specific region rule first.
-    gtag('consent', 'default', Object.assign(state('none'), { region: REGIONS, wait_for_update: 500 }))
-    gtag('consent', 'default', state('all'))
-    var raw = read()
-    var saved = normalize(raw)
-    if (saved && saved !== raw) write(STORE_KEY, saved)
-    if (saved) gtag('consent', 'update', state(saved))
-    gtag('set', 'ads_data_redaction', true)
-    gtag('js', new Date())
-
-    var params = { send_page_view: true }
-    if (page === 'thanks') params.page_location = location.origin + location.pathname
-    if (useGa) gtag('config', ga4, params)
-    if (useAds) gtag('config', ads, page === 'thanks' ? { page_location: params.page_location } : {})
-
-    var s = document.createElement('script')
-    s.async = true
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(useGa ? ga4 : ads)
-    document.head.appendChild(s)
-
-    stripeRef(saved)
-    banner(function (choice) { gtag('consent', 'update', state(choice)); stripeRef(choice) }, saved)
-
-    var ctas = document.querySelectorAll ? Array.prototype.slice.call(document.querySelectorAll('[data-cta="add-to-chrome"]')) : []
-    var heroCta = document.getElementById('add-to-chrome')
-    if (heroCta && ctas.indexOf(heroCta) < 0) ctas.push(heroCta)
-    ctas.forEach(function (el) {
-      el.addEventListener('click', function () {
-        gtag('event', 'add_to_chrome_click', { transport_type: 'beacon' })
-        if (!placeholder(cfg.addToChromeSendTo)) gtag('event', 'conversion', { send_to: cfg.addToChromeSendTo, transport_type: 'beacon' })
-      })
-    })
-    var pros = document.querySelectorAll ? Array.prototype.slice.call(document.querySelectorAll('[data-cta="pro"]')) : []
-    pros.forEach(function (el) { el.addEventListener('click', function () { gtag('event', 'pro_click', { transport_type: 'beacon' }) }) })
-
-    if (page === 'thanks') {
-      var id = new URLSearchParams(location.search).get('session_id') || ''
-      // Stripe session ids look like cs_live_...; the unreplaced template is not an id.
-      if (/^cs_[A-Za-z0-9_]+$/.test(id) && id.length <= 200) {
-        var seen = 'gpdt_purchase_' + id
-        if (!read2(seen)) {
-          write(seen, '1')
-          gtag('event', 'purchase', { page_location: location.origin + location.pathname, transaction_id: id, value: PRO_VALUE, currency: 'USD' })
-          if (!placeholder(cfg.purchaseSendTo)) gtag('event', 'conversion', { send_to: cfg.purchaseSendTo, transaction_id: id, value: PRO_VALUE, currency: 'USD' })
+    function enable() {
+      if (loaded || (choice !== 'all' && choice !== 'analytics') || (!ga4 && !(ads && choice === 'all'))) return
+      // Fail closed when consent cannot be saved (including a read-only stored grant).
+      if (!write(STORE_KEY, choice)) return
+      loaded = true
+      activeAds = !!ads && choice === 'all'
+      window.dataLayer = window.dataLayer || []
+      window.gtag = gtag
+      // Basic consent mode: these commands exist only AFTER affirmative consent.
+      gtag('consent', 'default', state('none'))
+      gtag('consent', 'update', state(choice))
+      gtag('set', 'ads_data_redaction', true)
+      // Never send session IDs, tokens, email, click IDs or query/hash values to Google.
+      gtag('set', { page_location: cleanLocation, page_referrer: '', url_passthrough: false })
+      gtag('js', new Date())
+      if (ga4) gtag('config', ga4, { page_location: cleanLocation, page_referrer: '', send_page_view: true, allow_google_signals: false, allow_ad_personalization_signals: false })
+      if (activeAds) gtag('config', ads, { page_location: cleanLocation, page_referrer: '' })
+      var s = document.createElement('script')
+      s.async = true
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ga4 || ads)
+      document.head.appendChild(s)
+    }
+    function clearCookies() {
+      // Only analytics/ad cookies; never touch checkout, licence or recovery state.
+      String(document.cookie || '').split(';').forEach(function (part) {
+        var name = part.split('=')[0].trim()
+        if (!/^(_ga($|_)|_gid$|_gat($|_)|_gcl_)/.test(name)) return
+        var paths = ['/']
+        var segments = location.pathname.split('/')
+        for (var i = 1; i < segments.length; i++) {
+          var path = segments.slice(0, i + 1).join('/')
+          paths.push(path, path + '/')
         }
+        paths.forEach(function (path) {
+          var expiry = name + '=; Max-Age=0; path=' + path
+          document.cookie = expiry
+          var host = location.hostname.split('.')
+          while (host.length > 1) { document.cookie = expiry + '; domain=.' + host.join('.'); host.shift() }
+        })
+      })
+    }
+    function update(next) {
+      if (choice === next) return
+      choice = next
+      if (loaded) {
+        // Consent-update pings are not sufficient withdrawal. Disable collection first,
+        // then unload the Google runtime by reloading with the newly saved choice.
+        if (ga4) window['ga-disable-' + ga4] = true
+        if (ads) window['ga-disable-' + ads] = true
+        clearCookies()
+        window.dataLayer.length = 0
+        location.reload()
+        return
+      }
+      if (choice === 'none') clearCookies()
+      enable()
+    }
+    banner(update, choice)
+    if (choice === 'none') clearCookies()
+    enable()
+    window.addEventListener('storage', function (event) {
+      if (event.key === STORE_KEY || event.key === null) update(normalize(read()))
+    })
+
+    // A restored page may have missed storage events while it was frozen.
+    window.addEventListener('pageshow', function () { update(normalize(read())) })
+
+    function event(name, conversion) {
+      if (!loaded || (choice !== 'all' && choice !== 'analytics') || (ga4 && window['ga-disable-' + ga4])) return
+      if (ga4) gtag('event', name, { send_to: ga4, page_location: cleanLocation, page_referrer: '', transport_type: 'beacon' })
+      if (activeAds && choice === 'all' && conversion && new RegExp('^' + ads + '/[A-Za-z0-9_-]+$').test(conversion)) {
+        gtag('event', 'conversion', { send_to: conversion, page_location: cleanLocation, page_referrer: '', transport_type: 'beacon' })
       }
     }
+    var ctas = Array.prototype.slice.call(document.querySelectorAll('[data-cta="add-to-chrome"]'))
+    var hero = document.getElementById('add-to-chrome')
+    if (hero && ctas.indexOf(hero) < 0) ctas.push(hero)
+    ctas.forEach(function (el) { el.addEventListener('click', function () { event('add_to_chrome_click', cfg.addToChromeSendTo) }) })
+    Array.prototype.slice.call(document.querySelectorAll('[data-cta="pro"]')).forEach(function (el) {
+      el.addEventListener('click', function () { event('pro_click') })
+    })
+    // This website has no verified paid-order receipt. A return URL, entitlement or
+    // access token is never a purchase signal; purchase measurement stays absent.
   }
-  function read2(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
 
-  // Self-serve checkout switch (config.json selfServeCheckout, shipped false): when true every Pro buy
+  // Self-serve checkout switch (config.json selfServeCheckout): when true every Pro buy
   // link goes to checkoutUrl and the "Lost your licence?" link (recoverUrl) shows. Hrefs only.
   function checkout(cfg) {
     if (!cfg || cfg.selfServeCheckout !== true || !cfg.checkoutUrl) return
@@ -161,5 +178,5 @@
   }
 
   carryUtm()
-  fetch(sibling('config.json'), { cache: 'no-cache' }).then(function (r) { return r.json() }).then(function (cfg) { try { checkout(cfg) } catch (e) { /* keep the current links */ } return start(cfg) }).catch(function () { /* no config: no tags */ })
+  fetch(sibling('config.json'), { cache: 'no-cache' }).then(function (r) { return r.json() }).then(function (cfg) { try { checkout(cfg) } catch (e) { /* keep the current links */ } return start(cfg) }).catch(function () { start({}) /* no config: no tags; settings remain available */ })
 })()
