@@ -62,8 +62,8 @@ export async function getProVariant(store: ProVariantStore, random: () => number
 
 /** Copy per variant; "a" is the original wording. */
 export const PRO_COPY: Record<ProVariant, { ctaLine: string; linkLabel: string }> = {
-  a: { ctaLine: 'Delete only the types you choose with Pro — US$9.99 once', linkLabel: 'Get Pro' },
-  b: { ctaLine: 'Clean up faster with Pro: type and date filters, presets — US$9.99 once, yours for life', linkLabel: 'Unlock Pro' },
+  a: { ctaLine: 'Delete only the types you choose with Pro — from US$19, one-time', linkLabel: 'Get Pro' },
+  b: { ctaLine: 'Clean up faster with Pro: type and date filters, presets — from US$19, one-time, yours for life', linkLabel: 'Unlock Pro' },
 }
 
 export type ProMedium = 'dryrun_teaser' | 'post_run' | 'date_filter' | 'presets' | 'dupes' | 'license_box'

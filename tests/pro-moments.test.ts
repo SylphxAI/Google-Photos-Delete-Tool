@@ -18,7 +18,7 @@ describe('dry-run teaser', () => {
     const t = buildDryRunTeaser(counts, labels.length, false)
     expect(t).not.toBeNull()
     expect(t!.countsLine).toBe('This view has 1 photo, 1 video, 2 screenshots.')
-    expect(t!.ctaLine).toBe('Delete only the types you choose with Pro — US$9.99 once')
+    expect(t!.ctaLine).toBe('Delete only the types you choose with Pro — from US$19, one-time')
     const u = new URL(t!.url)
     expect(u.origin + u.pathname).toBe('https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing')
     expect(u.searchParams.get('utm_source')).toBe('extension')
@@ -127,7 +127,7 @@ describe('copy A/B variant', () => {
       expect(host.textContent).toContain(PRO_COPY[v].ctaLine)
       expect(host.querySelector('a')!.textContent).toBe(PRO_COPY[v].linkLabel)
     }
-    expect(PRO_COPY.a.ctaLine).toBe('Delete only the types you choose with Pro — US$9.99 once')
+    expect(PRO_COPY.a.ctaLine).toBe('Delete only the types you choose with Pro — from US$19, one-time')
     expect(PRO_COPY.b.linkLabel).toBe('Unlock Pro')
   })
   it('renders both post-run button labels', async () => {

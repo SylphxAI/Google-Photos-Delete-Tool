@@ -77,7 +77,7 @@ for (const [field, [text, max]] of Object.entries(LIMITS)) {
     check(dText.length >= 250 && dText.length <= 16000, `cws.localized.${code}.description: ${dText.length} chars (250-16000)`)
     if (code !== DEFAULT_LOCALE) {
       check(dText.includes('Sylphx') && dText.includes('https://sylphx.com'), `cws.localized.${code}.description carries the "by Sylphx" line`)
-      check(dText.includes('9.99') || dText.includes('9,99'), `cws.localized.${code}.description states the Pro price`)
+      check(/(?:^|[^0-9])19(?:[^0-9]|$)/.test(dText), `cws.localized.${code}.description states the Pro price`)
     }
     check(t === msgs.appName?.message && s === msgs.appDescription?.message, `cws.localized.${code} equals _locales/${code} appName/appDescription`)
   }
@@ -90,7 +90,7 @@ for (const store of ['cws', 'edge', 'amo'] as const) {
   const text = listing[store].description.join('\n\n').toLowerCase()
   const summary = (listing[store].summary ?? '').toLowerCase()
   check(
-    text.includes('free forever') && (text.includes('pro') || summary.includes('pro')),
+    /free\s*,?\s*forever/.test(text) && (text.includes('pro') || summary.includes('pro')),
     `${store}: free-forever + Pro disclosure present`,
   )
 }
