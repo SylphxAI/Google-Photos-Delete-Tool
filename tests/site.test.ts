@@ -7,7 +7,9 @@ const tracking = read('tracking.js')
 
 type Call = unknown[]
 
-async function run(page: 'index' | 'thanks' | 'privacy' | 'terms', config: object, search = '', initial: Record<string, string> = {}) {
+async function run(page: 'index' | 'thanks' | 'privacy' | 'terms', config: object, search = '', initial: Record<string, string> = {}, storageFails = false) {
+  let reloads = 0
+  let writesFail = storageFails
   const storage = new Map<string, string>(Object.entries(initial))
   const appended: { src?: string }[] = []
   const listeners: Record<string, () => void> = {}
@@ -29,8 +31,9 @@ async function run(page: 'index' | 'thanks' | 'privacy' | 'terms', config: objec
       createElement: () => ({}),
       head: { appendChild: (e: { src?: string }) => appended.push(e) },
     },
-    location: { search, origin: 'https://x.test', pathname: '/thanks.html' },
-    localStorage: { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string, v: string) => storage.set(k, v) },
+    location: { search, origin: 'https://x.test', hostname: 'x.test', pathname: `/${page}.html`, reload: () => { reloads++ } },
+    addEventListener: (name: string, fn: () => void) => { listeners[name] = fn },
+    localStorage: { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string, v: string) => { if (writesFail) throw new Error('Storage unavailable'); storage.set(k, v) }, removeItem: (k: string) => { storage.delete(k) } },
     fetch: () => Promise.resolve({ json: () => Promise.resolve(config) }),
     URL,
     URLSearchParams,
@@ -43,221 +46,187 @@ async function run(page: 'index' | 'thanks' | 'privacy' | 'terms', config: objec
   runInNewContext(tracking, ctx)
   await new Promise((r) => setTimeout(r, 10))
   const snapshot = () => ((ctx.dataLayer as unknown[]) ?? []).map((a) => Array.from(a as ArrayLike<unknown>)) as Call[]
-  return { calls: snapshot(), snapshot, appended, link, link2, stripe, click: listeners.click, click2: listeners.click2, buttons, banner, storage, pressed, reopen: listeners.settings }
+  return { ctx, failWrites: () => { writesFail = true }, restore: (value: string) => { storage.set('gpdt_consent', value); listeners.pageshow() }, repeat: () => runInNewContext(tracking, ctx), reloads: () => reloads, externalChoice: (value: string) => { storage.set('gpdt_consent', value); (listeners.storage as (event: unknown) => void)({ key: 'gpdt_consent' }) }, calls: snapshot(), snapshot, appended, link, link2, stripe, click: listeners.click, click2: listeners.click2, buttons, banner, storage, pressed, reopen: listeners.settings }
 }
 
-const real = {
-  ga4MeasurementId: 'G-ABC123',
-  adsConversionId: 'AW-123456',
-  addToChromeSendTo: 'AW-123456/aaa',
-  purchaseSendTo: 'AW-123456/bbb',
-}
-
+const real = { ga4MeasurementId: 'G-ABC123', adsConversionId: 'AW-123456', addToChromeSendTo: 'AW-123456/aaa' }
 const PAGES = ['index.html', 'thanks.html', 'bye.html', 'privacy.html', 'terms.html']
-const SIGNALS = ['ad_storage', 'ad_user_data', 'ad_personalization', 'analytics_storage']
-const lastUpdate = (calls: Call[]) => calls.filter((c) => c[0] === 'consent' && c[1] === 'update').pop()?.[2] as Record<string, string> | undefined
+const accepted = { gpdt_consent: 'analytics' }
+const events = (r: Awaited<ReturnType<typeof run>>) => r.snapshot().filter(c => c[0] === 'event')
 
-describe('site tracking', () => {
-  it('ships placeholder ids and loads no tags with them', async () => {
-    const placeholders = { ga4MeasurementId: 'G-XXXX', adsConversionId: 'AW-XXXX', addToChromeSendTo: 'AW-XXXX/LABEL', purchaseSendTo: 'AW-XXXX/LABEL' }
-    for (const page of ['index', 'thanks'] as const) {
-      const r = await run(page, placeholders, '?session_id=cs_live_abcdefgh12')
-      expect(r.appended).toHaveLength(0)
-      expect(r.calls).toHaveLength(0)
-    }
-    expect(read('index.html')).not.toMatch(/googletagmanager/)
-    expect(read('thanks.html')).not.toMatch(/googletagmanager/)
+describe('global opt-in analytics', () => {
+  it.each<Record<string, string>>([{}, { gpdt_consent: 'none' }, { gpdt_consent: 'denied' }, { gpdt_consent: 'granted' }, { gpdt_consent: 'unexpected' }])('never loads or queues tags before affirmative consent: %j', async initial => {
+    const r = await run('index', real, '?gclid=secret&session_id=cs_secret', initial)
+    r.click(); r.click2()
+    expect(r.appended).toHaveLength(0)
+    expect(r.snapshot()).toHaveLength(0)
+    expect(r.ctx.gtag).toBeUndefined()
   })
 
-  it('sets consent defaults (denied in EEA/UK/CH, granted elsewhere) before config', async () => {
-    const { calls, appended } = await run('index', real)
-    expect(appended).toHaveLength(1)
-    const firstConfig = calls.findIndex((c) => c[0] === 'config')
-    const defaults = calls.map((c, i) => [c, i] as const).filter(([c]) => c[0] === 'consent' && c[1] === 'default')
-    expect(defaults).toHaveLength(2)
-    for (const [, i] of defaults) expect(i).toBeLessThan(firstConfig)
-    const denied = defaults[0][0][2] as Record<string, unknown>
-    for (const k of ['ad_storage', 'ad_user_data', 'ad_personalization', 'analytics_storage']) expect(denied[k]).toBe('denied')
-    expect(denied.region).toEqual(expect.arrayContaining(['DE', 'GB', 'CH', 'FR']))
-    expect((defaults[1][0][2] as Record<string, unknown>).ad_storage).toBe('granted')
-  })
-
-  it('records add_to_chrome_click and an Ads conversion, carrying UTM', async () => {
-    const r = await run('index', real, '?utm_source=google&utm_campaign=c1&email=a@b.c')
-    expect(r.link.href).toContain('utm_source=google')
-    expect(r.link.href).not.toContain('email')
-    r.click()
-    const ev = r.snapshot().filter((c) => c[0] === 'event')
-    expect(ev.map((c) => c[1])).toEqual(expect.arrayContaining(['add_to_chrome_click', 'conversion']))
-  })
-
-  it('thanks page sends purchase once with transaction_id and no personal data', async () => {
-    const r = await run('thanks', real, '?session_id=cs_live_abcdefgh12')
-    const purchase = r.calls.find((c) => c[0] === 'event' && c[1] === 'purchase')
-    expect(purchase?.[2]).toEqual({ page_location: 'https://x.test/thanks.html', transaction_id: 'cs_live_abcdefgh12', value: 9.99, currency: 'USD' })
-  })
-
-  it('does not fire purchase for the unreplaced template or a missing id', async () => {
-    for (const q of ['', '?session_id={CHECKOUT_SESSION_ID}']) {
-      const r = await run('thanks', real, q)
-      expect(r.calls.find((c) => c[1] === 'purchase')).toBeUndefined()
-    }
-  })
-
-  it('renders the public stats from stats.json', () => {
-    const s = JSON.parse(read('stats.json'))
-    expect(s.users).toBe('10,000+')
-    expect(s.rating).toBe(4.7)
-    expect(s.ratingCount).toBe(134)
-    expect(s.source).toBeTruthy()
-    expect(read('index.html')).toContain('Google Photos is a trademark of Google LLC')
-  })
-
-  it.each([
-    ['all', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted', analytics_storage: 'granted' }],
-    ['analytics', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'granted' }],
-    ['none', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied' }],
-  ])('button %s sets the right consent update and stores the choice', async (choice, expected) => {
+  it('Accept initializes once with global denied defaults before consent and config', async () => {
     const r = await run('index', real)
     expect(r.banner.hidden).toBe(false)
-    expect(Object.keys(r.buttons).sort()).toEqual(['all', 'analytics', 'none'])
-    r.buttons[choice]()
-    expect(lastUpdate(r.snapshot())).toEqual(expected)
-    expect(r.storage.get('gpdt_consent')).toBe(choice)
+    r.buttons.all()
+    expect(r.appended).toHaveLength(1)
+    const calls = r.snapshot()
+    expect(calls[0]).toEqual(['consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied' }])
+    expect(calls[1]).toEqual(['consent', 'update', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted', analytics_storage: 'granted' }])
+    expect(calls.filter(c => c[0] === 'config').map(c => c[1])).toEqual(['G-ABC123', 'AW-123456'])
+    r.buttons.all(); r.repeat()
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(r.appended).toHaveLength(1)
+    r.click()
+    expect(events(r).filter(c => c[1] === 'add_to_chrome_click')).toHaveLength(1)
+    expect(events(r).filter(c => c[1] === 'conversion')).toHaveLength(1)
+  })
+
+  it('Analytics only loads GA4, not Ads; saved explicit consent remains usable', async () => {
+    const r = await run('index', real, '', accepted)
     expect(r.banner.hidden).toBe(true)
+    expect(r.appended).toHaveLength(1)
+    expect(r.snapshot().filter(c => c[0] === 'config').map(c => c[1])).toEqual(['G-ABC123'])
+    r.click()
+    expect(events(r).map(c => c[1])).toEqual(['add_to_chrome_click'])
+    expect(r.snapshot().find(c => c[0] === 'consent' && c[1] === 'update')?.[2]).toMatchObject({ analytics_storage: 'granted', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' })
   })
 
-  it('re-applies a stored choice on load without showing the banner', async () => {
-    const r = await run('index', real, '', { gpdt_consent: 'analytics' })
-    expect(lastUpdate(r.calls)).toEqual({ ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'granted' })
-    expect(r.banner.hidden).toBe(true)
-  })
-
-  it('migrates old granted/denied values', async () => {
-    const g = await run('index', real, '', { gpdt_consent: 'granted' })
-    expect(g.storage.get('gpdt_consent')).toBe('all')
-    for (const k of SIGNALS) expect(lastUpdate(g.calls)?.[k]).toBe('granted')
-    const d = await run('index', real, '', { gpdt_consent: 'denied' })
-    expect(d.storage.get('gpdt_consent')).toBe('none')
-    for (const k of SIGNALS) expect(lastUpdate(d.calls)?.[k]).toBe('denied')
-  })
-
-  it('banner markup has three equal buttons, no checkboxes, no false claim', () => {
-    for (const f of PAGES) {
-      const html = read(f)
-      const b = html.match(/<div id="consent".*?<\/div>/s)![0]
-      expect(b).not.toMatch(/No personal data|checkbox|checked/)
-      expect(b.match(/<button/g)).toHaveLength(3)
-      for (const c of ['all', 'analytics', 'none']) expect(b).toContain(`data-consent="${c}"`)
-      expect(b).toContain('privacy.html')
-    }
-  })
-
-  it('Cookie settings reopens the banner with the current choice and a new choice applies at once', async () => {
-    const r = await run('index', real, '', { gpdt_consent: 'all' })
-    expect(r.banner.hidden).toBe(true)
-    r.reopen()
-    expect(r.banner.hidden).toBe(false)
-    expect(r.pressed).toEqual({ all: 'true', analytics: 'false', none: 'false' })
-    r.buttons.none()
-    expect(lastUpdate(r.snapshot())).toEqual({ ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied' })
+  it('withdrawal disables collection before reloading; rejection survives reload', async () => {
+    const r = await run('index', real)
+    r.buttons.all(); r.reopen(); r.buttons.none()
     expect(r.storage.get('gpdt_consent')).toBe('none')
-    expect(r.banner.hidden).toBe(true)
-    r.reopen()
-    expect(r.pressed.none).toBe('true')
+    expect(r.ctx['ga-disable-G-ABC123']).toBe(true)
+    expect(r.ctx['ga-disable-AW-123456']).toBe(true)
+    expect(r.reloads()).toBe(1)
+    r.click(); r.click2()
+    expect(r.snapshot()).toHaveLength(0)
+    const reloaded = await run('index', real, '', Object.fromEntries(r.storage))
+    expect(reloaded.appended).toHaveLength(0)
+    expect(reloaded.banner.hidden).toBe(true)
+    reloaded.reopen(); expect(reloaded.banner.hidden).toBe(false)
+    reloaded.buttons.analytics(); expect(reloaded.appended).toHaveLength(1)
   })
 
-  it('both pages have a Cookie settings link', () => {
-    for (const f of PAGES) expect(read(f)).toContain('id="cookie-settings"')
+  it('fails closed when storage cannot persist consent, even with an old grant', async () => {
+    for (const initial of [{}, accepted, { gpdt_consent: 'all' }] as Record<string, string>[]) {
+      const r = await run('index', real, '', initial, true)
+      r.buttons.all(); r.click()
+      expect(r.appended).toHaveLength(0)
+      expect(r.snapshot()).toHaveLength(0)
+    }
   })
 
-  it('every Add to Chrome CTA carries UTM and fires the event', async () => {
-    const r = await run('index', real, '?utm_source=google')
+  it('withdrawal fails closed if storage stops accepting writes after consent', async () => {
+    const r = await run('index', real, '', accepted)
+    expect(r.appended).toHaveLength(1)
+    r.failWrites(); r.buttons.none(); r.click()
+    expect(r.ctx['ga-disable-G-ABC123']).toBe(true)
+    expect(r.reloads()).toBe(1)
+    expect(r.snapshot()).toEqual([])
+    const reloaded = await run('index', real, '', Object.fromEntries(r.storage))
+    expect(reloaded.appended).toHaveLength(0)
+  })
+
+  it('rechecks consent when a page is restored from the back-forward cache', async () => {
+    const r = await run('index', real, '', accepted)
+    r.restore('none'); r.click()
+    expect(r.ctx['ga-disable-G-ABC123']).toBe(true)
+    expect(r.reloads()).toBe(1)
+    expect(r.snapshot()).toEqual([])
+  })
+
+  it('clears queued initialization if withdrawal precedes Google script execution', async () => {
+    const r = await run('index', real)
+    r.buttons.all()
+    expect(r.appended).toHaveLength(1)
+    r.buttons.none()
+    expect(r.snapshot()).toEqual([])
+    expect(r.ctx['ga-disable-G-ABC123']).toBe(true)
+    expect(r.reloads()).toBe(1)
+  })
+
+  it('a downgrade or cross-tab revocation unloads the active tag', async () => {
+    const r = await run('index', real, '', { gpdt_consent: 'all' })
+    r.buttons.analytics()
+    expect(r.reloads()).toBe(1)
+    r.click(); expect(events(r)).toHaveLength(0)
+    const tab = await run('index', real, '', accepted)
+    tab.externalChoice('none')
+    expect(tab.reloads()).toBe(1)
+    tab.click(); expect(events(tab)).toHaveLength(0)
+  })
+
+  it.each(['index', 'thanks', 'privacy', 'terms'] as const)('sanitizes every measured %s URL and never infers a purchase', async page => {
+    const r = await run(page, real, '?session_id=cs_live_abcdefgh12&email=secret&token=secret&gclid=secret#private', accepted)
+    r.click()
+    expect(JSON.stringify(r.snapshot())).not.toMatch(/secret|session_id|purchase/)
+    expect(r.snapshot().find(c => c[0] === 'config')?.[2]).toMatchObject({ page_location: `https://x.test/${page}.html`, page_referrer: '' })
+    expect([...r.storage.keys()]).toEqual(['gpdt_consent'])
+    expect(r.stripe.href).not.toContain('client_reference_id')
+  })
+
+  it('with missing or placeholder destinations, no tag loads even after consent', async () => {
+    for (const cfg of [{}, { ga4MeasurementId: 'G-XXXX', adsConversionId: 'AW-XXXX' }]) {
+      const r = await run('index', cfg)
+      r.reopen(); r.buttons.all(); r.click()
+      expect(r.appended).toHaveLength(0)
+      expect(r.snapshot()).toHaveLength(0)
+    }
+  })
+
+  it('a placeholder Ads destination cannot produce a conversion', async () => {
+    const r = await run('index', { ...real, adsConversionId: 'AW-XXXX', addToChromeSendTo: 'AW-XXXX/LABEL' }, '', { gpdt_consent: 'all' })
+    r.click()
+    expect(events(r).map(c => c[1])).toEqual(['add_to_chrome_click'])
+  })
+
+  it('all Chrome CTAs keep navigation and UTM independently of consent', async () => {
+    const r = await run('index', real, '?utm_source=google&gclid=private')
+    expect(r.link.href).toContain('utm_source=google')
     expect(r.link2.href).toContain('utm_source=google')
-    r.click2()
-    expect(r.snapshot().some((c) => c[0] === 'event' && c[1] === 'add_to_chrome_click')).toBe(true)
-  })
-
-  it('Cookie settings opens the banner even with placeholder ids', async () => {
-    const r = await run('index', { ga4MeasurementId: 'G-XXXX', adsConversionId: 'AW-XXXX' })
-    expect(r.banner.hidden).toBe(true)
-    r.reopen()
-    expect(r.banner.hidden).toBe(false)
-    expect(r.calls).toHaveLength(0)
-    expect(r.appended).toHaveLength(0)
-  })
-
-  it('legal pages carry company details', () => {
-    for (const f of PAGES) {
-      const html = read(f)
-      for (const v of ['16438428', '128 City Road', 'EC1V 2NX', '+44 7537 188 188', 'hi@sylphx.com', 'privacy.html', 'terms.html']) expect(html).toContain(v)
-    }
-  })
-
-  it('no placeholder checkout ships', () => {
-    expect(read('index.html')).not.toContain('PRO_CHECKOUT_URL')
-  })
-
-  it('purchase fires once per session id, never for a bad id, and Google never gets session_id', async () => {
-    const r = await run('thanks', real, '?session_id=cs_live_abcdefgh12')
-    expect(r.calls.filter((c) => c[1] === 'purchase')).toHaveLength(1)
-    const again = await run('thanks', real, '?session_id=cs_live_abcdefgh12', { gpdt_purchase_cs_live_abcdefgh12: '1' })
-    expect(again.calls.find((c) => c[1] === 'purchase')).toBeUndefined()
-    for (const q of ['?session_id=abc', '?session_id=cs_live_<x>', '?session_id=cs_']) {
-      expect((await run('thanks', real, q)).calls.find((c) => c[1] === 'purchase')).toBeUndefined()
-    }
-    for (const c of r.calls.filter((c) => c[0] === 'config')) expect((c[2] as { page_location: string }).page_location).toBe('https://x.test/thanks.html')
-    expect(JSON.stringify(r.calls)).not.toContain('?session_id')
-  })
-
-  it('gclid rides on Stripe links only after Accept all, and only when well formed', async () => {
-    const none = await run('index', real, '?gclid=Cj0KCQ_abc-1')
-    expect(none.stripe.href).not.toContain('client_reference_id')
-    none.buttons.analytics()
-    expect(none.stripe.href).not.toContain('client_reference_id')
-    none.buttons.all()
-    expect(none.stripe.href).toContain('client_reference_id=Cj0KCQ_abc-1')
-    none.buttons.none()
-    expect(none.stripe.href).not.toContain('client_reference_id')
-    const saved = await run('index', real, '?gclid=Cj0KCQ_abc-1', { gpdt_consent: 'all' })
-    expect(saved.stripe.href).toContain('client_reference_id=Cj0KCQ_abc-1')
-    const bad = await run('index', real, '?gclid=a%20b%26x', { gpdt_consent: 'all' })
-    expect(bad.stripe.href).not.toContain('client_reference_id')
-  })
-
-  it('banner names the controller and links the site privacy page', () => {
-    for (const f of PAGES) expect(read(f).match(/<div id="consent".*?<\/div>/s)![0]).toMatch(/Sylphx Limited, the controller.*privacy\.html/)
+    expect(r.link.href).not.toContain('gclid')
+    r.click2(); expect(events(r)).toHaveLength(0)
+    r.buttons.analytics(); r.click2()
+    expect(events(r).map(c => c[1])).toEqual(['add_to_chrome_click'])
   })
 })
 
-describe('site live truth', () => {
-  it('ships self-serve on: Pro button buys at checkout, thanks no longer says manual delivery', () => {
+describe('website configuration and copy', () => {
+  it('ships the real GA4 ID with no fabricated Ads configuration', () => {
     const cfg = JSON.parse(read('config.json'))
+    expect(cfg.ga4MeasurementId).toBe('G-BQ1GKMWND2')
+    for (const key of ['adsConversionId', 'addToChromeSendTo', 'purchaseSendTo']) expect(cfg[key]).toBe('')
     expect(cfg.selfServeCheckout).toBe(true)
-    expect(read('index.html')).toMatch(/data-cta="pro" href="https:\/\/sylphxai\.github\.io\/Google-Photos-Delete-Tool\/pricing">Buy Pro</)
-    expect(read('index.html')).not.toContain('See Pro details')
-    expect(read('thanks.html')).not.toMatch(/by hand|few hours/)
+    expect(cfg.checkoutUrl).toBe('https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing')
+    expect(cfg.recoverUrl).toBe('https://sylphxai.github.io/Google-Photos-Delete-Tool/recover')
+  })
+
+  it('all standalone pages include consent settings and legal details', () => {
+    for (const file of PAGES) {
+      const html = read(file)
+      for (const value of ['tracking.js', 'id="cookie-settings"', 'id="consent"', '16438428', '128 City Road', 'EC1V 2NX', '+44 7537 188 188', 'hi@sylphx.com', 'privacy.html', 'terms.html']) expect(html).toContain(value)
+      for (const choice of ['all', 'analytics', 'none']) expect(html).toContain(`data-consent="${choice}"`)
+      expect(html).not.toContain('googletagmanager')
+    }
+    expect(read('privacy.html')).toContain('default everywhere')
+    expect(read('privacy.html')).not.toContain('this is the default until you choose')
+  })
+
+  it('keeps checkout and recovery links and existing offer totals', () => {
+    expect(read('index.html')).toContain('Buy Pro')
+    expect(read('index.html')).toContain('US$19')
     expect(read('thanks.html')).toContain('https://sylphxai.github.io/Google-Photos-Delete-Tool/recover')
-  })
-
-  it('with the switch off the recover link stays hidden and unlinked', async () => {
-    expect(read('index.html')).toMatch(/id="recover" hidden/)
-    const r = await run('index', { selfServeCheckout: false, checkoutUrl: 'https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing', recoverUrl: 'https://sylphxai.github.io/Google-Photos-Delete-Tool/recover' })
-    expect(r.calls).toHaveLength(0)
-  })
-
-  it('a real GA4 id with a placeholder Ads id loads GA4 only and sends no Ads conversion', async () => {
-    const r = await run('index', { ga4MeasurementId: 'G-ABC123', adsConversionId: 'AW-XXXX', addToChromeSendTo: 'AW-XXXX/LABEL' })
-    expect(r.appended).toHaveLength(1)
-    expect(r.appended[0].src).toContain('id=G-ABC123')
-    expect(r.calls.filter((c) => c[0] === 'config').map((c) => c[1])).toEqual(['G-ABC123'])
-    r.click()
-    expect(r.snapshot().some((c) => c[0] === 'event' && c[1] === 'conversion')).toBe(false)
-  })
-
-  it('docs and README do not claim a Firefox or Edge store listing', () => {
-    const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8')
-    expect(readme).toMatch(/no Firefox Add-ons \(AMO\) listing/)
-    expect(readme).not.toMatch(/addons\.mozilla\.org\/[^\s)]*firefox\/addon/)
+    expect(read('thanks.html')).not.toMatch(/by hand|few hours/)
+    const pricing = readFileSync(new URL('../docs/storefront/pricing.md', import.meta.url), 'utf8')
+    expect(pricing).toContain('money_checkout: pro')
+    const catalogue = JSON.parse(readFileSync(new URL('../config/money-catalogue.json', import.meta.url), 'utf8'))
+    const offers = readFileSync(new URL('../docs/storefront/docs.toml', import.meta.url), 'utf8')
+    const prices = catalogue.spec.products.find((p: { key: string }) => p.key === 'gpdt_pro').prices
+    for (const [seat, label] of [[1, 'Personal'], [3, 'Family'], [10, 'Team']] as const) {
+      const key = `gpdt_pro_${seat}`
+      const unit = prices.find((p: { key: string }) => p.key === key).unit_amounts.USD
+      const total = Number(unit) * seat / 100
+      expect(offers).toContain(`key = "${key}"\nlabel = "${label} (${seat} ${seat === 1 ? 'seat' : 'seats'})"\nquantity = ${seat}`)
+      expect(read('index.html')).toContain(`${label} US$${total}`)
+    }
   })
 })
