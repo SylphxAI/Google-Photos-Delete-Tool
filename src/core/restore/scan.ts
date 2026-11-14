@@ -86,23 +86,6 @@ export interface RestoreScanResult {
   cancelled: boolean
 }
 
-/**
- * Parse original dimensions from a Google Photos thumbnail URL suffix when
- * present (e.g. `=w288-h192-no`), or fall back to decoded bitmap dimensions.
- */
-export function parseThumbUrlDimensions(
-  url: string,
-): { width: number; height: number } | null {
-  const m = /=w(\d+)-h(\d+)/.exec(url)
-  if (!m) return null
-  const width = Number(m[1])
-  const height = Number(m[2])
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    return null
-  }
-  return { width, height }
-}
-
 function pageFetch(): typeof fetch {
   const f = (globalThis as { content?: { fetch?: typeof fetch } }).content?.fetch
   return typeof f === 'function' ? f : fetch
@@ -121,7 +104,7 @@ export async function analyzeGooglePhotosThumbnail(
     signal?: AbortSignal
     fetchImpl?: typeof fetch
     decodeImage?: (blob: Blob) => Promise<DecodedThumbnail>
-     reportedWidth?: number
+    reportedWidth?: number
     reportedHeight?: number
   } = {},
 ): Promise<{ width: number; height: number; analysis: RestoreAnalysis } | null> {
@@ -162,9 +145,11 @@ export async function analyzeGooglePhotosThumbnail(
     }
   }
 
-  const parsedDims = parseThumbUrlDimensions(url)
-  const effectiveWidth = opts.reportedWidth ?? parsedDims?.width ?? decoded.width
-  const effectiveHeight = opts.reportedHeight ?? parsedDims?.height ?? decoded.height
+  // A `=wN-hN` suffix is the size the caller asked the image host for, not the
+  // photo's own size, so it never stands in for the original resolution. The
+  // decoded bitmap is at most that size; callers that know the original pass it.
+  const effectiveWidth = opts.reportedWidth ?? decoded.width
+  const effectiveHeight = opts.reportedHeight ?? decoded.height
 
   // Compute sharpness on the decoded buffer and combine with effective resolution.
   const pixelAnalysis = analyzeImageQuality(decoded.data, decoded.width, decoded.height, {

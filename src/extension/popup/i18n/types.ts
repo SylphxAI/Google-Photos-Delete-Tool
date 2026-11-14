@@ -41,7 +41,7 @@ export interface Translations {
     dateFilter: { label: string; hint: string; off: string; before: string; after: string; between: string; pro: string; report: string; reportSkipped: string }
     presets: { label: string; hint: string; pro: string; none: string; namePlaceholder: string; save: string; apply: string; rename: string; delete: string; viewHint: string }
     filter: { label: string; hint: string; all: string; screenshot: string; video: string; photo: string; animation: string; collage: string }
-    license: { label: string; hint: string; placeholder: string; activate: string; getPro: string; active: string; invalid: string; expired: string }
+    license: { label: string; hint: string; placeholder: string; activate: string; getPro: string; active: string; invalid: string; expired: string; termsRequired: string }
     language: { label: string; trigger: string }
   }
   /** Pro conversion copy: the dry-run teaser and its A/B variants. */
@@ -116,6 +116,8 @@ export interface Translations {
     exportCsv: string
     viewTrash: string
     findDuplicates: string
+    /** Opens the Blurry / Low-Res review where single photos can be restored in 4K. */
+    aiRestore: string
   }
   consent: {
     title: string

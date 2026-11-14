@@ -11,6 +11,8 @@ import type { EmptyTrashBaton } from '../core/empty-trash-baton'
 import { PRESETS_KEY, type PresetStore } from '../core/presets'
 import { PRO_TOKEN_KEY } from '../core/pro-moments'
 import { WALLET_TOKEN_KEY } from '../core/restore/wallet'
+import { POLICY_CONSENT_KEY } from '../core/consent'
+import type { PolicyConsentStore } from '../ui/restore/policy-consent'
 
 export { WALLET_TOKEN_KEY }
 
@@ -162,6 +164,12 @@ export async function writeWalletToken(token: string): Promise<void> {
 
 export async function clearWalletToken(): Promise<void> {
   await storageRemove([WALLET_TOKEN_KEY])
+}
+
+/** Terms/Privacy acceptance record (`gpdt_policy_consent`) in chrome.storage.local. */
+export const chromePolicyStore: PolicyConsentStore = {
+  read: async () => (await storageGet([POLICY_CONSENT_KEY]))[POLICY_CONSENT_KEY],
+  write: (record) => storageSet({ [POLICY_CONSENT_KEY]: record }),
 }
 
 export function runtimeSendMessage(message: unknown): Promise<unknown> {

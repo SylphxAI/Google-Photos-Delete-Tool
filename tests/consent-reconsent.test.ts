@@ -125,7 +125,7 @@ describe('Chairman #3751-#3753: affirmative clickwrap & versioned policy re-cons
     ).toBe(true)
   })
 
-  it('enforces unchecked-by-default clickwrap with /privacy and Terms links in site/activate.js before wallet or gated Pro activation', async () => {
+  it('holds a wallet handoff in site/activate.js behind an unticked clickwrap, then sends the versioned acceptance', async () => {
     const win = new Window({
       url: 'https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing?session_id=cs_1',
     })
@@ -142,29 +142,22 @@ describe('Chairman #3751-#3753: affirmative clickwrap & versioned policy re-cons
       win.MutationObserver,
     )
 
-    const checkbox = win.document.getElementById(
-      'gpdt-policy-consent-checkbox',
-    ) as unknown as InputLike | null
-    expect(checkbox).not.toBeNull()
-    expect(checkbox!.checked).toBe(false)
-
-    const gateHtml = win.document.getElementById('gpdt-consent-gate')?.innerHTML ?? ''
-    expect(gateHtml).toContain('privacy.html')
-    expect(gateHtml).toContain('terms.html')
-
-    // Setting wallet token while checkbox is unchecked must NOT call sendMessage
     const walletPre = win.document.querySelector('[data-keel-money-wallet-token]')!
     walletPre.textContent = 'sess_live_wallet_token_999'
-    await vi.waitFor(() =>
-      expect(win.document.getElementById('gpdt-activation-status')?.textContent).toContain(
-        'accept the Terms of Service and Privacy Policy',
-      ),
-    )
+    await vi.waitFor(() => expect(win.document.getElementById('gpdt-policy-gate')).not.toBeNull())
+    const gateHtml = win.document.getElementById('gpdt-policy-gate')!.innerHTML
+    expect(gateHtml).toContain('privacy.html')
+    expect(gateHtml).toContain('terms.html')
+    const checkbox = win.document.getElementById('gpdt-policy-check') as unknown as InputLike
+    const agree = win.document.getElementById('gpdt-policy-agree') as unknown as { disabled: boolean; click: () => void }
+    expect(checkbox.checked).toBe(false)
+    expect(agree.disabled).toBe(true)
     expect(sendMessage).not.toHaveBeenCalled()
 
-    // Checking the clickwrap checkbox dispatches activation with versioned consent metadata
-    checkbox!.checked = true
-    checkbox!.dispatchEvent(new win.Event('change'))
+    checkbox.checked = true
+    checkbox.dispatchEvent(new win.Event('change'))
+    expect(sendMessage).not.toHaveBeenCalled()
+    agree.click()
     await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(1))
     expect(sendMessage.mock.calls[0][0]).toBe(CHROME_WEB_STORE_ID)
     expect(sendMessage.mock.calls[0][1]).toMatchObject({
@@ -173,6 +166,9 @@ describe('Chairman #3751-#3753: affirmative clickwrap & versioned policy re-cons
       terms_version: CURRENT_TERMS_VERSION,
       privacy_version: CURRENT_PRIVACY_VERSION,
     })
+    const stored = JSON.parse(win.localStorage.getItem(POLICY_CONSENT_KEY) ?? 'null') as ConsentRecord
+    expect(stored.surface).toBe('gpdt_web_activate')
+    expect(needsPolicyReconsent(stored)).toBe(false)
   })
 
   it('requires re-consent in site/activate.js when stored gpdt_policy_consent has an older version', async () => {
@@ -203,18 +199,13 @@ describe('Chairman #3751-#3753: affirmative clickwrap & versioned policy re-cons
 
     const pre = win.document.querySelector('[data-keel-money-licence-token]')!
     pre.textContent = 'signed.valid'
-    await vi.waitFor(() =>
-      expect(win.document.getElementById('gpdt-activation-status')?.textContent).toContain(
-        'accept the Terms of Service and Privacy Policy',
-      ),
-    )
+    await vi.waitFor(() => expect(win.document.getElementById('gpdt-policy-gate')).not.toBeNull())
     expect(sendMessage).not.toHaveBeenCalled()
 
-    const checkbox = win.document.getElementById(
-      'gpdt-policy-consent-checkbox',
-    ) as unknown as InputLike
+    const checkbox = win.document.getElementById('gpdt-policy-check') as unknown as InputLike
     checkbox.checked = true
     checkbox.dispatchEvent(new win.Event('change'))
+    ;(win.document.getElementById('gpdt-policy-agree') as unknown as { click: () => void }).click()
     await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(1))
     expect(sendMessage.mock.calls[0][1]).toMatchObject({
       type: ACTIVATION_MESSAGE,

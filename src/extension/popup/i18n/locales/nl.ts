@@ -86,6 +86,7 @@ const nl: Translations = {
       active: "Pro actief — filters ingeschakeld",
       invalid: "Ongeldige licentietoken",
       expired: "Licentie verlopen. Haal je licentie opnieuw op.",
+      termsRequired: "Pro is niet geactiveerd. Ga akkoord met de bijgewerkte voorwaarden om door te gaan.",
     },
   },
   pro: {
@@ -153,6 +154,7 @@ const nl: Translations = {
     exportCsv: "CSV exporteren",
     viewTrash: "Prullenbak bekijken",
     findDuplicates: "Duplicaten zoeken",
+    aiRestore: "AI-herstel in 4K",
   },
   notes: {
     navigateFirst: "Open eerst {url}.",

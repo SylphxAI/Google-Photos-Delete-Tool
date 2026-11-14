@@ -6,56 +6,46 @@
 }
 
 :root {
-  /* ── Light theme tokens ─────────────────────────────────────── */
-  --bg-app: #f4f5fb;
-  --bg-app-gradient: radial-gradient(
-    1200px 600px at 0% 0%,
-    rgba(124, 58, 237, 0.08),
-    transparent 60%
-  ), radial-gradient(
-    1000px 500px at 100% 0%,
-    rgba(59, 130, 246, 0.08),
-    transparent 60%
-  );
-  --bg-surface: rgba(255, 255, 255, 0.78);
-  --bg-surface-strong: rgba(255, 255, 255, 0.95);
-  --bg-stat: rgba(15, 23, 42, 0.04);
-  --bg-stat-hover: rgba(15, 23, 42, 0.06);
-  --bg-input: rgba(15, 23, 42, 0.05);
-  --bg-track: rgba(15, 23, 42, 0.08);
-  --bg-error: rgba(239, 68, 68, 0.10);
-  --bg-note: rgba(15, 23, 42, 0.04);
+  /* ── Light theme tokens (DESIGN.md: ink on paper, one violet accent) ── */
+  --bg-app: #F7F6F3;
+  --bg-app-gradient: none;
+  --bg-surface: #FFFFFF;
+  --bg-surface-strong: #FFFFFF;
+  --bg-stat: #EDEBE6;
+  --bg-stat-hover: #E4E1DA;
+  --bg-input: #FFFFFF;
+  --bg-track: #EDEBE6;
+  --bg-error: #FBE7E4;
+  --bg-note: #EDEBE6;
 
-  --text-strong: #0f172a;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --text-faint: #94a3b8;
-  --text-on-accent: #ffffff;
+  --text-strong: #1A1920;
+  --text: #1A1920;
+  --text-muted: #5C5A66;
+  --text-faint: #5C5A66;
+  --text-on-accent: #FFFFFF;
 
-  --border: rgba(15, 23, 42, 0.08);
-  --border-strong: rgba(15, 23, 42, 0.15);
-  --border-focus: #6366f1;
-  --border-error: rgba(239, 68, 68, 0.30);
+  --border: #D6D3CC;
+  --border-strong: #C4C0B7;
+  --border-focus: #4B32C3;
+  --border-error: #E8B4AE;
 
-  --accent-from: #6366f1;
-  --accent-to: #8b5cf6;
-  --accent-glow: rgba(99, 102, 241, 0.35);
-  --warning: #f59e0b;
-  --warning-hover: #d97706;
-  --danger: #dc2626;
-  --danger-hover: #b91c1c;
-  --success: #16a34a;
-  --info: #2563eb;
+  /* One accent; from/to are equal so legacy gradients render as a flat fill. */
+  --accent-from: #4B32C3;
+  --accent-to: #4B32C3;
+  --accent-glow: transparent;
+  --warning: #8A5300;
+  --warning-hover: #6E4200;
+  --danger: #C5281C;
+  --danger-hover: #A82217;
+  --success: #16794A;
+  --info: #4B32C3;
 
-  /* Focus rings — single source of truth so dark mode can override
-     and brand-color tweaks propagate everywhere. */
-  --ring-accent: 0 0 0 3px rgba(99, 102, 241, 0.25);
-  --ring-danger: 0 0 0 3px rgba(220, 38, 38, 0.25);
-  --ring-strong: 0 0 0 3px rgba(99, 102, 241, 0.4);
+  --ring-accent: 0 0 0 2px #4B32C3;
+  --ring-danger: 0 0 0 2px #C5281C;
+  --ring-strong: 0 0 0 2px #4B32C3;
 
-  --shadow-card: 0 10px 35px -10px rgba(15, 23, 42, 0.18),
-                  0 2px 6px -2px rgba(15, 23, 42, 0.08);
-  --shadow-btn-primary: 0 6px 16px -6px var(--accent-glow);
+  --shadow-card: none;
+  --shadow-btn-primary: none;
   --shadow-stat: inset 0 0 0 1px var(--border);
 
   --radius-2xl: 20px;
@@ -73,48 +63,47 @@
 /* ─── Dark theme ──────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-app: #0b0d17;
-    --bg-app-gradient: radial-gradient(
-      1200px 600px at 0% 0%,
-      rgba(124, 58, 237, 0.18),
-      transparent 60%
-    ), radial-gradient(
-      1000px 500px at 100% 0%,
-      rgba(59, 130, 246, 0.16),
-      transparent 60%
-    );
-    --bg-surface: rgba(22, 26, 44, 0.78);
-    --bg-surface-strong: rgba(28, 32, 52, 0.96);
-    --bg-stat: rgba(255, 255, 255, 0.05);
-    --bg-stat-hover: rgba(255, 255, 255, 0.08);
-    --bg-input: rgba(255, 255, 255, 0.06);
-    --bg-track: rgba(255, 255, 255, 0.08);
-    --bg-error: rgba(239, 68, 68, 0.14);
-    --bg-note: rgba(255, 255, 255, 0.04);
+    --bg-app: #141318;
+    --bg-app-gradient: none;
+    --bg-surface: #1F1E25;
+    --bg-surface-strong: #1F1E25;
+    --bg-stat: #1F1E25;
+    --bg-stat-hover: #26252D;
+    --bg-input: #1F1E25;
+    --bg-track: #38363F;
+    --bg-error: #1F1E25;
+    --bg-note: #1F1E25;
 
-    --text-strong: #f8fafc;
-    --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-faint: #64748b;
+    --text-strong: #EDEBF2;
+    --text: #EDEBF2;
+    --text-muted: #A7A4B3;
+    --text-faint: #A7A4B3;
+    --text-on-accent: #1E1259;
 
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.15);
-    --border-error: rgba(239, 68, 68, 0.4);
+    --border: #38363F;
+    --border-strong: #4A4852;
+    --border-focus: #B7A9FF;
+    --border-error: #FF8A7E;
 
-    --accent-glow: rgba(139, 92, 246, 0.45);
+    --accent-from: #B7A9FF;
+    --accent-to: #B7A9FF;
+    --success: #5FD39A;
+    --info: #B7A9FF;
 
-    --shadow-card: 0 18px 60px -16px rgba(0, 0, 0, 0.55),
-                    0 2px 8px -2px rgba(0, 0, 0, 0.3);
+    --ring-accent: 0 0 0 2px #B7A9FF;
+    --ring-strong: 0 0 0 2px #B7A9FF;
+
+    --shadow-card: none;
     --shadow-stat: inset 0 0 0 1px var(--border);
   }
 }
 
 html, body {
-  /* System-font stack only — we don't bundle web fonts, so don't
-     advertise font families we can't deliver (Inter etc. used to be
-     here but resolved to the fallback on every install). */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
-                'SF Pro Text', Roboto, 'Helvetica Neue', sans-serif;
+  /* DESIGN.md stack: Inter when installed, then the system face. No
+     fonts are bundled (size budget). */
+  font-family: Inter, "Noto Sans JP", "Noto Sans SC", "Noto Sans TC", system-ui,
+               -apple-system, "Segoe UI", "Hiragino Sans", "PingFang SC", "PingFang TC",
+               "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text);
@@ -122,7 +111,7 @@ html, body {
 
 /* The popup IS the card — no outer rectangle, no inset margin. */
 body {
-  width: 320px;
+  width: 380px;
   margin: 0;
   background:
     var(--bg-app-gradient),
@@ -906,3 +895,25 @@ body {
 .preset-actions { gap: 6px; }
 .preset-actions .btn { padding: 7px 8px; font-size: 12px; }
 .preset-input { width: 100%; flex: 1; min-width: 0; }
+
+/* ─── AI 4K Restore entry + terms clickwrap ───────────────────── */
+.btn-restore {
+  color: var(--accent-from);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+.btn-restore:hover { border-color: var(--accent-from); }
+.btn-restore .btn-icon svg { width: 16px; height: 16px; }
+.btn-restore[hidden] { display: none; }
+.policy-slot:empty { display: none; }
+.policy-slot {
+  --gp-raised: var(--bg-surface);
+  --gp-sunken: var(--bg-stat);
+  --gp-ink: var(--text-strong);
+  --gp-muted: var(--text-muted);
+  --gp-outline: var(--border);
+  --gp-accent: var(--accent-from);
+  --gp-on-accent: var(--text-on-accent);
+  --gp-error: var(--danger);
+  --gp-font: inherit;
+}

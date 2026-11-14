@@ -86,6 +86,7 @@ const fr: Translations = {
       active: "Pro actif — filtres activés",
       invalid: "Jeton de licence invalide",
       expired: "Licence expirée. Récupérez votre licence.",
+      termsRequired: "Pro n’a pas été activé. Acceptez les conditions mises à jour pour continuer.",
     },
   },
   pro: {
@@ -153,6 +154,7 @@ const fr: Translations = {
     exportCsv: "Exporter CSV",
     viewTrash: "Voir la corbeille",
     findDuplicates: "Trouver les doublons",
+    aiRestore: "Restauration 4K par IA",
   },
   notes: {
     navigateFirst: "Ouvrez d’abord {url}.",

@@ -28,7 +28,7 @@ export const DEFAULT_CONSENT_PARENT =
   'orgs/org_fs01afbdccgn8xdk1ghj5y47w0vtph/projects/prj_fs01etb6sjwf33tcvmhf93jwppx8a0/envs/env_fs01kkyfapshabd01pdps7kf0f72cr'
 export const DEFAULT_CONSENT_PUBLISHABLE_KEY = 'sylphx_pk_live_fs011xLNiTif0SkaOCFx'
 
-export type ConsentSurface = 'gpdt_extension' | 'gpdt_web_activate' | 'sylphx_account'
+export type ConsentSurface = 'gpdt_extension' | 'gpdt_userscript' | 'gpdt_web_activate' | 'sylphx_account'
 
 export interface ConsentRecord {
   user_id?: string
@@ -40,6 +40,7 @@ export interface ConsentRecord {
 
 const VALID_SURFACES: readonly ConsentSurface[] = [
   'gpdt_extension',
+  'gpdt_userscript',
   'gpdt_web_activate',
   'sylphx_account',
 ]
@@ -48,11 +49,14 @@ export function isValidConsentSurface(value: unknown): value is ConsentSurface {
   return typeof value === 'string' && (VALID_SURFACES as readonly string[]).includes(value)
 }
 
+/** Policy versions are ISO dates, so same-shape strings order correctly. */
+const POLICY_VERSION = /^\d{4}-\d{2}-\d{2}$/
+
 export function isValidConsentRecord(raw: unknown): raw is ConsentRecord {
   if (!raw || typeof raw !== 'object') return false
   const r = raw as Record<string, unknown>
-  if (typeof r.terms_version !== 'string' || !r.terms_version.trim()) return false
-  if (typeof r.privacy_version !== 'string' || !r.privacy_version.trim()) return false
+  if (typeof r.terms_version !== 'string' || !POLICY_VERSION.test(r.terms_version)) return false
+  if (typeof r.privacy_version !== 'string' || !POLICY_VERSION.test(r.privacy_version)) return false
   if (typeof r.accepted_at !== 'string' || !Number.isFinite(Date.parse(r.accepted_at))) return false
   if (!isValidConsentSurface(r.surface)) return false
   if (r.user_id !== undefined && typeof r.user_id !== 'string') return false

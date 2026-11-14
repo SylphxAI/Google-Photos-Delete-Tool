@@ -1,11 +1,13 @@
-# Google Photos Delete Tool – Duplicate Finder & Bulk Delete
+# Google Photos Delete Tool – Duplicate Finder & AI Photo Restore
 
 Google Photos Delete Tool finds and deletes duplicate photos in Google Photos,
 and bulk deletes safely: dry run first, batches of up to 500, optional empty
-trash. Made by [Sylphx](https://sylphx.com).
+trash. It also spots blurry and low-resolution shots, and can restore a photo
+you care about in 4K. Made by [Sylphx](https://sylphx.com).
 
 Get it on the [Chrome Web Store](https://chromewebstore.google.com/detail/google-photos-delete-tool/jiahfbbfpacpolomdjlpdpiljllcdenb)
-or as a userscript. It runs in your browser; nothing is uploaded.
+or as a userscript. Scanning and deleting run in your browser with zero photo
+uploads; only the optional AI 4K Restore sends the one photo you confirm.
 
 Product page: <https://sylphxai.github.io/Google-Photos-Delete-Tool/> (source in [`site/`](site/); [publication and recovery](docs/PAGES.md)).
 
@@ -48,7 +50,7 @@ stay in your library. **Find duplicates** finds them for you:
 **Private by design.** Thumbnails are fetched only from Google's own image
 servers (the same ones the page already uses), turned into a 64-bit
 fingerprint in memory, and forgotten when you close the review. Nothing is
-uploaded; there is no server. Works for tens of thousands of photos: the
+uploaded. Works for tens of thousands of photos: the
 comparison runs in short slices so the tab stays responsive, with progress
 and Cancel throughout. Large views take a while because Google Photos loads
 the grid only as you scroll.
@@ -57,6 +59,32 @@ the grid only as you scroll.
 apps read your whole library through the Photos API, so an external
 duplicate finder cannot scan your whole library. This tool works inside the Google
 Photos page you already have open instead.
+
+## Blurry / Low-Res and AI 4K Restore
+
+The **Blurry / Low-Res** tab in the review measures the sharpness (Laplacian
+variance) and pixel size of each thumbnail on your computer and lists the soft
+and small ones. Nothing is marked for Trash until you choose: move junk shots
+to Trash through the same consent-gated flow, or keep them.
+
+For a photo you want to keep, **AI 4K Restore** (also on every duplicate tile)
+opens a studio with a draggable before/after comparison, a 1x/2x zoom, the
+old and new pixel size and **Download 4K Photo**:
+
+1. A transfer notice names the photo. Nothing is sent until you confirm it.
+2. Only that single photo is sent over HTTPS to Sylphx AI (`sylphx.ai`).
+   Sylphx servers process it ephemerally in memory with zero persistent
+   storage or retention. The paid AI inference API that renders it does not
+   train on it (`trains: false`).
+3. Each restore uses 1 credit. New accounts get 3 free trial credits; packs
+   are US$5 for 30, US$12 for 100 and US$29 for 300, or a US$4.99/month pass
+   with 50 credits a month, bought on the
+   [pricing page](https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing?offer=credits).
+
+Before the first purchase, Pro activation or restore, and whenever the terms
+change, the tool asks you to agree to the
+[Terms](https://sylphxai.github.io/Google-Photos-Delete-Tool/terms.html) and
+[Privacy Policy](PRIVACY.md) with a checkbox.
 
 ## Bulk delete
 
@@ -86,8 +114,9 @@ Google Photos Library API has no delete endpoint.
   [recovery limits](#recovery-limits).
 - **Accurate numbers.** The progress bar is indeterminate while the total is
   unknown; ETA appears once a dry run has established a total.
-- **No telemetry, no server.** Everything runs in your browser. Pro licence
-  verification is local (Ed25519).
+- **No telemetry, local scanning.** Scanning, duplicate finding, blur detection
+  and deleting run in your browser. Pro licence verification is local
+  (Ed25519). The only network feature is the optional, per-photo AI 4K Restore.
 
 ## Features
 
@@ -150,8 +179,12 @@ developer mode, and **Load unpacked**.
 
 ## Privacy
 
-Zero data collection, zero servers, zero telemetry. Full statement in
-[`PRIVACY.md`](PRIVACY.md).
+Bulk Delete, Find duplicates and the Blurry / Low-Res detector run 100%
+locally in your browser with zero photo uploads and zero telemetry. Only when
+you click **AI 4K Restore** on a single photo and confirm the transfer notice
+is that photo sent over HTTPS to Sylphx AI, which processes it in memory and
+keeps no copy; the paid inference API behind it does not train on it. Full
+statement in [`PRIVACY.md`](PRIVACY.md).
 
 ## Pro
 

@@ -20,7 +20,7 @@ import {
   admitDestructiveRun,
   type Acknowledgement,
 } from '../../core/consent'
-import { createChromePresetStore, readProToken, writeProToken, storageGet, storageSet, tabsCreate, tabsQuery, tabsSendMessage } from '../api'
+import { chromePolicyStore, createChromePresetStore, readProToken, writeProToken, storageGet, storageSet, tabsCreate, tabsQuery, tabsSendMessage } from '../api'
 import { createPresetManager, presetViewHint, type CleanupPreset } from '../../core/presets'
 import { buildFilterFromControls, type PhotoFilter } from '../../core/photo-filter'
 import { ACTIVE_STATUSES, TERMINAL_STATUSES, type RunStatus } from '../../core/status'
@@ -37,6 +37,7 @@ import {
   type I18nParams,
 } from './i18n'
 import { mountIcon } from './icons'
+import { POLICY_GATE_CSS, ensurePolicyConsent } from '../../ui/restore/policy-consent'
 
 const LOG = '[gpdt:popup]'
 
@@ -88,6 +89,8 @@ const exportBtn       = document.getElementById('export-btn')     as HTMLButtonE
 const trashBtn        = document.getElementById('trash-btn')      as HTMLButtonElement
 const reportBtn       = document.getElementById('report-btn')     as HTMLButtonElement
 const dupesBtn        = document.getElementById('dupes-btn')      as HTMLButtonElement
+const restoreBtn      = document.getElementById('restore-btn')    as HTMLButtonElement
+const policySlot      = document.getElementById('policy-slot')    as HTMLElement
 
 // ─── Icon mounting (static set, attached once) ──────────────────
 
@@ -107,6 +110,13 @@ mountIcon('start-icon',      'play')
 mountIcon('pause-icon',      'pause')
 mountIcon('resume-icon',     'play')
 mountIcon('stop-icon',       'stop')
+mountIcon('restore-icon',    'sparkle')
+
+{
+  const style = document.createElement('style')
+  style.textContent = POLICY_GATE_CSS
+  document.head.append(style)
+}
 
 // ─── State ──────────────────────────────────────────────────────
 
@@ -440,6 +450,12 @@ async function refreshProState(): Promise<void> {
 licenseBtn.addEventListener('click', async () => {
   const token = licenseInput.value.trim()
   if (!token) return
+  // Clickwrap on Pro activation, again whenever the terms version changes.
+  if (!(await ensurePolicyConsent(policySlot, chromePolicyStore, 'gpdt_extension'))) {
+    licenseStatus.textContent = t('settings.license.termsRequired')
+    licenseStatus.className = 'license-status bad'
+    return
+  }
   const result = await verifyLicense(token)
   if (!result.ok) {
     licenseStatus.textContent = t(licenseStatusKey(result))
@@ -742,6 +758,12 @@ dupesBtn.addEventListener('click', async () => {
   if ((res as { ok?: boolean } | null)?.ok) window.close()
 })
 
+// AI 4K Restore: opens the same in-page review on its Blurry / Low-Res tab.
+restoreBtn.addEventListener('click', async () => {
+  const res = await sendToContent({ action: 'findDuplicates', view: 'blurry' })
+  if ((res as { ok?: boolean } | null)?.ok) window.close()
+})
+
 reportBtn.addEventListener('click', async () => {
   const res = await sendToContent({ action: 'diagnostics' })
   if (!res || typeof res !== 'object') return
@@ -804,7 +826,11 @@ async function queryInitialStatus(): Promise<void> {
     paused: boolean
     progress?: ProgressMessageData | null
     progressAsOf?: number
+    /** The page has the restore backend wired; without it the button would open nothing. */
+    restore?: boolean
   }
+
+  restoreBtn.hidden = status.restore !== true
 
   if (status.progress) {
     if (typeof status.progressAsOf === 'number' && status.progressAsOf > 0) {

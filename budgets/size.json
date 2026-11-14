@@ -1,7 +1,7 @@
 {
   "tolerancePercent": 5,
   "files": {
-    "dist/extension/content.js": 121583,
-    "google-photos-delete-tool.zip": 104417
+    "dist/extension/content.js": 167078,
+    "google-photos-delete-tool.zip": 120737
   }
 }

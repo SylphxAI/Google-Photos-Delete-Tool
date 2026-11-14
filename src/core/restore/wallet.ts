@@ -10,13 +10,14 @@
  *   all balance/trial state is read from `wallet:mine`.
  * - Enforces explicit single-photo transfer consent before any photo bytes
  *   leave the device (`single_photo_transfer_consent_required`).
- * - Calls `POST /v1/apps/{parent}/images:restore` with `x-sylphx-key`,
+ * - Calls `POST /v1/money/{parent}/images:restore` with `x-sylphx-key`,
  *   `Authorization: Bearer <token>`, and `Idempotency-Key`. Never sends
  *   `Sylphx-Data-Policy: zdr` (which would trigger 403 lane_access_denied on
  *   google/gemini-3.1-flash-lite-image).
  * - `wallet:spend` and `wallet:refund` are internal-only between `sylphx-apps-api`
  *   and `services/money`; the browser client only calls `wallet:mine`,
- *   `wallet:claimCheckout`, and `/v1/apps/{parent}/images:restore`.
+ *   `wallet:claimCheckout`, and `/v1/money/{parent}/images:restore`.
+ *   (`/v1/apps/*` is hard-cut on the live API: 410 `surface_removed`.)
  */
 
 export const API_ORIGIN = 'https://api.sylphx.com'
@@ -468,8 +469,7 @@ async function runRestoreRequest(
 }
 
 /**
- * Execute single-photo AI 4K restoration via `POST /v1/apps/{parent}/images:restore`
- * (with fallback to `/v1/money/{parent}/images:restore`).
+ * Execute single-photo AI 4K restoration via `POST /v1/money/{parent}/images:restore`.
  */
 export async function executePhotoRestore(
   input: Omit<ExecuteAiRestoreInput, 'userConfirmedSinglePhotoTransfer'> & {
@@ -486,7 +486,6 @@ export async function executePhotoRestore(
         input.userConfirmedSinglePhotoTransfer ?? true,
     },
     [
-      `${apiOrigin}/v1/apps/${parent}/images:restore`,
       `${apiOrigin}/v1/money/${parent}/images:restore`,
     ],
     fetchImpl,
@@ -502,7 +501,6 @@ export async function executeAiRestore(
   return runRestoreRequest(
     input,
     [
-      `${apiOrigin}/v1/apps/${parent}/images:restore`,
       `${apiOrigin}/v1/money/${parent}/images:restore`,
       `${apiOrigin}/v1/money/${parent}/ai_restore:execute`,
     ],

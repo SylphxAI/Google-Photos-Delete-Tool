@@ -156,9 +156,9 @@ describe('executeAiRestore & executePhotoRestore (hard privacy precondition + no
     expect(fakeFetch).not.toHaveBeenCalled()
   })
 
-  it('calls POST /v1/apps/{parent}/images:restore without Sylphx-Data-Policy: zdr header', async () => {
+  it('calls POST /v1/money/{parent}/images:restore without Sylphx-Data-Policy: zdr header', async () => {
     const fakeFetch = vi.fn(async (url: string, init?: RequestInit) => {
-      expect(url).toBe(`${API_ORIGIN}/v1/apps/${MONEY_PARENT}/images:restore`)
+      expect(url).toBe(`${API_ORIGIN}/v1/money/${MONEY_PARENT}/images:restore`)
       const headers = init?.headers as Record<string, string>
       expect(headers.Authorization).toBe('Bearer sess_live_token_123')
       expect(headers['x-sylphx-key']).toBe(PUBLISHABLE_KEY)
