@@ -18,7 +18,7 @@ export const EMPTY_TRASH_ACK_KEY = 'gpdt_emptyTrashAck_v3'
 /** Userscript / panel localStorage acknowledgement token. */
 export const LOCAL_ACK_VALUE = '1'
 
-/** Versioned Terms of Service and Privacy Policy identifiers (Chairman #3751-#3753). */
+/** Versioned Terms of Service and Privacy Policy identifiers. */
 export const CURRENT_TERMS_VERSION = '2026-11-14'
 export const CURRENT_PRIVACY_VERSION = '2026-11-14'
 export const POLICY_CONSENT_KEY = 'gpdt_policy_consent'

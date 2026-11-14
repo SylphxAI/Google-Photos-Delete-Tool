@@ -30,7 +30,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Chairman #3751-#3753: affirmative clickwrap & versioned policy re-consent', () => {
+describe('affirmative clickwrap & versioned policy re-consent', () => {
   it('requires affirmative clickwrap and rejects unaccepted or outdated consent', async () => {
     expect(CURRENT_TERMS_VERSION).toBe('2026-11-14')
     expect(CURRENT_PRIVACY_VERSION).toBe('2026-11-14')

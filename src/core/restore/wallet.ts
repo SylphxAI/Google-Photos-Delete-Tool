@@ -12,10 +12,9 @@
  *   leave the device (`single_photo_transfer_consent_required`).
  * - Calls `POST /v1/money/{parent}/images:restore` with `x-sylphx-key`,
  *   `Authorization: Bearer <token>`, and `Idempotency-Key`. Never sends
- *   `Sylphx-Data-Policy: zdr` (which would trigger 403 lane_access_denied on
- *   google/gemini-3.1-flash-lite-image).
- * - `wallet:spend` and `wallet:refund` are internal-only between `sylphx-apps-api`
- *   and `services/money`; the browser client only calls `wallet:mine`,
+ *   `Sylphx-Data-Policy: zdr`; the restore route does not offer that policy.
+ * - `wallet:spend` and `wallet:refund` are server-side only; the browser client
+ *   only calls `wallet:mine`,
  *   `wallet:claimCheckout`, and `/v1/money/{parent}/images:restore`.
  *   (`/v1/apps/*` is hard-cut on the live API: 410 `surface_removed`.)
  */
@@ -381,8 +380,8 @@ async function runRestoreRequest(
   const publishableKey = input.publishableKey ?? PUBLISHABLE_KEY
   const f = resolveFetch(fetchImpl)
 
-  // Note: Do NOT send Sylphx-Data-Policy: zdr header because live oat-proxy
-  // declares google/gemini-3.1-flash-lite-image with {"zdr": false, "trains": false}.
+  // No Sylphx-Data-Policy: zdr header: the restore route does not offer that
+  // policy and refuses requests that ask for it (its upstream never trains).
   const headers = buildAuthHeaders(token, publishableKey, {
     'Content-Type': 'application/json',
     'Idempotency-Key': idempotencyKey,
