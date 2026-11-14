@@ -18,7 +18,8 @@
  */
 import { DEFAULT_CONFIG, DeleteEngine, type Progress } from '../core'
 import { PRO_FILTER_ERROR, describeFilter, filterRequiresPro, type PhotoFilter } from '../core/photo-filter'
-import { openDuplicateFinder } from '../ui/dupes/finder'
+import { openDuplicateFinder, type FinderView } from '../ui/dupes/finder'
+import { extensionFinderRestore } from './restore-backend'
 import { browserDom } from '../core/browser-dom'
 import { findConfirmButton, findConfirmDialog, findEmptyTrashButton, isTrashEmpty } from '../core/selectors'
 import { sleep } from '../core/utils'
@@ -362,11 +363,11 @@ function sendStatus(status: RunStatus | string, extra: Partial<Progress> = {}): 
 
 // ─── Find duplicates (in-page review → the same start() path) ───
 
-function openFinder(): void {
-  void syncLocale().then(() => openFinderLocalized())
+function openFinder(view: FinderView): void {
+  void syncLocale().then(() => openFinderLocalized(view))
 }
 
-function openFinderLocalized(): void {
+function openFinderLocalized(view: FinderView): void {
   openDuplicateFinder({
     // Same consent-gated start() as the popup; emptying Trash is never chained.
     runDelete: (ids, dryRun) => start({ dryRun, emptyTrashAfter: false, filter: { kind: 'ids', ids } }),
@@ -384,7 +385,9 @@ function openFinderLocalized(): void {
       progressListeners.add(cb)
       return () => progressListeners.delete(cb)
     },
-  })
+    // Blurry / Low-Res review (on-device) and AI 4K Restore (one confirmed photo).
+    restore: extensionFinderRestore(),
+  }, { view })
 }
 
 // ─── Message routing ────────────────────────────────────────────
@@ -423,10 +426,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         paused: engine?.isPaused ?? false,
         progress: lastProgress,
         progressAsOf: lastProgressAt,
+        // The page has the restore wiring, so the popup may offer AI 4K Restore.
+        restore: true,
       })
       break
     case 'findDuplicates':
-      openFinder()
+      openFinder(message.view === 'blurry' ? 'blurry' : 'duplicates')
       sendResponse({ ok: true })
       break
     case 'diagnostics':

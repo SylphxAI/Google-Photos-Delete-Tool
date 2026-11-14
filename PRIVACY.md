@@ -1,23 +1,31 @@
 # Privacy Policy — Google Photos Delete Tool
 
-**Last updated:** 2026-10-29
+**Last updated:** 2026-11-14 (policy version 2026-11-14)
 
 ## Overview
 
 Google Photos Delete Tool is a browser extension and userscript that helps
-you find duplicate photos and bulk-delete photos in Google Photos. Your privacy is the product's
-core promise: **photo and library information stays on your device**.
+you find duplicate photos, spot blurry or low-resolution shots and bulk-delete
+photos in Google Photos. Your privacy is the product's core promise:
+**scanning and deleting run 100% locally in your browser, with zero photo
+uploads**. Bulk Delete, Find duplicates and the Blurry / Low-Res detector never
+send a photo, thumbnail, fingerprint or library detail anywhere.
+
+The one exception is optional and per photo: **AI 4K Restore** sends a single
+photo, only after you click it on that photo and confirm the transfer notice.
+See [AI 4K Restore](#ai-4k-restore-optional) below.
+
 The tool stores the preferences and licence you choose to save, as described below;
 there is no analytics, telemetry or remote licence check in the client.
 
 ## Data Collection
 
-We do not collect your photo/library information or send it to our servers. Specifically:
+We do not collect your library information. Specifically:
 
 - No personally identifiable information is collected
-- No photo data leaves your browser
-- No analytics or tracking is used
-- No data is sent to external servers
+- No photo leaves your browser unless you confirm AI 4K Restore for that one photo
+- No analytics or tracking is used in the extension or userscript
+- Scanning, duplicate finding, blur detection and deleting send nothing to any server
 - No cookies are set
 - Pro license verification happens **locally** (Ed25519 signature check in
   your browser), using a public-key snapshot shipped with the package.
@@ -46,7 +54,47 @@ the page already loads them from). Each thumbnail is reduced in memory to a
 64-bit fingerprint (a perceptual hash) and the pixels are discarded. The
 fingerprints and groups live only in the open tab and are gone when you
 close the review or the tab. They are never saved and never sent to us or
-anyone else. The tool contacts no other server.
+anyone else.
+
+### Blurry / Low-Res detector
+
+The **Blurry / Low-Res** tab measures sharpness (Laplacian variance) and
+pixel size of the same thumbnails, in memory, on your computer. Scores live
+only in the open tab and are never saved or sent. Nothing is marked for Trash
+until you choose it.
+
+### AI 4K Restore (optional)
+
+AI 4K Restore is the only feature that sends a photo off your device, and it
+sends exactly one photo per request:
+
+1. You click **AI 4K Restore** on one photo.
+2. A transfer notice names the photo and says what will happen. Nothing is
+   sent until you press **Send 1 photo and restore**.
+3. That single photo is sent over HTTPS to Sylphx AI (`sylphx.ai`). Sylphx
+   servers process it **ephemerally in memory, with zero persistent storage or
+   retention**: no copy is kept after the 4K result is returned.
+4. To render the 4K image, Sylphx passes the photo to a paid third-party AI
+   inference API whose terms for this request **exclude training AI models on
+   it** (`trains: false`). Any short-term processing on the provider's side
+   is governed by its API terms.
+5. The restored image comes back to your browser, lives in memory as a
+   temporary object, and is released when you close the studio. It is saved
+   only if you press **Download 4K Photo**.
+
+When the studio opens, the tool also asks Sylphx for your credit balance
+using the wallet token stored on your device. That request carries no photo
+or library data. Credits are bought on the Sylphx pricing page; payment
+details go to the payment provider, never through the extension.
+
+Before your first purchase, Pro activation or restore, and again whenever
+these terms change, the tool asks you to agree to the Terms of Service and
+this policy. The acceptance record (a local or account id, the two version
+dates, the time and where you agreed) is saved in your browser
+(`chrome.storage.local` or `localStorage`). When you connect a Sylphx wallet or
+account, the same record is also sent to Sylphx (`api.sylphx.com`) so your
+account's agreement to the Terms and this policy is on file. It carries no
+photo or library data.
 
 On your request, the tool stores **locally**:
 
@@ -55,11 +103,16 @@ On your request, the tool stores **locally**:
 - Your Pro token in `chrome.storage.local` and `chrome.storage.sync`, so Pro
   follows your browser sign-in (the browser's own sync, under your Google
   account's sync settings; we never receive it)
+- Your Terms/Privacy acceptance record (`gpdt_policy_consent`) and, if you
+  connect one, your Sylphx wallet token
 - A short-lived "pending empty-trash" flag after a run that chose to
   continue to `/trash` (expires after 3 minutes and is always cleared on
   first sight)
 
-None of this is transmitted to us or anyone else by the tool.
+None of this is transmitted to us or anyone else by the tool, except the
+wallet token, which is sent to Sylphx only to check your balance and pay for a
+restore you confirmed, and the acceptance record, which is sent to Sylphx when
+you connect a Sylphx wallet or account.
 
 On install the browser opens our landing page's how-to section in a tab, and on
 uninstall it opens a short "why did you leave" page. These are ordinary pages
@@ -74,16 +127,17 @@ accept its cookie banner.
 - **Host access to `https://photos.google.com/*`** — required to interact
   with the Google Photos interface. The tool only runs on this domain.
   Find duplicates fetches thumbnails from Google's image servers with the
-  page's own access rules; it needs no extra permission.
+  page's own access rules; it needs no extra permission. AI 4K Restore adds
+  no permission either.
 
 The content script is declared directly for the single supported domain.
 
 ## Effects on Your Google Photos Account
 
-The tool deletes photos from your account on your behalf. Deleted photos
-move to the Google Photos **Trash**, where they remain for 60 days before
-permanent deletion (Google's standard policy). You can restore anything
-from the trash during that window.
+The tool moves the photos you choose to the Google Photos **Trash**.
+Restoration is possible only while items remain in Trash and Google Photos’
+current retention policy allows it; no recovery period is guaranteed. If
+Trash is full, Google may prompt permanent deletion instead.
 
 If you enable **"Empty trash"**, the tool navigates to
 `photos.google.com/trash` after the main run and clicks "Empty trash" +
@@ -93,10 +147,23 @@ complete after the empty state is verified. Use it with caution.
 
 ## Third-Party Services
 
-This tool does not integrate with or send data to any third-party
-services. No analytics, no telemetry, no remote logging. The **Report
+Scanning, duplicate finding, blur detection and deleting use no third-party
+service. No analytics, no telemetry, no remote logging. The only service the
+tool contacts is Sylphx AI, and only for AI 4K Restore as described above
+(with its paid, no-training inference provider). The **Report
 issue** button opens GitHub's issue page with a diagnostic description
 that you choose to submit.
+
+## Your Rights
+
+If you have connected a Sylphx account or bought Pro or credits, you can ask
+for a copy of your personal data (subject access / DSAR), or ask us to
+correct (rectify) or delete (erase) it, or to restrict or stop using it.
+Send statutory data-rights requests and formal legal notices exclusively to
+<legal@sylphx.com> (customer support at <hi@sylphx.com> cannot accept or
+discuss legal notices or statutory data-rights requests). You may also
+complain to the UK Information Commissioner's Office (`ico.org.uk`) or your
+local data protection authority.
 
 ## Children's Privacy
 
@@ -110,9 +177,12 @@ date.
 
 ## Contact
 
-For questions, open an issue at
+For routine product or order support, open an issue at
 <https://github.com/SylphxAI/Google-Photos-Delete-Tool/issues> or email
-<hi@sylphx.com>. Security reports go through the repository's
+<hi@sylphx.com>. Formal legal notices, statutory data-rights requests, and
+pre-action dispute notices must be sent exclusively to <legal@sylphx.com>
+(customer support at <hi@sylphx.com> cannot accept or discuss legal notices).
+Security reports go through the repository's
 [security advisories](https://github.com/SylphxAI/Google-Photos-Delete-Tool/security/advisories/new).
 
 The website and Pro purchases are covered by the site privacy notice: https://sylphxai.github.io/Google-Photos-Delete-Tool/privacy.html

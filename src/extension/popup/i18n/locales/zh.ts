@@ -86,6 +86,7 @@ const zh: Translations = {
       active: "Pro 已激活 — 筛选已启用",
       invalid: "许可证令牌无效",
       expired: "许可证已过期。请重新找回许可证。",
+      termsRequired: "Pro 未激活。请同意更新后的条款后再继续。",
     },
   },
   pro: {
@@ -153,6 +154,7 @@ const zh: Translations = {
     exportCsv: "导出 CSV",
     viewTrash: "查看回收站",
     findDuplicates: "查找重复照片",
+    aiRestore: "AI 4K 修复",
   },
   notes: {
     navigateFirst: "请先打开 {url}。",

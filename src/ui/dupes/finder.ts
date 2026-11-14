@@ -18,6 +18,11 @@ import { sleep } from '../../core/utils'
 import { proUrl, type ProVariant } from '../../core/pro-moments'
 import { getLocale, t } from '../../extension/popup/i18n'
 import {
+  RESTORE_LABEL, TOKENS_CSS, openRestoreStudio, sparkleIcon,
+  type PhotoQuality, type QualityVerdict, type RestoreBackend,
+} from '../restore/studio'
+import type { PolicyConsentStore, PolicySurface } from '../restore/policy-consent'
+import {
   CONFIDENT_SIMILARITY, applyKeepRule, groupKey, groupsToCsv, planWithAutoAccept, splitByConfidence, trashedIds,
   type KeepRule,
 } from '../../core/dedup/pro'
@@ -35,6 +40,26 @@ export interface FinderHost {
   /** The install's copy A/B variant, carried as utm_content on Pro links. Missing means "a". */
   proVariant?(): Promise<ProVariant>
   scanDeps?: ScanDeps
+  /** AI 4K Restore and the Blurry / Low-Res view. Missing hides both. */
+  restore?: FinderRestore
+}
+
+export interface FinderRestore {
+  backend: RestoreBackend
+  policyStore: PolicyConsentStore
+  surface?: PolicySurface
+  /**
+   * On-device sharpness and resolution check of the scanned thumbnails.
+   * Missing hides the Blurry / Low-Res tab; the restore button stays.
+   */
+  classify?(items: ScannedItem[], opts: { signal: AbortSignal; onProgress?: (done: number, total: number) => void }): Promise<Map<string, QualityVerdict>>
+}
+
+export type FinderView = 'duplicates' | 'blurry'
+
+export interface FinderOptions {
+  /** Tab to show after the scan. 'blurry' needs `host.restore.classify`. */
+  view?: FinderView
 }
 
 const HOST_ID = 'gpdt-dupes-host'
@@ -47,53 +72,73 @@ export const browserScanDeps: ScanDeps = {
   sleep,
 }
 
-const CSS = `
-:host { all: initial; }
+const CSS = `${TOKENS_CSS}
 * { box-sizing: border-box; }
 .panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); z-index: 2147483647;
-  display: flex; flex-direction: column; background: #16181d; color: #e8e8e8;
-  font: 13px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  box-shadow: -8px 0 32px rgba(0,0,0,.5); border-left: 1px solid rgba(255,255,255,.08); }
-header { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
-header h1 { flex: 1; margin: 0; font-size: 15px; }
-main { flex: 1; overflow-y: auto; padding: 14px 16px; }
-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.08); display: grid; gap: 8px; }
-button { cursor: pointer; border: 0; border-radius: 8px; padding: 8px 12px; font: 600 13px inherit; font-family: inherit; }
+  display: flex; flex-direction: column; background: var(--gp-paper); color: var(--gp-ink);
+  font: 400 14px/1.5 var(--gp-font); -webkit-font-smoothing: antialiased;
+  box-shadow: var(--gp-shadow); border-left: 1px solid var(--gp-outline); }
+header { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px 12px 8px 16px; border-bottom: 1px solid var(--gp-outline); }
+header h1 { flex: 1; margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; }
+main { flex: 1; overflow-y: auto; padding: 16px; }
+main p { margin: 0 0 12px; }
+footer { padding: 12px 16px; border-top: 1px solid var(--gp-outline); background: var(--gp-raised); display: grid; gap: 8px; }
+button { cursor: pointer; border: 1px solid var(--gp-btn-border); border-radius: 8px; min-height: 40px; padding: 0 16px;
+  font: 600 13px/1.2 var(--gp-font); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 button:disabled { opacity: .45; cursor: not-allowed; }
-.primary { background: linear-gradient(135deg,#10b981,#3b82f6); color: #fff; }
-.danger { background: #ef4444; color: #fff; }
-.ghost { background: rgba(255,255,255,.08); color: #c9c9d1; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--gp-accent); outline-offset: 2px; }
+.primary { background: var(--gp-accent); color: var(--gp-on-accent); border-color: var(--gp-accent); }
+.danger { background: #C5281C; color: #FFFFFF; border-color: #C5281C; }
+.ghost { background: var(--gp-sunken); color: var(--gp-ink); }
+header .ghost { min-height: 32px; padding: 0 12px; }
 .row { display: flex; gap: 8px; align-items: center; }
 .row > button { flex: 1; }
-.muted { color: #9a9aa5; font-size: 12px; }
-.err { color: #f87171; font-size: 12px; }
-.bar { height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; margin: 10px 0; }
-.bar > div { height: 100%; width: 30%; background: linear-gradient(90deg,#10b981,#3b82f6); animation: slide 1.4s ease-in-out infinite; }
+.muted { color: var(--gp-muted); font-size: 12px; line-height: 1.45; }
+.err { color: var(--gp-error); font-size: 12px; }
+.bar { height: 6px; background: var(--gp-sunken); border-radius: 9999px; overflow: hidden; margin: 12px 0; }
+.bar > div { height: 100%; width: 30%; border-radius: 9999px; background: var(--gp-accent); animation: slide 1.4s ease-in-out infinite; }
 @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(333%); } }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; }
-.stat { background: rgba(255,255,255,.05); border-radius: 8px; padding: 8px; text-align: center; }
-.stat b { display: block; font-size: 16px; font-variant-numeric: tabular-nums; }
-.stat span { font-size: 10px; color: #8b8b95; text-transform: uppercase; letter-spacing: .4px; }
-input[type=range] { flex: 1; accent-color: #3b82f6; }
-.group { background: rgba(255,255,255,.04); border-radius: 10px; padding: 10px; margin: 10px 0; }
-.group h2 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: #c9c9d1; }
+@media (prefers-reduced-motion: reduce) { .bar > div { animation: none; width: 100%; opacity: .5; } }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.stat { background: var(--gp-sunken); border-radius: 8px; padding: 12px; }
+.stat b { display: block; font-size: 24px; font-weight: 650; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.stat span { display: block; margin-top: 6px; font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--gp-muted); }
+input[type=range] { flex: 1; accent-color: var(--gp-accent); }
+input[type=checkbox] { accent-color: var(--gp-accent); }
+.group { background: var(--gp-raised); border: 1px solid var(--gp-outline); border-radius: 12px; padding: 16px; margin: 12px 0; }
+.group h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; }
 .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
-.item { position: relative; border-radius: 8px; overflow: hidden; border: 2px solid transparent; background: #0d0e11; }
-.item.keep { border-color: #10b981; }
-.item.delete { border-color: #ef4444; }
-.item.delete img { opacity: .55; }
-.item img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; cursor: pointer; }
-.item .badge { position: absolute; top: 4px; left: 4px; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-.item.keep .badge { background: #10b981; color: #fff; }
-.item.delete .badge { background: #ef4444; color: #fff; }
-.item .meta { display: flex; justify-content: space-between; gap: 4px; padding: 4px 6px; font-size: 11px; color: #9a9aa5; }
-.item .meta a { color: #93c5fd; text-decoration: none; }
-.consent { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; }
-.tools { display: grid; gap: 8px; margin: 10px 0; padding: 10px; border-radius: 10px; background: rgba(255,255,255,.04); }
-.tools select { flex: 1; background: #0d0e11; color: inherit; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 5px; font: inherit; }
+.qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.item, .qitem { position: relative; border-radius: 8px; overflow: hidden; background: var(--gp-raised); border: 1px solid var(--gp-outline); }
+.item::after, .qitem::after { content: ''; position: absolute; inset: 0; border-radius: 8px; pointer-events: none; }
+.item.keep::after { box-shadow: inset 0 0 0 2px var(--gp-keep); }
+.item.delete::after, .qitem.delete::after { box-shadow: inset 0 0 0 2px var(--gp-trash-ink); }
+.item.delete img, .qitem.delete img { opacity: .55; }
+.item img, .qitem img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--gp-sunken); }
+.item img { cursor: pointer; }
+.badge { position: absolute; top: 6px; left: 6px; z-index: 1; padding: 4px; border-radius: 4px; font-size: 12px; font-weight: 600; line-height: 1.2; }
+.item.keep .badge { background: var(--gp-keep); color: var(--gp-on-keep); }
+.item.delete .badge, .qitem.delete .badge { background: var(--gp-trash-ink); color: var(--gp-on-trash-ink); }
+.item .meta, .qitem .meta { display: flex; justify-content: space-between; gap: 4px; padding: 6px 8px; font-size: 12px; color: var(--gp-muted); font-variant-numeric: tabular-nums; }
+.meta a { color: var(--gp-accent); text-decoration: none; font-weight: 600; }
+.quality { color: var(--gp-ink); font-weight: 600; }
+.restore { width: calc(100% - 12px); margin: 0 6px 6px; min-height: 32px; padding: 0 8px; font-size: 12px;
+  background: var(--gp-raised); color: var(--gp-accent); border-color: var(--gp-outline); }
+.restore:hover { border-color: var(--gp-accent); }
+.verdict { display: flex; gap: 4px; padding: 0 6px 6px; }
+.verdict button { flex: 1; min-height: 32px; padding: 0 8px; font-size: 12px; background: var(--gp-sunken); color: var(--gp-ink); }
+.verdict button.k[aria-pressed=true] { background: var(--gp-keep); color: var(--gp-on-keep); border-color: var(--gp-keep); }
+.verdict button.t[aria-pressed=true] { background: var(--gp-trash-ink); color: var(--gp-on-trash-ink); border-color: var(--gp-trash-ink); }
+.consent { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.45; padding: 12px; border-radius: 8px; background: var(--gp-caution-container); }
+.tools { display: grid; gap: 8px; margin: 12px 0; padding: 12px; border-radius: 12px; background: var(--gp-raised); border: 1px solid var(--gp-outline); }
+.tools select { flex: 1; height: 36px; background: var(--gp-raised); color: inherit; border: 1px solid var(--gp-outline); border-radius: 8px; padding: 0 10px; font: inherit; font-size: 13px; }
 .tools select:disabled { opacity: .45; }
-.tools label.opt { display: flex; gap: 6px; align-items: center; }
-.pro-tag { color: #93c5fd; font-size: 11px; font-weight: 700; text-decoration: none; border: 1px solid rgba(147,197,253,.5); border-radius: 6px; padding: 1px 6px; }
+.tools label.opt { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.pro-tag { color: var(--gp-on-accent-container); background: var(--gp-accent-container); font-size: 12px; font-weight: 600; text-decoration: none; border-radius: 4px; padding: 2px 6px; }
+.tabs { display: flex; padding: 2px; margin: 0 0 16px; border-radius: 8px; background: var(--gp-sunken); border: 1px solid var(--gp-btn-border); }
+.tabs button { flex: 1; min-height: 32px; border: 0; background: transparent; color: var(--gp-muted); border-radius: 6px; }
+.tabs button[aria-selected=true] { background: var(--gp-raised); color: var(--gp-ink); box-shadow: 0 0 0 1px var(--gp-outline); }
+.gp-sparkle { flex: none; }
 .hidden { display: none !important; }
 `
 
@@ -113,7 +158,7 @@ function h<K extends keyof HTMLElementTagNameMap>(
 
 const pct = (x: number): string => `${Math.round(x * 100)}%`
 
-export function openDuplicateFinder(host: FinderHost): void {
+export function openDuplicateFinder(host: FinderHost, options: FinderOptions = {}): void {
   document.getElementById(HOST_ID)?.remove()
   const mount = h('div', { id: HOST_ID })
   const shadow = mount.attachShadow({ mode: 'open' })
@@ -141,6 +186,13 @@ export function openDuplicateFinder(host: FinderHost): void {
   let toolsNote = ''
   const approved = new Set<string>()
   const overrides: Overrides = new Map()
+  const restore = host.restore
+  const canClassify = typeof restore?.classify === 'function'
+  let tab: FinderView = options.view === 'blurry' && canClassify ? 'blurry' : 'duplicates'
+  let verdicts: Map<string, QualityVerdict> | null = null
+  let classifyAbort: AbortController | null = null
+  /** Blurry-tab photos the person chose to trash. Nothing is chosen for them. */
+  const blurTrash = new Set<string>()
 
   const main = h('main')
   const footer = h('footer')
@@ -152,12 +204,23 @@ export function openDuplicateFinder(host: FinderHost): void {
   closeBtn.addEventListener('click', () => {
     scanAbort?.abort()
     groupAbort?.abort()
+    classifyAbort?.abort()
     unsubscribe()
     mount.remove()
   })
 
   // ─── 1. Intro ───────────────────────────────────────────────
   function renderIntro(): void {
+    if (tab === 'blurry') {
+      main.replaceChildren(
+        h('p', {}, 'Finds blurry and low-resolution photos in the view you are on, so you can move junk shots to Trash or restore the ones you care about.'),
+        h('p', { class: 'muted' }, 'Sharpness is measured on your computer from small thumbnails. Nothing is uploaded and nothing is deleted until you choose.'),
+      )
+      const start = h('button', { class: 'primary' }, 'Scan this view')
+      start.addEventListener('click', () => void runScan())
+      footer.replaceChildren(start)
+      return
+    }
     main.replaceChildren(
       h('p', {}, 'Finds photos that look the same or almost the same in the view you are on (your library, an album, or a search).'),
       h('p', { class: 'muted' }, 'It scrolls the page and compares small thumbnails on your computer. Nothing is uploaded and nothing is deleted until you review the groups and confirm.'),
@@ -241,7 +304,50 @@ export function openDuplicateFinder(host: FinderHost): void {
         : t('finder.appliedAll', { n })
   }
 
+  function renderTabs(): HTMLElement | string {
+    if (!canClassify) return ''
+    const tabs = h('div', { class: 'tabs', role: 'tablist', 'aria-label': 'What to review' })
+    const views: [FinderView, string][] = [['duplicates', 'All Duplicates'], ['blurry', 'Blurry / Low-Res']]
+    for (const [key, label] of views) {
+      const b = h('button', { role: 'tab', 'aria-selected': String(tab === key), 'data-tab': key }, label)
+      b.addEventListener('click', () => {
+        if (tab === key) return
+        tab = key
+        renderReview()
+      })
+      tabs.append(b)
+    }
+    return tabs
+  }
+
+  /** Small "AI 4K Restore" button that opens the studio for one photo. */
+  function restoreButton(item: ScannedItem, quality?: PhotoQuality): HTMLElement | string {
+    if (!restore) return ''
+    const b = h('button', { class: 'restore', 'data-restore': item.id, title: 'Restore this photo in 4K' }, sparkleIcon(document, 14), RESTORE_LABEL)
+    b.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const v = verdicts?.get(item.id)
+      openRestoreStudio({
+        photo: {
+          id: item.id,
+          label: item.label,
+          previewUrl: sizedThumbUrl(item.thumbUrl, 1024),
+          sourceUrl: sizedThumbUrl(item.thumbUrl, 2048),
+          width: v?.width,
+          height: v?.height,
+          quality: quality ?? (v && v.kind !== 'sharp' ? v.kind : undefined),
+        },
+        backend: restore.backend,
+        policyStore: restore.policyStore,
+        surface: restore.surface,
+        returnFocus: b,
+      })
+    })
+    return b
+  }
+
   function renderReview(): void {
+    if (tab === 'blurry') { renderBlurry(); return }
     const slider = h('input', { type: 'range', min: '80', max: '100', step: '1', value: String(Math.round(threshold * 100)), 'aria-label': 'How similar photos must be' })
     const sliderValue = h('b', {}, pct(threshold))
     let debounce: ReturnType<typeof setTimeout> | undefined
@@ -266,6 +372,7 @@ export function openDuplicateFinder(host: FinderHost): void {
     more.addEventListener('click', () => { shown += PAGE; renderReview() })
 
     main.replaceChildren(
+      renderTabs(),
       h('div', { class: 'row' }, h('span', {}, 'Similarity'), slider, sliderValue),
       h('p', { class: 'muted' }, 'Higher finds only near-identical copies. Lower also groups edits, bursts and similar shots, so check them.'),
       renderTools(split.confident.length, split.review.length, pending),
@@ -280,6 +387,92 @@ export function openDuplicateFinder(host: FinderHost): void {
       more,
     )
     renderReviewFooter(plan.ids)
+  }
+
+  // ─── 3b. Blurry / Low-Res ───────────────────────────────────
+  async function classifyView(): Promise<void> {
+    if (!restore?.classify || classifyAbort) return
+    const ctrl = new AbortController()
+    classifyAbort = ctrl
+    const done = h('b', {}, '0')
+    const total = h('b', {}, items.length.toLocaleString())
+    main.replaceChildren(
+      renderTabs(),
+      h('p', { class: 'muted' }, 'Measuring sharpness on your computer…'),
+      h('div', { class: 'bar' }, h('div')),
+      h('div', { class: 'stats' },
+        h('div', { class: 'stat' }, done, h('span', {}, 'Checked')),
+        h('div', { class: 'stat' }, total, h('span', {}, 'In view')),
+        h('div', { class: 'stat' }, h('b', {}, '–'), h('span', {}, 'Flagged'))),
+    )
+    footer.replaceChildren()
+    try {
+      const result = await restore.classify(items, {
+        signal: ctrl.signal,
+        onProgress: (n) => { done.textContent = n.toLocaleString() },
+      })
+      if (ctrl.signal.aborted) return
+      verdicts = result
+    } catch {
+      if (ctrl.signal.aborted) return
+      verdicts = null
+      classifyAbort = null
+      main.replaceChildren(renderTabs(), h('p', { class: 'err' }, 'Sharpness could not be measured in this view. Nothing was changed. Try Scan again.'))
+      renderRestart()
+      return
+    }
+    classifyAbort = null
+    if (tab === 'blurry') renderBlurry()
+  }
+
+  function renderBlurry(): void {
+    if (!verdicts) { void classifyView(); return }
+    const rank = (v: QualityVerdict): number => (v.kind === 'blurry' ? 0 : 1) + (v.sharpness ?? 0)
+    const flagged = items
+      .map((item) => ({ item, v: verdicts!.get(item.id) }))
+      .filter((x): x is { item: ScannedItem; v: QualityVerdict & { kind: PhotoQuality } } => !!x.v && x.v.kind !== 'sharp')
+      .sort((a, b) => rank(a.v) - rank(b.v))
+    for (const id of blurTrash) if (!flagged.some((f) => f.item.id === id)) blurTrash.delete(id)
+    const blurry = flagged.filter((f) => f.v.kind === 'blurry').length
+    const grid = h('div', { class: 'qgrid' })
+    for (const { item, v } of flagged.slice(0, shown)) grid.append(renderQualityTile(item, v))
+    const more = h('button', { class: 'ghost' }, `Show more photos (${Math.max(0, flagged.length - shown)} left)`)
+    more.classList.toggle('hidden', shown >= flagged.length)
+    more.addEventListener('click', () => { shown += PAGE; renderReview() })
+    main.replaceChildren(
+      renderTabs(),
+      h('div', { class: 'stats' },
+        h('div', { class: 'stat' }, h('b', {}, blurry.toLocaleString()), h('span', {}, 'Blurry')),
+        h('div', { class: 'stat' }, h('b', {}, (flagged.length - blurry).toLocaleString()), h('span', {}, 'Low-res')),
+        h('div', { class: 'stat' }, h('b', {}, blurTrash.size.toLocaleString()), h('span', {}, 'To Trash'))),
+      flagged.length === 0
+        ? h('p', {}, `No blurry or low-resolution photos among ${items.length.toLocaleString()} in this view.`)
+        : h('p', { class: 'muted' }, `Nothing is marked for Trash until you choose. Restore sends only the photo you confirm; everything else stays on your computer.`),
+      grid,
+      more,
+    )
+    renderReviewFooter([...blurTrash])
+  }
+
+  function renderQualityTile(item: ScannedItem, v: QualityVerdict & { kind: PhotoQuality }): HTMLElement {
+    const trashed = blurTrash.has(item.id)
+    const date = item.takenAt ? new Date(item.takenAt).toLocaleDateString() : ''
+    const keep = h('button', { class: 'k', 'aria-pressed': String(!trashed) }, 'Keep')
+    const trash = h('button', { class: 't', 'aria-pressed': String(trashed) }, 'Move to Trash')
+    keep.addEventListener('click', () => { blurTrash.delete(item.id); renderReview() })
+    trash.addEventListener('click', () => { blurTrash.add(item.id); renderReview() })
+    const quality = v.kind === 'blurry' ? 'Blurry' : 'Low-res'
+    const detail = v.kind === 'low-res' && v.width && v.height
+      ? `${v.width.toLocaleString()} × ${v.height.toLocaleString()}`
+      : v.sharpness !== undefined ? `${Math.round(v.sharpness * 100)}% sharp` : ''
+    return h('div', { class: `qitem${trashed ? ' delete' : ''}`, 'data-quality': v.kind },
+      h('img', { src: sizedThumbUrl(item.thumbUrl, 300), alt: item.label ?? 'Photo', loading: 'lazy', title: item.label ?? '' }),
+      ...(trashed ? [h('span', { class: 'badge' }, 'Trash')] : []),
+      h('div', { class: 'meta' },
+        h('span', {}, h('span', { class: 'quality' }, quality), detail ? ` · ${detail}` : '', date ? ` · ${date}` : ''),
+        h('a', { href: `https://photos.google.com/photo/${encodeURIComponent(item.id)}`, target: '_blank', rel: 'noopener' }, 'Open')),
+      h('div', { class: 'verdict' }, keep, trash),
+      restoreButton(item, v.kind))
   }
 
   /** Pro review tools. Free users see them disabled with a Get Pro link. */
@@ -387,7 +580,8 @@ export function openDuplicateFinder(host: FinderHost): void {
         h('span', { class: 'badge' }, choice === 'keep' ? (id === group.bestItemId ? 'Keep · best' : 'Keep') : 'Trash'),
         h('div', { class: 'meta' },
           h('span', {}, date),
-          h('a', { href: `https://photos.google.com/photo/${encodeURIComponent(id)}`, target: '_blank', rel: 'noopener' }, 'Open'))))
+          h('a', { href: `https://photos.google.com/photo/${encodeURIComponent(id)}`, target: '_blank', rel: 'noopener' }, 'Open')),
+        restoreButton(item)))
     })
     const card = h('section', { class: 'group' },
       h('h2', {}, `${group.itemIds.length} photos · ${pct(group.averageSimilarity)} similar`),
@@ -470,16 +664,20 @@ export function openDuplicateFinder(host: FinderHost): void {
     else if (endedWithNothingMoved(p)) lines.push(h('p', { class: 'err' }, NOTHING_MOVED_TEXT))
     else lines.push(h('p', {}, `Done. ${p.deleted.toLocaleString()} photos moved to Trash. You can restore them from Trash for 60 days.`))
     // Moved items are gone from the view; the old groups are stale.
-    if (!runIsDryRun && p.deleted > 0) groups = []
+    if (!runIsDryRun && p.deleted > 0) { groups = []; verdicts = null; blurTrash.clear() }
     main.replaceChildren(...lines)
     renderRestart()
   }
 
   function renderRestart(): void {
     const again = h('button', { class: 'primary' }, 'Scan again')
-    again.addEventListener('click', () => { overrides.clear(); manual.clear(); approved.clear(); toolsNote = ''; keepRule = 'default'; void runScan() })
+    again.addEventListener('click', () => {
+      overrides.clear(); manual.clear(); approved.clear(); toolsNote = ''; keepRule = 'default'
+      classifyAbort?.abort(); classifyAbort = null; verdicts = null; blurTrash.clear()
+      void runScan()
+    })
     const back = h('button', { class: 'ghost' }, 'Back to review')
-    back.classList.toggle('hidden', groups.length === 0)
+    back.classList.toggle('hidden', tab === 'blurry' ? !verdicts : groups.length === 0)
     back.addEventListener('click', () => renderReview())
     footer.replaceChildren(h('div', { class: 'row' }, back, again))
   }

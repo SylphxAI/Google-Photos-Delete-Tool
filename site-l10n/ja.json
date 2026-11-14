@@ -46,8 +46,6 @@
     "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "復元できるのは、項目がゴミ箱に残っており、Google フォトの現在の保存ポリシーで認められる場合だけです。ゴミ箱を空にする操作は任意で、事前に確認を求めますが、元に戻すことはできません。",
     "Stops instead of guessing": "推測せず、止まります",
     "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "Google がボタンを変更し、ツールが確実に識別できなくなった場合は停止します。確信が持てない場所は決してクリックしません。",
-    "Your photos stay on your computer": "写真はお使いのパソコンから出ません",
-    "Everything runs in your browser. No photo, thumbnail or fingerprint is uploaded to us or anyone else.": "処理はすべてブラウザ内で行われます。写真、サムネイル、フィンガープリントが当社や第三者にアップロードされることはありません。",
     "Find the look-alikes Google keeps": "Google が残してしまう、そっくりな写真を見つける",
     "Google Photos removes only exact copies. Resized, re-saved, lightly edited or twice-uploaded copies stay. Find duplicates groups them, keeps the best copy and marks the rest for Trash.": "Google フォトが取り除くのは完全に同一のコピーだけです。リサイズ、再保存、軽い編集、二重アップロードされたコピーは残ります。「重複写真の検出」はそれらをグループにまとめ、最良のコピーを残し、残りをゴミ箱行きとして印を付けます。",
     "Set how strict the match is with a similarity slider.": "類似度スライダーで、一致の厳しさを設定できます。",
@@ -77,7 +75,6 @@
     "Can I undo a delete?": "削除を取り消せますか？",
     "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "項目がゴミ箱に残っており、Google フォトの現在のポリシーで認められる場合だけです。Google フォトのゴミ箱を開き、項目を選択して「復元」を押してください。ゴミ箱を空にする操作や完全な削除は元に戻せません。ゴミ箱がいっぱいの場合、代わりに完全な削除を求められることがあります。削除前に Google の説明をご確認ください。",
     "Does it upload my photos?": "写真はアップロードされますか？",
-    "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "いいえ。ブラウザ内の Google フォトのページの中で動作します。重複写真の検出は、Google 自身のサーバーから小さなサムネイルだけをダウンロードし、メモリ内でそれぞれをフィンガープリントに変換して、レビューを閉じると破棄します。",
     "Can I delete only part of my library?": "ライブラリの一部だけを削除できますか？",
     "Yes. Open an album or a search and the tool acts on that view only. Pro adds type and date filters for finer control.": "はい。アルバムや検索結果を開けば、ツールはその表示範囲だけを対象にします。Pro では、種類・日付フィルターでさらに細かく絞り込めます。",
     "Which browsers does it work in?": "どのブラウザで動作しますか？",
@@ -104,6 +101,13 @@
     "Google Photos desktop delete guidance (checked 2026-10-29)": "Google フォトのパソコン向け削除手順（確認日：2026-10-29）",
     "Google Photos desktop restore guidance (checked 2026-10-29)": "Google フォトのパソコン向け復元手順（確認日：2026-10-29）",
     "Pro is from US$19, one-time. Personal US$19, Family US$29.97, Team US$49. No subscription, no account.": "Pro は19米ドルからの買い切りです。個人 19米ドル、家族 29.97米ドル、チーム 49米ドル。サブスクもアカウントも不要です。",
-    "Personal US$19 · Family US$29.97 · Team US$49": "個人 US$19 · 家族 US$29.97 · チーム US$49"
+    "Personal US$19 · Family US$29.97 · Team US$49": "個人 US$19 · 家族 US$29.97 · チーム US$49",
+    "Scanning stays on your computer": "スキャンはあなたのパソコンの中だけ",
+    "Finding duplicates, spotting blurry shots and deleting run in your browser with zero photo uploads. Only AI 4K Restore sends the one photo you confirm.": "重複の検出、ぼやけた写真の判定、削除はブラウザ内で動作し、写真は一枚もアップロードされません。写真を送るのは、あなたが確認した1枚を対象にした「AIで4K復元」だけです。",
+    "Not for scanning or deleting. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review. Only if you confirm AI 4K Restore on one photo is that photo sent over HTTPS to Sylphx AI, which processes it in memory and keeps no copy.": "スキャンや削除ではアップロードしません。ブラウザの Google フォトのページ内で動作します。重複検出は Google 自身のサーバーから小さなサムネイルだけを読み込み、メモリ上で指紋に変換し、確認画面を閉じると消去します。1枚の写真で「AIで4K復元」を確認したときだけ、その写真が HTTPS で Sylphx AI に送られ、メモリ上で処理されてコピーは残りません。",
+    "Restore the blurry ones worth keeping": "残したい、ぼやけた写真をよみがえらせる",
+    "The Blurry / Low-Res view finds soft and small photos on your computer. Move junk shots to Trash, or restore a photo you love in 4K and compare before and after with a slider.": "「ぼやけ / 低解像度」ビューは、ピントの甘い写真や小さな写真をパソコン上で見つけます。失敗写真はゴミ箱へ。大切な写真は4Kに復元し、スライダーで前後を見比べられます。",
+    "Only the photo you confirm is sent, over HTTPS to Sylphx AI. It is processed in memory, no copy is kept, and it is never used to train AI models. New accounts get 3 free trial credits.": "送信されるのは、あなたが確認した写真だけです。HTTPS で Sylphx AI に送られ、メモリ上で処理され、コピーは残らず、AIモデルの学習にも使われません。新規アカウントには無料お試しクレジットが3回分付きます。",
+    "Try AI 4K Restore": "AIで4K復元を試す"
   }
 }

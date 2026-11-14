@@ -65,3 +65,10 @@ describe('published permanent empty-trash warning copy', () => {
     expect(panelTs).toContain('"Empty trash afterwards" is PERMANENT with no recovery.')
   })
 })
+
+describe('AI 4K Restore popup entry', () => {
+  it('ships hidden until the page reports restore support', () => {
+    const popupHtml = read('src/extension/popup/popup.html')
+    expect(popupHtml).toMatch(/<button[^>]*id="restore-btn"[^>]*\shidden[\s>]/)
+  })
+})

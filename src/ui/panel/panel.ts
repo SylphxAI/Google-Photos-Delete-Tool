@@ -11,7 +11,9 @@ import { formatElapsed, formatEta } from '../../core/utils'
 import { ACTIVE_STATUSES } from '../../core/status'
 import type { Progress, RunStatus } from '../../core'
 import { PHOTO_TYPES, buildFilterFromControls, type PhotoType } from '../../core/photo-filter'
-import { openDuplicateFinder } from '../dupes/finder'
+import { openDuplicateFinder, type FinderRestore } from '../dupes/finder'
+import { POLICY_GATE_CSS, ensurePolicyConsent, localStoragePolicyStore, type PolicyConsentStore } from '../restore/policy-consent'
+import { RESTORE_LABEL, sparkleIcon } from '../restore/studio'
 import { sleep } from '../../core/utils'
 import { POST_RUN_PROMPT_KEY, claimPostRunPrompt, detectBrowser } from '../../core/post-run-prompt'
 import { PRO_VARIANT_KEY, buildDryRunTeaser, dateReportLine, getProVariant, proUrl, type ProVariant } from '../../core/pro-moments'
@@ -44,53 +46,76 @@ const FILTER_LABELS: Record<PhotoType, string> = {
   unknown: 'Unknown',
 }
 
-export function mountPanel(container: HTMLElement, runner: PageRunner): void {
+export interface PanelOptions {
+  /** AI 4K Restore wiring. Missing hides the entry point. */
+  restore?: FinderRestore
+  /** Where the Terms/Privacy acceptance lives. Defaults to localStorage. */
+  policyStore?: PolicyConsentStore
+}
+
+export function mountPanel(container: HTMLElement, runner: PageRunner, options: PanelOptions = {}): void {
   if (document.getElementById(ROOT_ID)) return
 
   const style = document.createElement('style')
   style.id = STYLE_ID
   style.textContent = `
+#${ROOT_ID} {
+  --gp-font: Inter, "Noto Sans JP", "Noto Sans SC", "Noto Sans TC", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "PingFang SC", "PingFang TC", "Microsoft YaHei", sans-serif;
+  --gp-paper: #F7F6F3; --gp-raised: #FFFFFF; --gp-sunken: #EDEBE6; --gp-ink: #1A1920; --gp-muted: #5C5A66; --gp-outline: #D6D3CC;
+  --gp-accent: #4B32C3; --gp-on-accent: #FFFFFF; --gp-caution: #8A5300; --gp-caution-container: #FDF1DC; --gp-error: #B3261E;
+  --gp-trash-ink: #C5281C; --gp-btn-border: transparent; --gp-shadow: 0 8px 24px rgba(26,25,32,0.16);
+}
+@media (prefers-color-scheme: dark) { #${ROOT_ID} {
+  --gp-paper: #141318; --gp-raised: #1F1E25; --gp-sunken: #1F1E25; --gp-ink: #EDEBF2; --gp-muted: #A7A4B3; --gp-outline: #38363F;
+  --gp-accent: #B7A9FF; --gp-on-accent: #1E1259; --gp-caution: #F2B45C; --gp-caution-container: #1F1E25; --gp-error: #FF8A7E;
+  --gp-trash-ink: #FF8A7E; --gp-btn-border: #38363F; --gp-shadow: none;
+} }
 #${ROOT_ID} * { box-sizing: border-box; }
 #${ROOT_ID} {
   position: fixed; bottom: 20px; right: 20px; z-index: 2147483646;
-  width: 300px; max-height: 90vh; overflow-y: auto;
-  background: rgba(24,26,32,0.96); color: #e8e8e8; border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5); padding: 14px 16px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px; user-select: none; border: 1px solid rgba(255,255,255,0.08);
+  width: 320px; max-height: 90vh; overflow-y: auto;
+  background: var(--gp-paper); color: var(--gp-ink); border-radius: 12px;
+  box-shadow: var(--gp-shadow); padding: 16px;
+  font-family: var(--gp-font); font-size: 13px; line-height: 1.45; user-select: none; border: 1px solid var(--gp-outline);
 }
-#${ROOT_ID} button { cursor: pointer; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; padding: 8px 10px; }
+#${ROOT_ID} button { cursor: pointer; border: 1px solid var(--gp-btn-border); border-radius: 8px; font: 600 13px/1.2 var(--gp-font); padding: 9px 12px; }
 #${ROOT_ID} button:disabled { opacity: 0.45; cursor: not-allowed; }
-#${ROOT_ID} input[type=number], #${ROOT_ID} input[type=text], #${ROOT_ID} select {
-  width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06); color: #e8e8e8; font-size: 12px; outline: none;
+#${ROOT_ID} button:focus-visible, #${ROOT_ID} input:focus-visible, #${ROOT_ID} select:focus-visible, #${ROOT_ID} a:focus-visible { outline: 2px solid var(--gp-accent); outline-offset: 2px; }
+#${ROOT_ID} input[type=number], #${ROOT_ID} input[type=text], #${ROOT_ID} input[type=date], #${ROOT_ID} select {
+  width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--gp-outline);
+  background: var(--gp-raised); color: var(--gp-ink); font: 400 13px var(--gp-font); outline: none;
 }
+#${ROOT_ID} input[type=checkbox] { accent-color: var(--gp-accent); }
 #${ROOT_ID} .gpdt-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-#${ROOT_ID} .gpdt-row label { font-size: 12px; color: #c9c9d1; }
-#${ROOT_ID} .gpdt-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; }
-#${ROOT_ID} .gpdt-stat { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px; text-align: center; }
-#${ROOT_ID} .gpdt-stat b { display: block; font-size: 16px; font-variant-numeric: tabular-nums; }
-#${ROOT_ID} .gpdt-stat span { font-size: 10px; color: #8b8b95; text-transform: uppercase; letter-spacing: 0.4px; }
-#${ROOT_ID} .gpdt-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin: 8px 0; }
-#${ROOT_ID} .gpdt-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#10b981,#3b82f6); border-radius: 3px; transition: width 0.3s; }
+#${ROOT_ID} .gpdt-row label { font-size: 12px; color: var(--gp-ink); }
+#${ROOT_ID} .gpdt-row a { color: var(--gp-accent) !important; }
+#${ROOT_ID} .gpdt-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+#${ROOT_ID} .gpdt-stat { background: var(--gp-sunken); border-radius: 8px; padding: 10px 12px; }
+#${ROOT_ID} .gpdt-stat b { display: block; font-size: 20px; font-weight: 650; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+#${ROOT_ID} .gpdt-stat span { display: block; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--gp-muted); }
+#${ROOT_ID} .gpdt-bar { height: 6px; background: var(--gp-sunken); border-radius: 9999px; overflow: hidden; margin: 8px 0; }
+#${ROOT_ID} .gpdt-bar-fill { height: 100%; width: 0%; background: var(--gp-accent); border-radius: 9999px; transition: width 0.3s; }
 #${ROOT_ID} .gpdt-bar-fill.indeterminate { width: 30%; animation: gpdt-slide 1.4s ease-in-out infinite; }
 @keyframes gpdt-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(333%); } }
 #${ROOT_ID} .gpdt-actions { display: flex; gap: 8px; }
 #${ROOT_ID} .gpdt-actions button { flex: 1; }
-#${ROOT_ID} .gpdt-start { background: linear-gradient(135deg,#10b981,#3b82f6); color: #fff; }
-#${ROOT_ID} .gpdt-pause { background: #f59e0b; color: #fff; }
-#${ROOT_ID} .gpdt-stop { background: #ef4444; color: #fff; }
-#${ROOT_ID} .gpdt-ghost { background: rgba(255,255,255,0.08); color: #c9c9d1; }
-#${ROOT_ID} .gpdt-warn { color: #fbbf24; font-size: 12px; line-height: 1.4; }
-#${ROOT_ID} .gpdt-danger { color: #f87171; font-size: 12px; line-height: 1.4; }
-#${ROOT_ID} .gpdt-consent { border: 1px solid rgba(251,191,36,0.4); background: rgba(251,191,36,0.08); border-radius: 10px; padding: 10px; margin: 8px 0; }
-#${ROOT_ID} .gpdt-consent label { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; color: #e8e8e8; }
-#${ROOT_ID} .gpdt-footer { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-#${ROOT_ID} .gpdt-err { color: #f87171; font-size: 12px; margin: 6px 0; word-break: break-word; }
-#${ROOT_ID} .gpdt-note { color: #8b8b95; font-size: 11px; margin-top: 6px; line-height: 1.4; }
-#${ROOT_ID}.minimized { width: 48px; height: 48px; padding: 0; border-radius: 50%; overflow: hidden; }
+#${ROOT_ID} .gpdt-start { background: var(--gp-accent); color: var(--gp-on-accent); border-color: var(--gp-accent); }
+#${ROOT_ID} .gpdt-pause { background: var(--gp-sunken); color: var(--gp-ink); }
+#${ROOT_ID} .gpdt-stop { background: #C5281C; color: #FFFFFF; border-color: #C5281C; }
+#${ROOT_ID} .gpdt-ghost { background: var(--gp-sunken); color: var(--gp-ink); }
+#${ROOT_ID} .gpdt-restore { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--gp-accent); background: var(--gp-raised); border-color: var(--gp-outline); }
+#${ROOT_ID} .gpdt-warn { color: var(--gp-caution); font-size: 12px; line-height: 1.45; }
+#${ROOT_ID} .gpdt-danger { color: var(--gp-trash-ink); font-size: 12px; line-height: 1.45; }
+#${ROOT_ID} .gpdt-consent { background: var(--gp-caution-container); border-radius: 8px; padding: 12px; margin: 8px 0; }
+#${ROOT_ID} .gpdt-consent label { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--gp-ink); }
+#${ROOT_ID} .gpdt-footer { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+#${ROOT_ID} .gpdt-err { color: var(--gp-error); font-size: 12px; margin: 6px 0; word-break: break-word; }
+#${ROOT_ID} .gpdt-note { color: var(--gp-muted); font-size: 12px; margin-top: 6px; line-height: 1.45; }
+#${ROOT_ID} .gpdt-policy { margin: 8px 0; user-select: text; }
+#${ROOT_ID}.minimized { width: 48px; height: 48px; padding: 0; border-radius: 9999px; overflow: hidden; }
 #${ROOT_ID}.minimized > * { display: none; }
 #${ROOT_ID}.minimized::after { content: '🗑️'; display: flex; align-items: center; justify-content: center; height: 100%; font-size: 20px; cursor: pointer; }
+${POLICY_GATE_CSS.replace(/(^|\n)\.gpdt-policy/g, `$1#${ROOT_ID} .gpdt-policy`)}
 `
 
   container.appendChild(style)
@@ -99,7 +124,7 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
   root.id = ROOT_ID
   root.innerHTML = `
     <div class="gpdt-row">
-      <b>🗑️ Google Photos Delete Tool – Duplicate Finder &amp; Bulk Delete</b>
+      <b style="font-size:15px;font-weight:600;line-height:1.3">Google Photos Delete Tool – Duplicate Finder &amp; Bulk Delete</b>
       <span>
         <button class="gpdt-ghost" id="gpdt-min" title="Minimize">−</button>
         <button class="gpdt-ghost" id="gpdt-close" title="Close">✕</button>
@@ -112,11 +137,11 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
     </div>
     <div class="gpdt-row">
       <label for="gpdt-dryrun">Dry run (count this view, no clicks)</label>
-      <input type="checkbox" id="gpdt-dryrun" style="accent-color:#3b82f6" />
+      <input type="checkbox" id="gpdt-dryrun" />
     </div>
     <div class="gpdt-row">
       <label for="gpdt-empty" title="Permanent — no recovery">Empty trash afterwards</label>
-      <input type="checkbox" id="gpdt-empty" style="accent-color:#ef4444" />
+      <input type="checkbox" id="gpdt-empty" style="accent-color:#C5281C" />
     </div>
     <div id="gpdt-empty-warning" class="gpdt-danger" style="display:none">"Empty trash afterwards" is PERMANENT with no recovery.</div>
     <div class="gpdt-row">
@@ -144,7 +169,7 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
       <input type="date" id="gpdt-date-b" style="width:120px; display:none" disabled aria-label="End date" />
     </div>
     <div class="gpdt-row" id="gpdt-date-pro" style="display:none">
-      <a id="gpdt-date-pro-link" href="" target="_blank" rel="noopener" style="font-size:11px; color:#8b8b95; white-space:nowrap">Pro: Get Pro</a>
+      <a id="gpdt-date-pro-link" href="" target="_blank" rel="noopener" style="font-size:12px; white-space:nowrap">Pro: Get Pro</a>
     </div>
     <div class="gpdt-row">
       <label for="gpdt-preset">Saved presets (Pro)</label>
@@ -162,7 +187,7 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
     <div id="gpdt-preset-hint" class="gpdt-note" style="display:none"></div>
     <div id="gpdt-preset-err" class="gpdt-note" style="display:none"></div>
     <div class="gpdt-row" id="gpdt-preset-pro" style="display:none">
-      <a id="gpdt-preset-pro-link" href="" target="_blank" rel="noopener" style="font-size:11px; color:#8b8b95; white-space:nowrap">Pro: Get Pro</a>
+      <a id="gpdt-preset-pro-link" href="" target="_blank" rel="noopener" style="font-size:12px; white-space:nowrap">Pro: Get Pro</a>
     </div>
     <div class="gpdt-row">
       <label for="gpdt-license">Pro license</label>
@@ -170,9 +195,10 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
         <input type="text" id="gpdt-license" placeholder="paste token" style="flex:1" />
         <button class="gpdt-ghost" id="gpdt-license-btn" style="padding:6px 8px">Activate</button>
       </span>
-      <a id="gpdt-license-get" href="" target="_blank" rel="noopener" style="font-size:11px; color:#8b8b95; white-space:nowrap">Get Pro — from US$19, one-time</a>
+      <a id="gpdt-license-get" href="" target="_blank" rel="noopener" style="font-size:12px; white-space:nowrap">Get Pro — from US$19, one-time</a>
     </div>
     <div id="gpdt-license-status" class="gpdt-note"></div>
+    <div id="gpdt-policy-slot"></div>
     <div class="gpdt-stats">
       <div class="gpdt-stat"><b id="gpdt-deleted">0</b><span>Deleted</span></div>
       <div class="gpdt-stat"><b id="gpdt-rate">—</b><span>Per minute</span></div>
@@ -180,7 +206,7 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
       <div class="gpdt-stat"><b id="gpdt-eta">—</b><span>ETA</span></div>
     </div>
     <div class="gpdt-bar"><div class="gpdt-bar-fill" id="gpdt-bar"></div></div>
-    <div id="gpdt-status" class="gpdt-note" style="font-size:12px;color:#c9c9d1">Ready</div>
+    <div id="gpdt-status" class="gpdt-note" style="font-size:12px">Ready</div>
     <div id="gpdt-err" class="gpdt-err" style="display:none"></div>
     <div class="gpdt-actions">
       <button class="gpdt-start" id="gpdt-start">▶ Start</button>
@@ -198,6 +224,7 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
       </div>
     </div>
     <button class="gpdt-ghost" id="gpdt-dupes" style="width:100%;margin-top:8px">Find duplicates</button>
+    <button class="gpdt-restore" id="gpdt-restore" style="width:100%;margin-top:8px;display:none"></button>
     <div id="gpdt-pro-teaser" style="display:none"></div>
     <div class="gpdt-footer">
       <button class="gpdt-ghost" id="gpdt-report">Report issue</button>
@@ -381,9 +408,16 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
   }
 
   licenseInput.value = runner.getLicenseToken() ?? ''
+  const policyStore = options.policyStore ?? localStoragePolicyStore()
+  const policySlot = $<HTMLElement>('gpdt-policy-slot')
   $<HTMLButtonElement>('gpdt-license-btn').addEventListener('click', async () => {
     const token = licenseInput.value.trim()
     if (!token) return
+    // Clickwrap on Pro activation, again whenever the terms version changes.
+    if (!(await ensurePolicyConsent(policySlot, policyStore, 'gpdt_userscript'))) {
+      licenseStatus.textContent = 'Pro was not activated. Agree to the updated terms to continue.'
+      return
+    }
     const accepted = await runner.setLicenseToken(token)
     licenseStatus.textContent = accepted
       ? '✓ License accepted locally — filters enabled.'
@@ -468,7 +502,7 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
 
   // ─── Find duplicates (review → the same consent-gated runner) ──
 
-  $<HTMLButtonElement>('gpdt-dupes').addEventListener('click', () => {
+  const openFinder = (view: 'duplicates' | 'blurry'): void => {
     openDuplicateFinder({
       runDelete: async (ids, dryRun) => {
         let error: string | undefined
@@ -486,8 +520,18 @@ export function mountPanel(container: HTMLElement, runner: PageRunner): void {
       consentAcknowledged: async () => runner.consentAcknowledged(),
       acknowledgeConsent: async () => runner.acknowledgeConsent(),
       onRunProgress: (cb) => runner.onUpdate((s) => { if (s.progress) cb(s.progress) }),
-    })
-  })
+      ...(options.restore ? { restore: options.restore } : {}),
+    }, { view })
+  }
+  $<HTMLButtonElement>('gpdt-dupes').addEventListener('click', () => openFinder('duplicates'))
+
+  // ─── AI 4K Restore (opens the Blurry / Low-Res review) ────────
+  const restoreBtn = $<HTMLButtonElement>('gpdt-restore')
+  if (options.restore) {
+    restoreBtn.append(sparkleIcon(document, 14), RESTORE_LABEL)
+    restoreBtn.style.display = 'flex'
+    restoreBtn.addEventListener('click', () => openFinder(options.restore?.classify ? 'blurry' : 'duplicates'))
+  }
 
   // ─── Issue report / report export ─────────────────────────────
 
