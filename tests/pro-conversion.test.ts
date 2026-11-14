@@ -12,8 +12,7 @@ describe('local activation boundary', () => {
   })
   it('normalizes untrusted tokens without trusting claims', () => {
     expect(activationToken(' abc.def ')).toBe('abc.def')
-    expect(activationToken(JSON.stringify({ token: 'abc.def', claims: { seats: 10 } }))).toBe('abc.def')
-    for (const raw of [null, {}, '{', '{"token":1}', 'x'.repeat(17000), 'a.b.c', '<script>']) expect(activationToken(raw)).toBeNull()
+    for (const raw of [null, {}, '{', '{"token":"abc.def"}', 'x'.repeat(17000), 'a.b.c', '<script>']) expect(activationToken(raw)).toBeNull()
   })
   it('labels signed scope and leaves legacy licences unrestricted', () => {
     for (const [seats, name] of [[1, 'Personal'], [3, 'Family'], [10, 'Team']] as const) expect(licenceScope({ plan: 'pro', seats })).toContain(name)

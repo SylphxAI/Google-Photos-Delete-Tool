@@ -223,16 +223,25 @@ discloses the paid Pro layer.
 
 ### Conversion verification
 
-The activation bridge runs only on the owned pricing/recovery URLs and reads
-Keel's licence token DOM node or local token cache. Both inputs are untrusted:
-`verifyLicense` must succeed before extension storage or owned claims change.
-`tests/activation-bridge.test.ts` covers a checkout token appearing after page
-load and rejects a later forged token without overwriting the saved activation.
+Automatic activation uses Chrome `externally_connectable` messaging, not a
+content script, so the extension asks for no host access beyond Google Photos
+and an update shows no new permission warning. The storefront build adds
+`site/activate.js` to the pricing and recovery pages; it sends the token Keel
+shows to the Chrome Web Store extension id and never stores it in the page.
+The service worker (`src/extension/external-activation.ts`) accepts the message
+only when the browser-reported sender URL is an owned pricing/recovery path
+(`isActivationUrl`) and `verifyLicense` succeeds; a rejected or invalid token
+never replaces a saved licence. Without the extension, in Firefox and in the
+userscript, the token stays on the page for manual paste.
+`tests/external-activation.test.ts` covers sender and token rejection,
+`tests/site-activate.test.ts` the page handoff and manual fallback, and
+`tests/manifest-permissions.test.ts` plus `bun run verify` fail any package
+that adds a permission, host or content-script origin.
 Storage Saver fills filters only; it starts no run. Google Photos grid tiles do
 not provide original sizes, so GB freed is explicitly unavailable, not inferred
 from thumbnail bytes. The dry run still provides matching item counts.
 
 The conversion release records new size baselines: content 121,583 bytes and
-Chrome zip 104,417 bytes. The zip now includes an isolated activation bundle
-with the existing offline Ed25519 verifier, plus Storage Saver and duplicate
-selection UI; no new runtime dependency or remote verification was added.
+Chrome zip 104,417 bytes, covering Storage Saver, duplicate selection UI and
+activation in the service worker with the existing offline Ed25519 verifier; no
+new runtime dependency or remote verification was added.

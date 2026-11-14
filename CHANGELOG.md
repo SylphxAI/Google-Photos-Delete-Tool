@@ -7,9 +7,9 @@ All notable changes to this project will be documented in this file.
 ## [3.6.4] - 2026-11-14
 
 ### Added
-- Pro activates automatically after checkout: the pricing and recovery pages
-  hand the new licence to the installed extension, so there is no token to
-  copy and paste.
+- Pro activates automatically after checkout in Chrome: the pricing and
+  recovery pages hand the new licence to the installed extension, so there is
+  no token to copy and paste. The extension asks for no new permissions.
 - Storage Saver (Pro): one-click safe cleanup presets for screenshots, videos
   and screenshots older than one year. Each preset fills the filters and turns
   on dry run, so nothing is deleted before you review it.

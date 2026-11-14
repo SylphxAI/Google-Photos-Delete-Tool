@@ -70,6 +70,23 @@ for (const variant of ['extension', 'extension-edge', 'extension-firefox']) {
   check(Array.isArray(m.content_scripts?.[0]?.matches) && m.content_scripts[0].matches.includes(SUPPORTED_MATCH_PATTERN), 'chrome content_scripts match photos.google.com')
 }
 
+// ─── Install-time access: identical to 3.6.3 in every package ──
+// A new host or content-script origin adds a permission warning, and Chrome
+// disables the extension on update until each user approves it again.
+for (const variant of ['extension', 'extension-edge', 'extension-firefox']) {
+  const m = JSON.parse(read(`dist/${variant}/manifest.json`))
+  const origins = (m.content_scripts ?? []).flatMap((c: { matches?: string[] }) => c.matches ?? [])
+  check(JSON.stringify(m.permissions) === '["storage"]' && JSON.stringify(m.host_permissions) === JSON.stringify([SUPPORTED_MATCH_PATTERN]) && !m.optional_permissions && !m.optional_host_permissions,
+    `${variant} permissions == ["storage"], host_permissions == [${SUPPORTED_MATCH_PATTERN}]`)
+  check(origins.length > 0 && origins.every((o: string) => o === SUPPORTED_MATCH_PATTERN), `${variant} content_scripts match only ${SUPPORTED_MATCH_PATTERN}`)
+  check(!existsSync(resolve(root, `${distDirectory}/${variant}/activation.js`)), `${variant} ships no page content script bundle`)
+  const ec = m.externally_connectable
+  check(variant === 'extension-firefox'
+    ? ec === undefined
+    : JSON.stringify(ec) === JSON.stringify({ matches: ['https://gpd.sylphx.com/*', 'https://sylphxai.github.io/*'] }),
+  `${variant} externally_connectable ${variant === 'extension-firefox' ? 'absent (unsupported)' : '== owned site origins only'}`)
+}
+
 // ─── Edge manifest (Edge caps the manifest name at 45 characters) ──
 {
   const m = JSON.parse(read('dist/extension-edge/manifest.json'))

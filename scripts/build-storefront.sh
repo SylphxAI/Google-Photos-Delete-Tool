@@ -50,8 +50,26 @@ rm -rf "$DIST/_docs" "$DIST/_keel"
 cp -R "$PREBUILT/_docs" "$DIST/"
 cp -R "$PREBUILT/_keel" "$DIST/"
 
+# The product's Pro activation handoff (site/activate.js) runs on the two
+# checkout pages only. The engine output has exactly one </body>; anything
+# else fails the build rather than shipping pages without the handoff.
+python3 - "$DIST/pricing.html" "$DIST/recover.html" <<'PY'
+import sys
+tag = '<script src="/Google-Photos-Delete-Tool/activate.js" defer></script>'
+for path in sys.argv[1:]:
+    with open(path, encoding='utf-8') as f:
+        html = f.read()
+    if html.count('</body>') != 1 or 'activate.js' in html:
+        sys.exit(f'{path}: expected one </body> and no activation script')
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(html.replace('</body>', tag + '</body>'))
+PY
+
 test -s "$DIST/pricing.html"
 test -s "$DIST/recover.html"
+test -s "$DIST/activate.js"
+grep -q 'src="/Google-Photos-Delete-Tool/activate.js"' "$DIST/pricing.html"
+grep -q 'src="/Google-Photos-Delete-Tool/activate.js"' "$DIST/recover.html"
 grep -q 'data-keel-money-checkout' "$DIST/pricing.html"
 grep -q 'data-keel-money-form="checkout"' "$DIST/pricing.html"
 grep -q 'data-keel-money-form="recover"' "$DIST/recover.html"
