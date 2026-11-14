@@ -10,6 +10,7 @@ import {
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
   POLICY_CONSENT_KEY,
+  fetchServerConsentStatus,
   needsPolicyReconsent,
   readPolicyConsent,
   recordPolicyConsent,
@@ -97,12 +98,35 @@ describe('affirmative clickwrap & versioned policy re-consent', () => {
     expect((calls[0].init?.headers as Record<string, string>)['x-sylphx-organization']).toBe(
       'org_fs01afbdccgn8xdk1ghj5y47w0vtph',
     )
-    expect(JSON.parse(String(calls[0].init?.body))).toMatchObject({
+    expect(JSON.parse(String(calls[0].init?.body))).toEqual({
       terms_accepted: true,
       terms_version: CURRENT_TERMS_VERSION,
       privacy_version: CURRENT_PRIVACY_VERSION,
       surface: 'gpdt_extension',
+    })
+
+    const status = await fetchServerConsentStatus({
+      token: fake('sess', 'live', 'abc12345'),
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            user_id: 'usr_123',
+            current_terms_version: CURRENT_TERMS_VERSION,
+            current_privacy_version: CURRENT_PRIVACY_VERSION,
+            accepted_terms_version: CURRENT_TERMS_VERSION,
+            accepted_privacy_version: CURRENT_PRIVACY_VERSION,
+            accepted_at: '2026-11-14T18:00:00.000Z',
+            needs_reconsent: false,
+          }),
+          { status: 200 },
+        ),
+    })
+    expect(status).toEqual({
       user_id: 'usr_123',
+      terms_version: CURRENT_TERMS_VERSION,
+      privacy_version: CURRENT_PRIVACY_VERSION,
+      accepted_at: '2026-11-14T18:00:00.000Z',
+      surface: 'sylphx_cloud',
     })
   })
 

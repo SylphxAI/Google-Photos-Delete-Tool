@@ -28,7 +28,12 @@ export const DEFAULT_CONSENT_PARENT =
   'orgs/org_fs01afbdccgn8xdk1ghj5y47w0vtph/projects/prj_fs01etb6sjwf33tcvmhf93jwppx8a0/envs/env_fs01kkyfapshabd01pdps7kf0f72cr'
 export const DEFAULT_CONSENT_PUBLISHABLE_KEY = 'sylphx_pk_live_fs011xLNiTif0SkaOCFx'
 
-export type ConsentSurface = 'gpdt_extension' | 'gpdt_userscript' | 'gpdt_web_activate' | 'sylphx_account'
+export type ConsentSurface =
+  | 'gpdt_extension'
+  | 'gpdt_userscript'
+  | 'gpdt_web_activate'
+  | 'sylphx_account'
+  | 'sylphx_cloud'
 
 export interface ConsentRecord {
   user_id?: string
@@ -43,6 +48,7 @@ const VALID_SURFACES: readonly ConsentSurface[] = [
   'gpdt_userscript',
   'gpdt_web_activate',
   'sylphx_account',
+  'sylphx_cloud',
 ]
 
 export function isValidConsentSurface(value: unknown): value is ConsentSurface {
@@ -245,8 +251,6 @@ export async function syncPolicyConsentToServer(
     terms_version: record.terms_version,
     privacy_version: record.privacy_version,
     surface: record.surface,
-    ...(record.user_id !== undefined ? { user_id: record.user_id } : {}),
-    accepted_at: record.accepted_at,
   })
   const endpoints = [
     `${apiOrigin}/v1/auth/${parent}/consent:accept`,
@@ -294,7 +298,29 @@ export async function fetchServerConsentStatus(
       if (!res || !res.ok) return null
       const data = (await res.json()) as Record<string, unknown>
       const candidate = (data.consent ?? data) as Record<string, unknown>
-      return isValidConsentRecord(candidate) ? candidate : null
+      if (isValidConsentRecord(candidate)) return candidate
+      if (
+        typeof candidate.accepted_terms_version === 'string' &&
+        typeof candidate.accepted_privacy_version === 'string'
+      ) {
+        const normalized = {
+          ...(typeof candidate.user_id === 'string' && candidate.user_id
+            ? { user_id: candidate.user_id }
+            : {}),
+          terms_version: candidate.accepted_terms_version,
+          privacy_version: candidate.accepted_privacy_version,
+          accepted_at:
+            typeof candidate.accepted_at === 'string' && candidate.accepted_at
+              ? candidate.accepted_at
+              : new Date(0).toISOString(),
+          surface:
+            typeof candidate.surface === 'string' && candidate.surface
+              ? candidate.surface
+              : 'sylphx_cloud',
+        }
+        return isValidConsentRecord(normalized) ? normalized : null
+      }
+      return null
     } catch {
       return null
     }
