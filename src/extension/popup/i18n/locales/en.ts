@@ -86,6 +86,7 @@ const en: Translations = {
       active: "Pro active — filters enabled",
       invalid: "Invalid license token",
       expired: "Licence expired. Recover your licence.",
+      termsRequired: "Pro was not activated. Agree to the updated terms to continue.",
     },
   },
   pro: {
@@ -148,6 +149,7 @@ const en: Translations = {
     exportCsv: "Export CSV",
     viewTrash: "View trash",
     findDuplicates: "Find duplicates",
+    aiRestore: "AI 4K Restore",
   },
   notes: {
     navigateFirst: "Open {url} first.",

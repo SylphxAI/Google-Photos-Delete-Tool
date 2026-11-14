@@ -86,6 +86,7 @@ const ja: Translations = {
       active: "Pro 有効 — フィルター利用可",
       invalid: "無効なライセンストークン",
       expired: "ライセンス期限切れ。再取得してください。",
+      termsRequired: "Pro は有効になっていません。続けるには、更新された規約に同意してください。",
     },
   },
   pro: {
@@ -153,6 +154,7 @@ const ja: Translations = {
     exportCsv: "CSV をエクスポート",
     viewTrash: "ゴミ箱を表示",
     findDuplicates: "重複を探す",
+    aiRestore: "AIで4K復元",
   },
   notes: {
     navigateFirst: "先に {url} を開いてください。",

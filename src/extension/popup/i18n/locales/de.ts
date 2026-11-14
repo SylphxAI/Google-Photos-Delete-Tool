@@ -86,6 +86,7 @@ const de: Translations = {
       active: "Pro aktiv — Filter aktiviert",
       invalid: "Ungültiger Lizenz-Token",
       expired: "Lizenz abgelaufen. Lizenz erneut abrufen.",
+      termsRequired: "Pro wurde nicht aktiviert. Stimme den aktualisierten Bedingungen zu, um fortzufahren.",
     },
   },
   pro: {
@@ -153,6 +154,7 @@ const de: Translations = {
     exportCsv: "CSV exportieren",
     viewTrash: "Papierkorb ansehen",
     findDuplicates: "Duplikate finden",
+    aiRestore: "KI-Restaurierung in 4K",
   },
   notes: {
     navigateFirst: "Öffne zuerst {url}.",

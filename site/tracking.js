@@ -159,6 +159,28 @@
     Array.prototype.slice.call(document.querySelectorAll('[data-cta="pro"]')).forEach(function (el) {
       el.addEventListener('click', function () { event('pro_click') })
     })
+
+    // AI 4K Restore funnel. These are website events only: the extension and
+    // userscript send no analytics. Each call re-reads the stored choice, so an
+    // event fires only after an affirmative grant ('all' or 'analytics') and
+    // only while the tag is loaded and not disabled. Never carries photo,
+    // wallet or checkout identifiers; the name is the whole payload.
+    var AI_EVENTS = { ai_restore_start: true, ai_credit_checkout: true, ai_restore_complete: true }
+    function aiEvent(name) {
+      if (!Object.prototype.hasOwnProperty.call(AI_EVENTS, name)) return false
+      var now = normalize(read())
+      if (now !== 'all' && now !== 'analytics') return false
+      if (!loaded || (ga4 && window['ga-disable-' + ga4])) return false
+      event(name)
+      return true
+    }
+    window.gpdtTrack = aiEvent
+    Array.prototype.slice.call(document.querySelectorAll('[data-cta="ai-restore"]')).forEach(function (el) {
+      el.addEventListener('click', function () { aiEvent('ai_restore_start') })
+    })
+    Array.prototype.slice.call(document.querySelectorAll('[data-cta="credits"]')).forEach(function (el) {
+      el.addEventListener('click', function () { aiEvent('ai_credit_checkout') })
+    })
     // This website has no verified paid-order receipt. A return URL, entitlement or
     // access token is never a purchase signal; purchase measurement stays absent.
   }

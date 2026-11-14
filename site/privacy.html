@@ -21,14 +21,19 @@
 </header>
 <main id="main" class="legal">
 <h1>Privacy</h1>
-<p class="sub">Last updated: 2026-11-13</p>
-<p>This notice covers this website and Pro purchases. The extension and userscript collect nothing; their full statement is in <a href="privacy.html">PRIVACY.md</a>.</p>
+<p class="sub">Last updated: 2026-11-14 (version 2026-11-14)</p>
+<p>This notice covers this website, Pro and credit purchases, and the optional AI 4K Restore. Scanning and deleting in the extension and userscript collect nothing; their full statement is in <a href="https://github.com/SylphxAI/Google-Photos-Delete-Tool/blob/master/PRIVACY.md">PRIVACY.md</a>.</p>
 
 <h2>Who we are</h2>
 <p>Google Photos Delete Tool is made by Sylphx Limited, a company registered in England and Wales (company number 16438428). Registered office: 128 City Road, London EC1V 2NX, United Kingdom. We are the controller of the personal data described here. Contact: <a href="mailto:hi@sylphx.com">hi@sylphx.com</a>, <a href="tel:+447537188188">+44 7537 188 188</a>.</p>
 
 <h2>The extension</h2>
-<p>The extension runs only on photos.google.com, inside your browser. Your photos, thumbnails and fingerprints never leave your device. It has no server, no analytics and no telemetry. A Pro token is checked offline on your device using public keys shipped with the client and is never sent to us. The client makes no JWKS or entitlement request; a new signing key requires a client update. Build maintainers refresh the public-key snapshot from Money’s environment-specific public JWKS without any token, claim or photo information; if you use your browser's sync account, your browser keeps it on your other signed-in devices.</p>
+<p>The extension runs only on photos.google.com, inside your browser. Bulk Delete, Find duplicates and the Blurry / Low-Res detector run 100% locally: your photos, thumbnails, fingerprints and sharpness scores never leave your device, and there are zero photo uploads. The extension has no analytics and no telemetry. A Pro token is checked offline on your device using public keys shipped with the client and is never sent to us. The client makes no JWKS or entitlement request; a new signing key requires a client update. Build maintainers refresh the public-key snapshot from Money’s environment-specific public JWKS without any token, claim or photo information; if you use your browser's sync account, your browser keeps it on your other signed-in devices.</p>
+
+<h2>AI 4K Restore (optional)</h2>
+<p>AI 4K Restore is the only feature that sends a photo, and it sends one photo at a time. Only when you click <b>AI 4K Restore</b> on a single photo and confirm the transfer notice is that photo sent over HTTPS to Sylphx AI (<code>sylphx.ai</code>). Sylphx servers process it ephemerally in memory, with zero persistent storage or retention: no copy is kept after the 4K result is returned to your browser. To render the image, Sylphx uses a paid third-party AI inference API whose terms for this request exclude training AI models on it (<code>trains: false</code>); any short-term processing on the provider's side is governed by its API terms. The restored image is saved only if you download it.</p>
+<p>To show and charge your credits, the extension sends your Sylphx wallet token, never a photo, to Sylphx when the studio opens and when you confirm a restore. We keep a ledger of credit purchases and use (wallet id, amounts, dates) to deliver what you paid for.</p>
+<p>Before your first purchase, Pro activation or restore, and whenever the <a href="terms.html">Terms</a> or this notice change, you are asked to tick a box and agree. That acceptance record stays in your browser.</p>
 
 <h2>This website</h2>
 <p>If you allow it, this site uses Google Analytics 4 to count visits. Google Ads measurement is not currently configured. Analytics can set cookies and send Google your browser details, an online identifier and the pages you view. You choose in the cookie banner:</p>
@@ -39,18 +44,18 @@
 </ul>
 <p>We never send Google your name, email or anything you type. Withdrawing consent clears website analytics cookies and reloads the page to stop collection. You can change your choice at any time with <a href="#" data-cookie-settings>Cookie settings</a>. Your choice is stored in your browser (local storage key <code>gpdt_consent</code>). Google processes analytics data under its data processing terms.</p>
 
-<h2>Pro purchases</h2>
-<p>Stripe processes Pro payments. We never see your card number. Stripe sends us your email, country, the amount and the date. We use your email only to send your Pro token and to answer you about your order. We keep order records for 6 years because UK tax law requires it.</p>
+<h2>Pro and credit purchases</h2>
+<p>Stripe processes Pro, credit pack and Monthly Pass payments. We never see your card number. Stripe sends us your email, country, the amount and the date. We use your email only to send your Pro token and to answer you about your order. We keep order records for 6 years because UK tax law requires it.</p>
 
 <h2>Lawful bases</h2>
 <ul>
 <li>Website analytics and any configured ad measurement: your consent, which you can withdraw at any time.</li>
-<li>Delivering Pro and support: performing our contract with you.</li>
+<li>Delivering Pro, credits, AI 4K Restore and support: performing our contract with you.</li>
 <li>Order records: our legal obligation to keep tax records.</li>
 </ul>
 
 <h2>Who receives data</h2>
-<p>Google (Google Analytics) and Stripe (payments), under their data processing terms. They may process data in the United States under the UK International Data Transfer Addendum, EU Standard Contractual Clauses or the Data Privacy Framework.</p>
+<p>Google (Google Analytics), Stripe (payments) and, for AI 4K Restore only, the paid AI inference provider that renders the single photo you confirm, under their data processing terms. They may process data in the United States under the UK International Data Transfer Addendum, EU Standard Contractual Clauses or the Data Privacy Framework.</p>
 
 <h2>Your rights</h2>
 <p>You can ask for a copy of your data, or ask us to correct or delete it, or to stop using it. Email <a href="mailto:hi@sylphx.com">hi@sylphx.com</a>. You may also complain to the UK Information Commissioner's Office (ico.org.uk) or your local data protection authority.</p>

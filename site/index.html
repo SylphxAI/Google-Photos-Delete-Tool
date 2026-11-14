@@ -77,7 +77,7 @@
     <div class="card"><h3>Nothing runs until you confirm</h3><p>The first real run asks you to confirm what is about to happen. Nothing is ever scheduled or unattended.</p></div>
     <div class="card"><h3>Recovery has limits</h3><p>Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.</p><p class="sub"><a href="https://support.google.com/photos/answer/6128858?hl=en&amp;co=GENIE.Platform%3DDesktop">Google Photos desktop delete guidance (checked 2026-10-29)</a> · <a href="https://support.google.com/photos/answer/9343482?hl=en&amp;co=GENIE.Platform%3DDesktop">Google Photos desktop restore guidance (checked 2026-10-29)</a></p></div>
     <div class="card"><h3>Stops instead of guessing</h3><p>If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.</p></div>
-    <div class="card"><h3>Your photos stay on your computer</h3><p>Everything runs in your browser. No photo, thumbnail or fingerprint is uploaded to us or anyone else.</p></div>
+    <div class="card"><h3>Scanning stays on your computer</h3><p>Finding duplicates, spotting blurry shots and deleting run in your browser with zero photo uploads. Only AI 4K Restore sends the one photo you confirm.</p></div>
   </div>
 </section>
 
@@ -95,6 +95,13 @@
     <p class="kicker">Why an extension</p>
     <p>Since 31 March 2025, Google no longer lets apps read your whole library through the Photos API, so outside duplicate finders cannot scan your whole library. This tool works inside the Google Photos page you already have open.</p>
   </div>
+</section>
+
+<section id="restore" class="wrap">
+  <h2>Restore the blurry ones worth keeping</h2>
+  <p class="lead">The Blurry / Low-Res view finds soft and small photos on your computer. Move junk shots to Trash, or restore a photo you love in 4K and compare before and after with a slider.</p>
+  <p class="sub">Only the photo you confirm is sent, over HTTPS to Sylphx AI. It is processed in memory, no copy is kept, and it is never used to train AI models. New accounts get 3 free trial credits.</p>
+  <p><a class="btn btn-ghost" data-cta="ai-restore" href="https://chromewebstore.google.com/detail/google-photos-delete-tool/jiahfbbfpacpolomdjlpdpiljllcdenb">Try AI 4K Restore</a></p>
 </section>
 
 <section id="pro" class="wrap">
@@ -137,7 +144,7 @@
   <h2>Questions</h2>
   <div class="faq">
     <details><summary>Can I undo a delete?</summary><p>Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.</p><p class="sub"><a href="https://support.google.com/photos/answer/6128858?hl=en&amp;co=GENIE.Platform%3DDesktop">Google Photos desktop delete guidance (checked 2026-10-29)</a> · <a href="https://support.google.com/photos/answer/9343482?hl=en&amp;co=GENIE.Platform%3DDesktop">Google Photos desktop restore guidance (checked 2026-10-29)</a></p></details>
-    <details><summary>Does it upload my photos?</summary><p>No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.</p></details>
+    <details><summary>Does it upload my photos?</summary><p>Not for scanning or deleting. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review. Only if you confirm AI 4K Restore on one photo is that photo sent over HTTPS to Sylphx AI, which processes it in memory and keeps no copy.</p></details>
     <details><summary>Can I delete only part of my library?</summary><p>Yes. Open an album or a search and the tool acts on that view only. Pro adds type and date filters for finer control.</p></details>
     <details><summary>Which browsers does it work in?</summary><p>Desktop Chrome, and Chromium browsers that install from the Chrome Web Store. A userscript for Tampermonkey or Violentmonkey is on <a href="https://github.com/SylphxAI/Google-Photos-Delete-Tool/releases/latest">GitHub</a>. It does not run on phones.</p></details>
     <details><summary>Is it made by Google?</summary><p>No. It is made by Sylphx Limited and is not affiliated with or endorsed by Google.</p></details>

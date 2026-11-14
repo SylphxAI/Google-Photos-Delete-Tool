@@ -46,8 +46,6 @@
     "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "只有內容仍在垃圾桶中且符合 Google 相簿目前的保留政策時，才可以復原。清空垃圾桶為選用操作，會先要求確認，而且無法復原。",
     "Stops instead of guessing": "寧可停止，也不猜測",
     "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "如果 Google 更改了某個按鈕，而此工具無法確定辨識，它就會停止。它絕不會點選自己沒有把握的內容。",
-    "Your photos stay on your computer": "你的照片留在你的電腦上",
-    "Everything runs in your browser. No photo, thumbnail or fingerprint is uploaded to us or anyone else.": "一切都在你的瀏覽器中執行。沒有任何照片、縮圖或指紋會上傳給我們或任何其他方。",
     "Find the look-alikes Google keeps": "找出 Google 保留的相似照片",
     "Google Photos removes only exact copies. Resized, re-saved, lightly edited or twice-uploaded copies stay. Find duplicates groups them, keeps the best copy and marks the rest for Trash.": "Google 相簿只會移除完全相同的副本。調整過大小、重新儲存、輕微編輯或重複上傳的副本都會保留。「尋找重複照片」會把它們分組，保留最佳副本，並將其餘標記為移入垃圾桶。",
     "Set how strict the match is with a similarity slider.": "用相似度滑桿設定比對的嚴格程度。",
@@ -77,7 +75,6 @@
     "Can I undo a delete?": "可以復原刪除嗎？",
     "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "只有內容仍在垃圾桶中且符合 Google 相簿目前政策時才可以復原。開啟 Google 相簿垃圾桶，選取所需內容，然後點選「還原」。清空垃圾桶和任何永久刪除操作都無法復原。垃圾桶已滿時，系統可能會改為提示永久刪除。刪除前請查看 Google 的說明。",
     "Does it upload my photos?": "會上傳我的照片嗎？",
-    "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "不會。它在瀏覽器中的 Google 相簿頁面內執行。尋找重複照片只會從 Google 自己的伺服器下載小縮圖，在記憶體中把每張轉換成指紋，並在你關閉審核時捨棄。",
     "Can I delete only part of my library?": "可以只刪除部分圖庫嗎？",
     "Yes. Open an album or a search and the tool acts on that view only. Pro adds type and date filters for finer control.": "可以。開啟某個相簿或一次搜尋，此工具只會處理那個檢視。Pro 增加了類型和日期篩選，控制更精細。",
     "Which browsers does it work in?": "支援哪些瀏覽器？",
@@ -104,6 +101,13 @@
     "Google Photos desktop delete guidance (checked 2026-10-29)": "Google 相簿電腦版刪除說明（查閱日期：2026-10-29）",
     "Google Photos desktop restore guidance (checked 2026-10-29)": "Google 相簿電腦版還原說明（查閱日期：2026-10-29）",
     "Pro is from US$19, one-time. Personal US$19, Family US$29.97, Team US$49. No subscription, no account.": "Pro 一次付費 19 美元起。個人 19 美元、家庭 29.97 美元、團隊 49 美元。無需訂閱，不需帳號。",
-    "Personal US$19 · Family US$29.97 · Team US$49": "個人 19 美元 · 家庭 29.97 美元 · 團隊 49 美元"
+    "Personal US$19 · Family US$29.97 · Team US$49": "個人 19 美元 · 家庭 29.97 美元 · 團隊 49 美元",
+    "Scanning stays on your computer": "掃描只在你的電腦上進行",
+    "Finding duplicates, spotting blurry shots and deleting run in your browser with zero photo uploads. Only AI 4K Restore sends the one photo you confirm.": "尋找重複照片、辨識模糊照片和刪除都在你的瀏覽器中完成，不會上傳任何照片。只有 AI 4K 修復會傳送你確認的那一張照片。",
+    "Not for scanning or deleting. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review. Only if you confirm AI 4K Restore on one photo is that photo sent over HTTPS to Sylphx AI, which processes it in memory and keeps no copy.": "掃描和刪除都不會上傳。它在你瀏覽器裡的 Google 相簿頁面中執行。尋找重複照片只從 Google 自己的伺服器下載小縮圖，在記憶體中把每張轉成指紋，關閉檢視後即忘記。只有當你對某一張照片確認 AI 4K 修復時，這張照片才會透過 HTTPS 傳送到 Sylphx AI，只在記憶體中處理，不保留副本。",
+    "Restore the blurry ones worth keeping": "把值得留下的模糊照片修復好",
+    "The Blurry / Low-Res view finds soft and small photos on your computer. Move junk shots to Trash, or restore a photo you love in 4K and compare before and after with a slider.": "「模糊 / 低解析度」檢視會在你的電腦上找出不清晰和尺寸太小的照片。拍壞的移到垃圾桶，珍貴的用 4K 修復，並用滑桿比較修復前後。",
+    "Only the photo you confirm is sent, over HTTPS to Sylphx AI. It is processed in memory, no copy is kept, and it is never used to train AI models. New accounts get 3 free trial credits.": "只傳送你確認的那一張照片，透過 HTTPS 傳送到 Sylphx AI。它只在記憶體中處理，不保留副本，也絕不用於訓練 AI 模型。新帳戶可獲得 3 個免費試用點數。",
+    "Try AI 4K Restore": "試試 AI 4K 修復"
   }
 }

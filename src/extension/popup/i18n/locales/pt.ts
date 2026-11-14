@@ -86,6 +86,7 @@ const pt: Translations = {
       active: "Pro ativo — filtros ativados",
       invalid: "Token de licença inválido",
       expired: "Licença expirada. Recupere a sua licença.",
+      termsRequired: "O Pro não foi ativado. Aceite os termos atualizados para continuar.",
     },
   },
   pro: {
@@ -153,6 +154,7 @@ const pt: Translations = {
     exportCsv: "Exportar CSV",
     viewTrash: "Ver lixeira",
     findDuplicates: "Encontrar duplicados",
+    aiRestore: "Restaurar em 4K com IA",
   },
   notes: {
     navigateFirst: "Abra {url} primeiro.",

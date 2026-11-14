@@ -46,8 +46,6 @@
     "Restore only while items remain in Trash, within Google Photos’ current retention policy. Empty Trash is optional, asks first and cannot be undone.": "Il ripristino è possibile solo finché gli elementi restano nel cestino e le attuali regole di conservazione di Google Foto lo consentono. Svuotare il cestino è facoltativo, richiede conferma e non può essere annullato.",
     "Stops instead of guessing": "Si ferma invece di tirare a indovinare",
     "If Google changes a button the tool cannot positively identify, it stops. It never clicks something it is unsure of.": "Se Google cambia un pulsante che lo strumento non riesce a identificare con certezza, si ferma. Non clicca mai qualcosa di cui non è sicuro.",
-    "Your photos stay on your computer": "Le tue foto restano sul tuo computer",
-    "Everything runs in your browser. No photo, thumbnail or fingerprint is uploaded to us or anyone else.": "Tutto gira nel tuo browser. Nessuna foto, miniatura o impronta viene caricata da noi né da nessun altro.",
     "Find the look-alikes Google keeps": "Trova i simili che Google tiene",
     "Google Photos removes only exact copies. Resized, re-saved, lightly edited or twice-uploaded copies stay. Find duplicates groups them, keeps the best copy and marks the rest for Trash.": "Google Foto rimuove solo le copie esatte. Le copie ridimensionate, risalvate, leggermente modificate o caricate due volte restano. Trova duplicati le raggruppa, tiene la copia migliore e segna le altre per il cestino.",
     "Set how strict the match is with a similarity slider.": "Imposta con un cursore di somiglianza quanto deve essere rigoroso il confronto.",
@@ -77,7 +75,6 @@
     "Can I undo a delete?": "Posso annullare un’eliminazione?",
     "Only if the items are still in Trash and Google Photos’ current policy allows it. Open Google Photos Trash, select the items and choose Restore. Empty Trash and any permanent deletion cannot be undone. A full Trash may prompt permanent deletion instead. Check Google’s guidance before deleting.": "Solo se gli elementi sono ancora nel cestino e le regole attuali di Google Foto lo consentono. Apri il cestino di Google Foto, seleziona gli elementi e scegli Ripristina. Svuotare il cestino e qualsiasi eliminazione definitiva sono operazioni irreversibili. Se il cestino è pieno, potrebbe essere proposta invece l’eliminazione definitiva. Consulta le istruzioni di Google prima di eliminare.",
     "Does it upload my photos?": "Carica le mie foto?",
-    "No. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review.": "No. Funziona dentro la pagina di Google Foto nel tuo browser. Trova duplicati scarica piccole miniature solo dai server di Google, trasforma ciascuna in un’impronta in memoria e la dimentica quando chiudi la revisione.",
     "Can I delete only part of my library?": "Posso eliminare solo una parte della libreria?",
     "Yes. Open an album or a search and the tool acts on that view only. Pro adds type and date filters for finer control.": "Sì. Apri un album o una ricerca e lo strumento agisce solo su quella vista. Pro aggiunge filtri per tipo e data per un controllo più preciso.",
     "Which browsers does it work in?": "In quali browser funziona?",
@@ -104,6 +101,13 @@
     "Google Photos desktop delete guidance (checked 2026-10-29)": "Google Foto: eliminare dal computer (consultato il 2026-10-29)",
     "Google Photos desktop restore guidance (checked 2026-10-29)": "Google Foto: ripristinare dal computer (consultato il 2026-10-29)",
     "Pro is from US$19, one-time. Personal US$19, Family US$29.97, Team US$49. No subscription, no account.": "Pro costa da 19 USD, una tantum. Personale 19 USD, Famiglia 29,97 USD, Team 49 USD. Nessun abbonamento, nessun account.",
-    "Personal US$19 · Family US$29.97 · Team US$49": "Personale 19 USD · Famiglia 29.97 USD · Team 49 USD"
+    "Personal US$19 · Family US$29.97 · Team US$49": "Personale 19 USD · Famiglia 29.97 USD · Team 49 USD",
+    "Scanning stays on your computer": "L’analisi resta sul tuo computer",
+    "Finding duplicates, spotting blurry shots and deleting run in your browser with zero photo uploads. Only AI 4K Restore sends the one photo you confirm.": "Ricerca dei duplicati, rilevamento delle foto sfocate ed eliminazione funzionano nel tuo browser senza caricare alcuna foto. Solo il ripristino 4K con IA invia la foto che confermi.",
+    "Not for scanning or deleting. It runs inside the Google Photos page in your browser. Find duplicates downloads small thumbnails only from Google's own servers, turns each into a fingerprint in memory and forgets it when you close the review. Only if you confirm AI 4K Restore on one photo is that photo sent over HTTPS to Sylphx AI, which processes it in memory and keeps no copy.": "Non per analizzare o eliminare. Funziona dentro la pagina di Google Foto nel tuo browser. Trova duplicati scarica piccole miniature solo dai server di Google, ne ricava un’impronta in memoria e la dimentica quando chiudi la revisione. Solo se confermi il ripristino 4K con IA su una foto, quella foto viene inviata via HTTPS a Sylphx AI, che la elabora in memoria senza conservarne copia.",
+    "Restore the blurry ones worth keeping": "Ripristina le foto sfocate che vale la pena tenere",
+    "The Blurry / Low-Res view finds soft and small photos on your computer. Move junk shots to Trash, or restore a photo you love in 4K and compare before and after with a slider.": "La vista Sfocate / Bassa risoluzione trova le foto poco nitide e piccole sul tuo computer. Sposta nel cestino gli scatti venuti male, oppure ripristina in 4K una foto a cui tieni e confronta prima e dopo con un cursore.",
+    "Only the photo you confirm is sent, over HTTPS to Sylphx AI. It is processed in memory, no copy is kept, and it is never used to train AI models. New accounts get 3 free trial credits.": "Viene inviata solo la foto che confermi, via HTTPS a Sylphx AI. Viene elaborata in memoria, nessuna copia viene conservata e non viene mai usata per addestrare modelli di IA. I nuovi account ricevono 3 crediti di prova gratuiti.",
+    "Try AI 4K Restore": "Prova il ripristino 4K con IA"
   }
 }

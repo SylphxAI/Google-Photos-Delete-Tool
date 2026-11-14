@@ -2,18 +2,23 @@ import { readFileSync } from 'node:fs'
 import { Window } from 'happy-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { ACTIVATION_MESSAGE, CHROME_WEB_STORE_ID } from '../src/core/activation'
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION, POLICY_CONSENT_KEY, PRIVACY_URL, TERMS_URL, policyAccepted } from '../src/ui/restore/policy-consent'
+import { WALLET_ACTIVATION_MESSAGE } from '../src/ui/restore/studio'
 
 const code = readFileSync(new URL('../site/activate.js', import.meta.url), 'utf8')
 type Reply = { ok: boolean; scope?: string; reason?: string } | undefined
 type Send = (id: string, message: { type: string; token: string }, cb: (reply: Reply) => void) => void
+const ACCEPTED = { user_id: 'local-1', terms_version: CURRENT_TERMS_VERSION, privacy_version: CURRENT_PRIVACY_VERSION, accepted_at: '2026-11-14T00:00:00.000Z', surface: 'gpdt_site' }
 
 let win: Window
 let rt: { lastError?: { message: string }; sendMessage: Send } | undefined
 const status = () => win.document.getElementById('gpdt-activation-status')?.textContent ?? ''
 
 /** A fresh pricing page; `rt` is chrome.runtime as Chrome exposes it when an installed extension lists this origin. */
-function page(ids?: string) {
-  win = new Window({ url: 'https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing?session_id=cs_1' })
+function page(ids?: string, opts: { consent?: unknown; search?: string } = {}) {
+  win = new Window({ url: `https://sylphxai.github.io/Google-Photos-Delete-Tool/pricing${opts.search ?? '?session_id=cs_1'}` })
+  const consent = 'consent' in opts ? opts.consent : ACCEPTED
+  if (consent !== undefined) win.localStorage.setItem(POLICY_CONSENT_KEY, typeof consent === 'string' ? consent : JSON.stringify(consent))
   const w = win as unknown as Record<string, unknown>
   if (rt) w.chrome = { runtime: rt }
   win.document.body.innerHTML = '<section><pre data-keel-money-licence-token hidden></pre></section>'
@@ -85,6 +90,91 @@ describe('site activation handoff', () => {
     expect(rt.sendMessage).not.toHaveBeenCalled()
     win.document.querySelector('pre')!.textContent = 'signed.valid'
     await vi.waitFor(() => expect(status()).toContain('Pro activated'))
-    expect(win.localStorage.length).toBe(0)
+    for (let i = 0; i < win.localStorage.length; i++) {
+      expect(win.localStorage.getItem(win.localStorage.key(i)!)).not.toContain('signed.valid')
+    }
+  })
+})
+
+describe('terms clickwrap before activation', () => {
+  const gate = () => win.document.getElementById('gpdt-policy-gate')
+  const box = () => win.document.getElementById('gpdt-policy-check') as unknown as HTMLInputElement
+  const agree = () => win.document.getElementById('gpdt-policy-agree') as unknown as HTMLButtonElement
+
+  it('keeps the site and extension on the same versions and legal pages', () => {
+    expect(code).toContain(`var TERMS_VERSION = '${CURRENT_TERMS_VERSION}'`)
+    expect(code).toContain(`var PRIVACY_VERSION = '${CURRENT_PRIVACY_VERSION}'`)
+    expect(code).toContain(`var POLICY_KEY = '${POLICY_CONSENT_KEY}'`)
+    expect(code).toContain(TERMS_URL)
+    expect(code).toContain(PRIVACY_URL)
+  })
+
+  for (const [label, consent] of [
+    ['no acceptance', undefined],
+    ['an older terms version', { ...ACCEPTED, terms_version: '2026-01-01' }],
+    ['an older privacy version', { ...ACCEPTED, privacy_version: '2026-01-01' }],
+    ['an unreadable record', '{not json'],
+  ] as const) {
+    it(`holds the licence until the box is ticked and agreed (${label})`, async () => {
+      const rt = runtime(() => ({ ok: true, scope: 'Personal · 1 account/profile' }))!
+      page(undefined, { consent }).textContent = 'signed.valid'
+      await vi.waitFor(() => expect(gate()).not.toBeNull())
+      expect(gate()!.textContent).toContain('Terms of Service & Privacy Policy Update')
+      expect(box().checked).toBe(false)
+      expect(agree().disabled).toBe(true)
+      agree().click()
+      await new Promise((r) => setTimeout(r, 10))
+      expect(rt.sendMessage).not.toHaveBeenCalled()
+
+      box().checked = true
+      box().dispatchEvent(new win.Event('change') as unknown as Event)
+      expect(agree().disabled).toBe(false)
+      agree().click()
+      await vi.waitFor(() => expect(status()).toContain('Pro activated'))
+      expect(gate()).toBeNull()
+      const saved = JSON.parse(win.localStorage.getItem(POLICY_CONSENT_KEY)!)
+      expect(policyAccepted(saved)).toBe(true)
+      expect(saved).toMatchObject({ terms_version: CURRENT_TERMS_VERSION, privacy_version: CURRENT_PRIVACY_VERSION, surface: 'gpdt_site' })
+    })
+  }
+
+  it('does not prompt again once the current version is accepted', async () => {
+    const rt = runtime(() => ({ ok: true, scope: 'x' }))!
+    page().textContent = 'signed.valid'
+    await vi.waitFor(() => expect(status()).toContain('Pro activated'))
+    expect(gate()).toBeNull()
+    expect(rt.sendMessage).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('wallet handoff', () => {
+  const walletToken = 'wlt_0123456789abcdefABCDEF'
+
+  it('relays wallet_token from the pricing page and drops it from the address bar', async () => {
+    const rt = runtime(() => ({ ok: true }))!
+    page(undefined, { search: `?offer=credits&wallet_token=${walletToken}` })
+    await vi.waitFor(() => expect(status()).toContain('AI credits are connected'))
+    expect(vi.mocked(rt.sendMessage).mock.calls[0].slice(0, 2)).toEqual([CHROME_WEB_STORE_ID, { type: WALLET_ACTIVATION_MESSAGE, token: walletToken }])
+    expect(win.location.search).toBe('?offer=credits')
+  })
+
+  it('waits for the clickwrap before relaying a wallet', async () => {
+    const rt = runtime(() => ({ ok: true }))!
+    page(undefined, { search: `?wallet_token=${walletToken}`, consent: undefined })
+    await vi.waitFor(() => expect(win.document.getElementById('gpdt-policy-gate')).not.toBeNull())
+    expect(rt.sendMessage).not.toHaveBeenCalled()
+  })
+
+  it('rejects a malformed wallet token without messaging the extension', async () => {
+    const rt = runtime(() => ({ ok: true }))!
+    page(undefined, { search: '?wallet_token=short' })
+    await vi.waitFor(() => expect(status()).toContain('could not be verified'))
+    expect(rt.sendMessage).not.toHaveBeenCalled()
+  })
+
+  it('points to manual connect when no extension answers', async () => {
+    runtime(() => undefined)
+    page(undefined, { search: `?wallet_token=${walletToken}` })
+    await vi.waitFor(() => expect(status()).toContain('Connect Sylphx Wallet'))
   })
 })
