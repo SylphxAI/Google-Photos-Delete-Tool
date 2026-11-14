@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.6.4] - 2026-11-14
+
+### Added
+- Pro activates automatically after checkout in Chrome: the pricing and
+  recovery pages hand the new licence to the installed extension, so there is
+  no token to copy and paste. The extension asks for no new permissions.
+- Storage Saver (Pro): one-click safe cleanup presets for screenshots, videos
+  and screenshots older than one year. Each preset fills the filters and turns
+  on dry run, so nothing is deleted before you review it.
+- Find duplicates (Pro): "Select all duplicates, keep best copy" marks every
+  group in one click and keeps the best copy in each.
+
+### Changed
+- Pro now comes in Personal, Family and Team licences, and the licence status
+  shows which one is active. Pro offers in the extension read "from US$19,
+  one-time" instead of "US$9.99 once".
+
 ## [3.6.3] - 2026-11-02
 
 ### Fixed

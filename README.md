@@ -201,8 +201,9 @@ nothing. **Pro** adds the analysis layer on top:
 on the success page right after payment and emailed to you. Lost it? Recover it
 at <https://sylphxai.github.io/Google-Photos-Delete-Tool/recover>.
 
-**Activation:** open the extension (or the userscript panel), find the **Pro
-license** box, paste your Pro token and press **Activate**. The token is
+**Activation:** in Chrome, the extension activates itself when the success or
+recovery page shows your token. Otherwise open the extension (or the userscript
+panel), find the **Pro license** box, paste your Pro token and press **Activate**. The token is
 verified on your device, works offline, does not expire and is never sent to us
 (your browser's own sync may copy it to your other signed-in devices). Pro is
 digital content: at checkout you ask us to supply it straight away and

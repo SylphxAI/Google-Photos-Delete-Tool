@@ -45,7 +45,6 @@ console.log(`Building ${licenseEnvironment} licence trust into ${distDirectory}/
 
 const extensionEntries = [
   { name: 'content', input: 'src/extension/content.ts' },
-  { name: 'activation', input: 'src/extension/activation.ts' },
   { name: 'background', input: 'src/extension/background.ts' },
   { name: 'popup', input: 'src/extension/popup/popup.ts' },
 ]
@@ -134,6 +133,9 @@ function firefoxManifest(): Record<string, unknown> {
   // title would be rejected, so Firefox uses the short localized name
   // (appNameEdge, at most 45 characters in every locale).
   m.name = '__MSG_appNameEdge__'
+  // Firefox does not support web-page messaging through externally_connectable;
+  // Firefox users activate Pro by pasting the licence.
+  delete m.externally_connectable
   m.browser_specific_settings = {
     gecko: {
       id: 'google-photos-delete-tool@shtse8.github.io',

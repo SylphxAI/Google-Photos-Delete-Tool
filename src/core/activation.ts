@@ -1,6 +1,10 @@
 import type { ProLicensePayload } from './license'
 
-export const LICENCE_STORAGE_KEY = 'keel:money:licence:gpdt'
+/** Message the owned pricing/recovery pages send to the installed extension. */
+export const ACTIVATION_MESSAGE = 'gpdt:activate-licence'
+
+/** Chrome Web Store id of the published extension (the pages' default message target). */
+export const CHROME_WEB_STORE_ID = 'jiahfbbfpacpolomdjlpdpiljllcdenb'
 
 /** Only product-owned checkout/recovery pages may offer a local token. */
 export function isActivationUrl(raw: string): boolean {
@@ -14,15 +18,28 @@ export function isActivationUrl(raw: string): boolean {
   } catch { return false }
 }
 
-/** Storage and page content are untrusted; signature verification is mandatory next. */
+/** Page content is untrusted; signature verification is mandatory next. */
 export function activationToken(raw: unknown): string | null {
   if (typeof raw !== 'string' || raw.length > 16384) return null
-  let token = raw.trim()
-  if (token.startsWith('{')) {
-    try { token = JSON.parse(token).token } catch { return null }
-  }
-  return typeof token === 'string' && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token) ? token : null
+  const token = raw.trim()
+  return /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token) ? token : null
 }
+
+/**
+ * The token of an external activation message, or null when the sender is not
+ * an owned pricing/recovery page or the message is not an activation request.
+ * `senderUrl` is the browser-reported frame URL, never a page-supplied value.
+ */
+export function activationRequest(message: unknown, senderUrl: string | undefined): string | null {
+  if (typeof senderUrl !== 'string' || !isActivationUrl(senderUrl)) return null
+  if (typeof message !== 'object' || message === null) return null
+  const m = message as { type?: unknown; token?: unknown }
+  return m.type === ACTIVATION_MESSAGE ? activationToken(m.token) : null
+}
+
+export type ActivationReply =
+  | { ok: true; scope: string }
+  | { ok: false; reason: 'rejected' | 'invalid' | 'storage' }
 
 /** Seat scope is informational, never a device lock or a restriction on legacy buyers. */
 export function licenceScope(payload: ProLicensePayload): string {

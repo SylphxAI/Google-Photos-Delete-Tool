@@ -1,8 +1,9 @@
 /**
  * Service worker (Chromium MV3) / background script (Firefox MV3).
  *
- * Single responsibility: reflect the engine's deletion count on the
- * action badge so users see progress without opening the popup.
+ * Reflects the engine's deletion count on the action badge so users see
+ * progress without opening the popup, and accepts Pro activation messages
+ * from the owned pricing/recovery pages (external-activation.ts).
  *
  * All async chrome.* calls go through src/extension/api.ts promise
  * wrappers (callback-based) so this file is identical for both
@@ -28,8 +29,10 @@ const pendingBadge = new Map<number, ReturnType<typeof setTimeout>>()
 
 import { setBadgeBackgroundColor, setBadgeText } from './api'
 import { registerLifecycle } from './lifecycle'
+import { registerExternalActivation } from './external-activation'
 
 registerLifecycle()
+registerExternalActivation()
 
 interface ProgressData {
   deleted: number
