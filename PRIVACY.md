@@ -89,9 +89,12 @@ details go to the payment provider, never through the extension.
 
 Before your first purchase, Pro activation or restore, and again whenever
 these terms change, the tool asks you to agree to the Terms of Service and
-this policy. The acceptance record (a random local id, the two version dates,
-the time and the surface) stays in `chrome.storage.local` or `localStorage`
-and is not sent.
+this policy. The acceptance record (a local or account id, the two version
+dates, the time and where you agreed) is saved in your browser
+(`chrome.storage.local` or `localStorage`). When you connect a Sylphx wallet or
+account, the same record is also sent to Sylphx (`api.sylphx.com`) so your
+account's agreement to the Terms and this policy is on file. It carries no
+photo or library data.
 
 On your request, the tool stores **locally**:
 
@@ -108,7 +111,8 @@ On your request, the tool stores **locally**:
 
 None of this is transmitted to us or anyone else by the tool, except the
 wallet token, which is sent to Sylphx only to check your balance and pay for a
-restore you confirmed.
+restore you confirmed, and the acceptance record, which is sent to Sylphx when
+you connect a Sylphx wallet or account.
 
 On install the browser opens our landing page's how-to section in a tab, and on
 uninstall it opens a short "why did you leave" page. These are ordinary pages
@@ -130,10 +134,10 @@ The content script is declared directly for the single supported domain.
 
 ## Effects on Your Google Photos Account
 
-The tool deletes photos from your account on your behalf. Deleted photos
-move to the Google Photos **Trash**, where they remain for 60 days before
-permanent deletion (Google's standard policy). You can restore anything
-from the trash during that window.
+The tool moves the photos you choose to the Google Photos **Trash**.
+Restoration is possible only while items remain in Trash and Google Photos’
+current retention policy allows it; no recovery period is guaranteed. If
+Trash is full, Google may prompt permanent deletion instead.
 
 If you enable **"Empty trash"**, the tool navigates to
 `photos.google.com/trash` after the main run and clicks "Empty trash" +
@@ -150,6 +154,17 @@ tool contacts is Sylphx AI, and only for AI 4K Restore as described above
 issue** button opens GitHub's issue page with a diagnostic description
 that you choose to submit.
 
+## Your Rights
+
+If you have connected a Sylphx account or bought Pro or credits, you can ask
+for a copy of your personal data (subject access / DSAR), or ask us to
+correct (rectify) or delete (erase) it, or to restrict or stop using it.
+Send statutory data-rights requests and formal legal notices exclusively to
+<legal@sylphx.com> (customer support at <hi@sylphx.com> cannot accept or
+discuss legal notices or statutory data-rights requests). You may also
+complain to the UK Information Commissioner's Office (`ico.org.uk`) or your
+local data protection authority.
+
 ## Children's Privacy
 
 The tool is not directed at children under 13 and does not knowingly
@@ -162,9 +177,12 @@ date.
 
 ## Contact
 
-For questions, open an issue at
+For routine product or order support, open an issue at
 <https://github.com/SylphxAI/Google-Photos-Delete-Tool/issues> or email
-<hi@sylphx.com>. Security reports go through the repository's
+<hi@sylphx.com>. Formal legal notices, statutory data-rights requests, and
+pre-action dispute notices must be sent exclusively to <legal@sylphx.com>
+(customer support at <hi@sylphx.com> cannot accept or discuss legal notices).
+Security reports go through the repository's
 [security advisories](https://github.com/SylphxAI/Google-Photos-Delete-Tool/security/advisories/new).
 
 The website and Pro purchases are covered by the site privacy notice: https://sylphxai.github.io/Google-Photos-Delete-Tool/privacy.html

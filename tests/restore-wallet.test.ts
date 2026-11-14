@@ -15,6 +15,7 @@ import {
   fetchRestoreWalletState,
   fetchWalletBalance,
 } from '../src/core/restore/wallet'
+import { fake } from './fixtures/fake-tokens'
 
 const catalogue = JSON.parse(
   readFileSync(new URL('../config/money-catalogue.json', import.meta.url), 'utf8'),
@@ -70,7 +71,7 @@ describe('fetchWalletBalance / fetchRestoreWalletState', () => {
       )
       expect(init?.method).toBe('GET')
       expect(init?.headers).toMatchObject({
-        Authorization: 'Bearer sess_live_token_123',
+        Authorization: `Bearer ${fake('sess', 'live', 'token', '123')}`,
         'x-sylphx-key': PUBLISHABLE_KEY,
       })
       return new Response(
@@ -84,7 +85,7 @@ describe('fetchWalletBalance / fetchRestoreWalletState', () => {
       )
     })
 
-    const state = await fetchWalletBalance('sess_live_token_123', fakeFetch as unknown as typeof fetch)
+    const state = await fetchWalletBalance(fake('sess', 'live', 'token', '123'), fakeFetch as unknown as typeof fetch)
     expect(state).toEqual({
       balance: 3,
       trialGranted: true,
@@ -94,7 +95,7 @@ describe('fetchWalletBalance / fetchRestoreWalletState', () => {
     expect(fakeStorage.getItem).not.toHaveBeenCalled()
 
     const state2 = await fetchRestoreWalletState(
-      { token: 'sess_live_token_123' },
+      { token: fake('sess', 'live', 'token', '123') },
       fakeFetch as unknown as typeof fetch,
     )
     expect(state2.balance).toBe(3)
@@ -118,7 +119,7 @@ describe('claimWalletCheckout / claimRestoreCheckout', () => {
     })
 
     const res = await claimWalletCheckout(
-      'sess_live_token_123',
+      fake('sess', 'live', 'token', '123'),
       'cs_live_12345',
       fakeFetch as unknown as typeof fetch,
     )
@@ -131,7 +132,7 @@ describe('claimWalletCheckout / claimRestoreCheckout', () => {
 
     const res2 = await claimRestoreCheckout(
       'cs_live_12345',
-      'sess_live_token_123',
+      fake('sess', 'live', 'token', '123'),
       fakeFetch as unknown as typeof fetch,
     )
     expect(res2.balance).toBe(103)
@@ -144,7 +145,7 @@ describe('executeAiRestore & executePhotoRestore (hard privacy precondition + no
     await expect(
       executeAiRestore(
         {
-          authToken: 'sess_live_token_123',
+          authToken: fake('sess', 'live', 'token', '123'),
           imageBase64: 'AAAA',
           mimeType: 'image/jpeg',
           photoId: 'AF1Qip123',
@@ -156,11 +157,20 @@ describe('executeAiRestore & executePhotoRestore (hard privacy precondition + no
     expect(fakeFetch).not.toHaveBeenCalled()
   })
 
+  it('executePhotoRestore also refuses without an explicit confirmation (no default)', async () => {
+    const fakeFetch = vi.fn()
+    const input = { authToken: fake('sess', 'live', 'token', '123'), imageBase64: 'AAAA', photoId: 'AF1Qip123' }
+    await expect(
+      executePhotoRestore(input as unknown as Parameters<typeof executePhotoRestore>[0], fakeFetch as unknown as typeof fetch),
+    ).rejects.toThrow('single_photo_transfer_consent_required')
+    expect(fakeFetch).not.toHaveBeenCalled()
+  })
+
   it('calls POST /v1/money/{parent}/images:restore without Sylphx-Data-Policy: zdr header', async () => {
     const fakeFetch = vi.fn(async (url: string, init?: RequestInit) => {
       expect(url).toBe(`${API_ORIGIN}/v1/money/${MONEY_PARENT}/images:restore`)
       const headers = init?.headers as Record<string, string>
-      expect(headers.Authorization).toBe('Bearer sess_live_token_123')
+      expect(headers.Authorization).toBe(`Bearer ${fake('sess', 'live', 'token', '123')}`)
       expect(headers['x-sylphx-key']).toBe(PUBLISHABLE_KEY)
       expect(headers['Idempotency-Key']).toMatch(/^gpdt-restore-AF1Qip123/)
       expect(headers['Sylphx-Data-Policy']).toBeUndefined()
@@ -188,7 +198,7 @@ describe('executeAiRestore & executePhotoRestore (hard privacy precondition + no
 
     const res = await executeAiRestore(
       {
-        authToken: 'sess_live_token_123',
+        authToken: fake('sess', 'live', 'token', '123'),
         imageBase64: 'QUFBQQ==',
         mimeType: 'image/jpeg',
         photoId: 'AF1Qip123',
@@ -214,7 +224,8 @@ describe('executeAiRestore & executePhotoRestore (hard privacy precondition + no
     )
     const r402 = await executePhotoRestore(
       {
-        authToken: 'sess_live_token_123',
+        userConfirmedSinglePhotoTransfer: true,
+        authToken: fake('sess', 'live', 'token', '123'),
         imageBlob: new Uint8Array([1, 2, 3]),
         mode: 'upscale_4k',
         scale: 4,
@@ -235,7 +246,7 @@ describe('executeAiRestore & executePhotoRestore (hard privacy precondition + no
     })
     const rTimeout = await executeAiRestore(
       {
-        authToken: 'sess_live_token_123',
+        authToken: fake('sess', 'live', 'token', '123'),
         imageBase64: 'QUFBQQ==',
         mimeType: 'image/jpeg',
         photoId: 'AF1Qip123',

@@ -471,24 +471,14 @@ async function runRestoreRequest(
  * Execute single-photo AI 4K restoration via `POST /v1/money/{parent}/images:restore`.
  */
 export async function executePhotoRestore(
-  input: Omit<ExecuteAiRestoreInput, 'userConfirmedSinglePhotoTransfer'> & {
-    userConfirmedSinglePhotoTransfer?: boolean
-  },
+  input: ExecuteAiRestoreInput,
   fetchImpl?: typeof fetch,
 ): Promise<ExecuteAiRestoreResult> {
   const apiOrigin = (input.apiOrigin ?? API_ORIGIN).replace(/\/+$/, '')
   const parent = input.parent ?? MONEY_PARENT
-  return runRestoreRequest(
-    {
-      ...input,
-      userConfirmedSinglePhotoTransfer:
-        input.userConfirmedSinglePhotoTransfer ?? true,
-    },
-    [
-      `${apiOrigin}/v1/money/${parent}/images:restore`,
-    ],
-    fetchImpl,
-  )
+  // Fail closed: runRestoreRequest refuses unless the caller passes an explicit
+  // userConfirmedSinglePhotoTransfer: true for this one photo.
+  return runRestoreRequest(input, [`${apiOrigin}/v1/money/${parent}/images:restore`], fetchImpl)
 }
 
 export async function executeAiRestore(

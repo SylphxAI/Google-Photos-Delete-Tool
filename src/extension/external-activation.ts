@@ -18,61 +18,58 @@ import {
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
   needsPolicyReconsent,
+  readPolicyConsent,
   recordPolicyConsent,
 } from '../core/consent'
 import { verifyLicense } from '../core/license'
 import { WALLET_TOKEN_KEY } from '../core/restore/wallet'
 import * as api from './api'
 
+/**
+ * Admit an activation only under a current Terms/Privacy acceptance: the one
+ * the page sends with the message (recorded here, and synced to the account
+ * when a wallet token is present), or one already stored in this browser.
+ * A message without complete consent fields and no current stored acceptance
+ * is refused, so nothing activates without a recorded agreement.
+ */
 async function validateAndPersistConsent(
   consentMeta: ActivationConsentMeta | null,
   authToken?: string,
 ): Promise<{ ok: true } | { ok: false; reason: 'consent_required' }> {
-  if (!consentMeta) return { ok: true }
-  if (consentMeta.accepted === false) {
-    return { ok: false, reason: 'consent_required' }
-  }
-  const termsVersion = consentMeta.terms_version ?? ''
-  const privacyVersion = consentMeta.privacy_version ?? ''
-  const acceptedAt = consentMeta.accepted_at ?? new Date().toISOString()
+  const refuse = { ok: false, reason: 'consent_required' } as const
+  if (consentMeta?.accepted === false) return refuse
 
-  if (
-    consentMeta.require_consent === true &&
-    (!termsVersion || !privacyVersion)
-  ) {
-    return { ok: false, reason: 'consent_required' }
+  const inline =
+    consentMeta !== null &&
+    typeof consentMeta.terms_version === 'string' &&
+    typeof consentMeta.privacy_version === 'string' &&
+    typeof consentMeta.accepted_at === 'string'
+  if (!inline) {
+    const existing = await readPolicyConsent()
+    return needsPolicyReconsent(existing, CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION) ? refuse : { ok: true }
   }
 
-  if (
-    consentMeta.terms_version !== undefined ||
-    consentMeta.privacy_version !== undefined ||
-    consentMeta.accepted_at !== undefined
-  ) {
-    const candidate = {
-      terms_version: termsVersion,
-      privacy_version: privacyVersion,
-      accepted_at: acceptedAt,
-      surface: 'gpdt_web_activate' as const,
-      ...(consentMeta.user_id ? { user_id: consentMeta.user_id } : {}),
-    }
-    if (needsPolicyReconsent(candidate, CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION)) {
-      return { ok: false, reason: 'consent_required' }
-    }
-    try {
-      await recordPolicyConsent({
-        userId: consentMeta.user_id,
-        surface: 'gpdt_web_activate',
-        accepted: true,
-        termsVersion,
-        privacyVersion,
-        acceptedAt,
-        token: authToken,
-      })
-    } catch {
-      return { ok: false, reason: 'consent_required' }
-    }
+  const candidate = {
+    terms_version: consentMeta.terms_version as string,
+    privacy_version: consentMeta.privacy_version as string,
+    accepted_at: consentMeta.accepted_at as string,
+    surface: 'gpdt_web_activate' as const,
+    ...(consentMeta.user_id ? { user_id: consentMeta.user_id } : {}),
   }
-
+  if (needsPolicyReconsent(candidate, CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION)) return refuse
+  try {
+    await recordPolicyConsent({
+      userId: consentMeta.user_id,
+      surface: 'gpdt_web_activate',
+      accepted: true,
+      termsVersion: candidate.terms_version,
+      privacyVersion: candidate.privacy_version,
+      acceptedAt: candidate.accepted_at,
+      token: authToken,
+    })
+  } catch {
+    return refuse
+  }
   return { ok: true }
 }
 

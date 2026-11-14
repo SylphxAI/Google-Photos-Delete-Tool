@@ -176,7 +176,7 @@ const CSS = `${TOKENS_CSS}
 * { box-sizing: border-box; }
 .scrim { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 16px;
   background: var(--gp-scrim); font: 400 14px/1.5 var(--gp-font); color: var(--gp-ink); -webkit-font-smoothing: antialiased; }
-.studio { width: min(880px, 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden;
+.studio { width: min(880px, 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden; outline: none;
   background: var(--gp-paper); border: 1px solid var(--gp-outline); border-radius: 12px; box-shadow: var(--gp-shadow); }
 .nav { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 8px 0 16px; border-bottom: 1px solid var(--gp-outline); }
 .nav .gp-sparkle { color: var(--gp-accent); flex: none; }
@@ -187,6 +187,7 @@ const CSS = `${TOKENS_CSS}
 .chip { flex: none; padding: 4px 8px; border-radius: 4px; background: var(--gp-accent-container); color: var(--gp-on-accent-container);
   font-size: 13px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .wallet .line { flex: 1; min-width: 0; color: var(--gp-muted); font-size: 12px; line-height: 1.45; }
+@media (max-width: 480px) { .wallet { flex-wrap: wrap; } .wallet .line { order: 3; flex-basis: 100%; } .wallet .btn { margin-left: auto; } }
 .drawer { padding: 16px; border-bottom: 1px solid var(--gp-outline); background: var(--gp-paper); display: grid; gap: 12px; }
 .drawer[hidden] { display: none; }
 .offers { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 8px; }
@@ -199,6 +200,8 @@ const CSS = `${TOKENS_CSS}
 .offer .each { color: var(--gp-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
 .actions { display: flex; justify-content: space-between; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--gp-outline); background: var(--gp-raised); }
+.actions:empty { display: none; }
+@media (max-width: 480px) { .actions .end { flex: 1; } .actions .end .btn { flex: 1; padding: 0 12px; } }
 .actions .end { display: flex; gap: 8px; margin-left: auto; }
 button.btn { height: 40px; padding: 0 16px; border: 1px solid var(--gp-btn-border); border-radius: 8px; font: 600 13px/1.2 var(--gp-font); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
@@ -229,8 +232,8 @@ p { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .progress > div { animation: none; width: 100%; opacity: .5; } }
 .working { display: grid; gap: 12px; max-width: 520px; margin: 0 auto; }
 .compare { display: grid; gap: 12px; }
-.stage { --pos: 50%; --zoom: 1; --ox: 50%; --oy: 50%; position: relative; aspect-ratio: 4 / 3; max-height: 62vh; width: 100%;
-  border-radius: 8px; overflow: hidden; background: var(--gp-sunken); touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: ew-resize; }
+.stage { --pos: 50%; --zoom: 1; --ox: 50%; --oy: 50%; --ar: 4 / 3; --arn: 1.3333; position: relative; aspect-ratio: var(--ar);
+  width: min(100%, calc(62vh * var(--arn))); margin: 0 auto; border-radius: 8px; overflow: hidden; background: var(--gp-sunken); touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: ew-resize; }
 .layer { position: absolute; inset: 0; }
 .layer img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none;
   transform: scale(var(--zoom)); transform-origin: var(--ox) var(--oy); transition: transform .2s ease; }
@@ -325,7 +328,7 @@ export function openRestoreStudio(opts: RestoreStudioOptions): RestoreStudio {
   const body = h('div', { class: 'body' })
   const actions = h('footer', { class: 'actions' })
   const live = h('p', { class: 'sr', role: 'status', 'aria-live': 'polite' })
-  const dialog = h('div', { class: 'studio', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'gp-studio-title' },
+  const dialog = h('div', { class: 'studio', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'gp-studio-title', tabindex: '-1' },
     h('header', { class: 'nav' }, sparkleIcon(document, 18), title, closeBtn),
     h('div', { class: 'wallet' }, chip, walletLine, topUp),
     drawer, body, actions, live)
@@ -551,6 +554,11 @@ export function openRestoreStudio(opts: RestoreStudioOptions): RestoreStudio {
       h('span', { class: 'badge right' }, '4K Restored'),
       h('div', { class: 'divider' }, handle))
 
+    // The stage takes the photo's own shape, so the badges sit on the picture, not on bars beside it.
+    if (result.width > 0 && result.height > 0) {
+      stage.style.setProperty('--ar', `${result.width} / ${result.height}`)
+      stage.style.setProperty('--arn', String(Math.round((result.width / result.height) * 10000) / 10000))
+    }
     const setPos = (p: number): void => {
       pos = Math.min(100, Math.max(0, Math.round(p)))
       stage.style.setProperty('--pos', `${pos}%`)
@@ -639,7 +647,8 @@ export function openRestoreStudio(opts: RestoreStudioOptions): RestoreStudio {
       if (!ok) close()
     }
   })()
-  closeBtn.focus()
+  // Focus lands on the dialog itself, so Tab reaches the controls without a ring on Close at first sight.
+  dialog.focus({ preventScroll: true })
 
   return { close, root: shadow }
 }

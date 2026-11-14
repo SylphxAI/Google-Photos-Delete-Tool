@@ -204,44 +204,102 @@ export async function recordPolicyConsent(input: RecordPolicyConsentInput): Prom
 
   await writeChromeOrLocalPolicyConsent(record)
 
-  const token = input.token?.trim()
-  if (token) {
-    const apiOrigin = (input.apiOrigin ?? DEFAULT_CONSENT_API_ORIGIN).replace(/\/+$/, '')
-    const parent = input.parent ?? DEFAULT_CONSENT_PARENT
-    const publishableKey = input.publishableKey ?? DEFAULT_CONSENT_PUBLISHABLE_KEY
-    const defaultFetch =
-      typeof fetch === 'function' &&
-      ('mock' in fetch || !(globalThis as { process?: { env?: { VITEST?: string } } }).process?.env?.VITEST)
-        ? fetch
-        : undefined
-    const f = input.fetchImpl ?? defaultFetch
-    if (f) {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${token}`,
-        'x-sylphx-key': publishableKey,
-        'Content-Type': 'application/json',
-      }
-      const body = JSON.stringify(record)
-      try {
-        const res = await f(`${apiOrigin}/v1/auth/${parent}/consent:accept`, {
-          method: 'POST',
-          headers,
-          body,
-        })
-        if (res && res.status === 404) {
-          await f(`${apiOrigin}/account/consent`, {
-            method: 'POST',
-            headers,
-            body,
-          })
-        }
-      } catch {
-        // Local consent record is authoritative offline; cloud sync retries on next auth call
-      }
-    }
-  }
+  await syncPolicyConsentToServer(record, input)
 
   return record
+}
+
+export interface ServerConsentSyncOptions {
+  token?: string
+  apiOrigin?: string
+  parent?: string
+  publishableKey?: string
+  fetchImpl?: typeof fetch
+}
+
+export async function syncPolicyConsentToServer(
+  record: ConsentRecord,
+  input: ServerConsentSyncOptions,
+): Promise<void> {
+  const token = input.token?.trim()
+  if (!token) return
+  const apiOrigin = (input.apiOrigin ?? DEFAULT_CONSENT_API_ORIGIN).replace(/\/+$/, '')
+  const parent = input.parent ?? DEFAULT_CONSENT_PARENT
+  const publishableKey = input.publishableKey ?? DEFAULT_CONSENT_PUBLISHABLE_KEY
+  const defaultFetch =
+    typeof fetch === 'function' &&
+    ('mock' in fetch || !(globalThis as { process?: { env?: { VITEST?: string } } }).process?.env?.VITEST)
+      ? fetch
+      : undefined
+  const f = input.fetchImpl ?? defaultFetch
+  if (!f) return
+  const orgId = /^orgs\/([^/]+)/.exec(parent)?.[1]
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'x-sylphx-key': publishableKey,
+    ...(orgId ? { 'x-sylphx-organization': orgId } : {}),
+    'Content-Type': 'application/json',
+  }
+  const body = JSON.stringify({
+    terms_accepted: true,
+    terms_version: record.terms_version,
+    privacy_version: record.privacy_version,
+    surface: record.surface,
+    ...(record.user_id !== undefined ? { user_id: record.user_id } : {}),
+    accepted_at: record.accepted_at,
+  })
+  const endpoints = [
+    `${apiOrigin}/v1/auth/${parent}/consent:accept`,
+    `${apiOrigin}/v1/auth/consent:accept`,
+    `${apiOrigin}/account/consent`,
+  ]
+  try {
+    for (const url of endpoints) {
+      const res = await f(url, {
+        method: 'POST',
+        headers,
+        body,
+      })
+      if (!res || res.status !== 404) break
+    }
+  } catch {
+    // Local consent record is authoritative offline; cloud sync retries on next auth call
+  }
+}
+
+export async function fetchServerConsentStatus(
+  input: ServerConsentSyncOptions,
+): Promise<ConsentRecord | null> {
+  const token = input.token?.trim()
+  if (!token) return null
+  const apiOrigin = (input.apiOrigin ?? DEFAULT_CONSENT_API_ORIGIN).replace(/\/+$/, '')
+  const parent = input.parent ?? DEFAULT_CONSENT_PARENT
+  const publishableKey = input.publishableKey ?? DEFAULT_CONSENT_PUBLISHABLE_KEY
+  const f = input.fetchImpl ?? (typeof fetch === 'function' ? fetch : undefined)
+  if (!f) return null
+  const orgId = /^orgs\/([^/]+)/.exec(parent)?.[1]
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'x-sylphx-key': publishableKey,
+    ...(orgId ? { 'x-sylphx-organization': orgId } : {}),
+  }
+  const endpoints = [
+    `${apiOrigin}/v1/auth/${parent}/consent:status`,
+    `${apiOrigin}/v1/auth/consent:status`,
+  ]
+  for (const url of endpoints) {
+    try {
+      const res = await f(url, { method: 'GET', headers })
+      if (res && res.status === 404) continue
+      if (!res || !res.ok) return null
+      const data = (await res.json()) as Record<string, unknown>
+      const candidate = (data.consent ?? data) as Record<string, unknown>
+      return isValidConsentRecord(candidate) ? candidate : null
+    } catch {
+      return null
+    }
+  }
+  return null
 }
 
 export type Acknowledgement = {

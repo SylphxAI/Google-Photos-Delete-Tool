@@ -4,6 +4,7 @@ import type { ScannedItem } from '../src/core/dedup/scan'
 import {
   PROBE_PX, classifyThumbnails, createRestoreBackend, verdictOf, walletStateOf,
 } from '../src/extension/restore-backend'
+import { fake } from './fixtures/fake-tokens'
 
 const GOOGLE = 'https://lh3.googleusercontent.com/pw/AP1Gcz=w2048-h2048-no'
 const photo = { id: 'AF1Qip', previewUrl: GOOGLE, sourceUrl: GOOGLE }
@@ -25,7 +26,7 @@ describe('wallet state', () => {
   })
 
   it('fails the wallet check instead of guessing a balance', async () => {
-    const backend = createRestoreBackend({ readToken: async () => 'sess_token_123', fetchImpl: async () => json({}, 500) })
+    const backend = createRestoreBackend({ readToken: async () => fake('sess', 'token', '123'), fetchImpl: async () => json({}, 500) })
     await expect(backend.wallet()).rejects.toThrow()
   })
 })
@@ -39,7 +40,7 @@ describe('restore', () => {
       if (url === GOOGLE) return new Response(new Blob([new Uint8Array([1, 2, 3])], { type: 'image/jpeg' }))
       return json({ restoredImageB64: btoa('restored'), mimeType: 'image/png', width: 3840, height: 2880, remainingCredits: 9 })
     })
-    const backend = createRestoreBackend({ readToken: async () => 'sess_token_123', fetchImpl })
+    const backend = createRestoreBackend({ readToken: async () => fake('sess', 'token', '123'), fetchImpl })
     const result = await backend.restore(photo, { signal: signal() })
     expect(result).toMatchObject({ width: 3840, height: 2880 })
     expect(result.image.type).toBe('image/png')
@@ -51,7 +52,7 @@ describe('restore', () => {
 
   it('never reads or sends a photo from a non-Google address', async () => {
     const fetchImpl = vi.fn<typeof fetch>()
-    const backend = createRestoreBackend({ readToken: async () => 'sess_token_123', fetchImpl })
+    const backend = createRestoreBackend({ readToken: async () => fake('sess', 'token', '123'), fetchImpl })
     await expect(backend.restore({ ...photo, sourceUrl: 'https://evil.example/p.jpg' }, { signal: signal() })).rejects.toThrow('Nothing was sent')
     expect(fetchImpl).not.toHaveBeenCalled()
   })
@@ -65,7 +66,7 @@ describe('restore', () => {
 
   it('explains an empty wallet and a failed restore without claiming success', async () => {
     const run = (res: Response) => createRestoreBackend({
-      readToken: async () => 'sess_token_123',
+      readToken: async () => fake('sess', 'token', '123'),
       fetchImpl: async (input) => (String(input) === GOOGLE ? new Response(new Blob([new Uint8Array([1])])) : res),
     }).restore(photo, { signal: signal() })
     await expect(run(json({ code: 'INSUFFICIENT_CREDITS' }, 402))).rejects.toThrow('out of credits')

@@ -9,6 +9,7 @@ import {
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
 } from '../src/core/consent'
+import { fake, fakeJwt } from './fixtures/fake-tokens'
 
 const verify = vi.hoisted(() => vi.fn())
 const write = vi.hoisted(() => vi.fn())
@@ -31,10 +32,40 @@ const walletMsg = (wallet_token: unknown, extra: Record<string, unknown> = {}) =
   ...extra,
 })
 
+const CURRENT_CONSENT = {
+  user_id: 'local-1',
+  terms_version: CURRENT_TERMS_VERSION,
+  privacy_version: CURRENT_PRIVACY_VERSION,
+  accepted_at: '2026-11-14T17:00:00.000Z',
+  surface: 'gpdt_web_activate',
+}
+const INLINE_CONSENT = {
+  terms_version: CURRENT_TERMS_VERSION,
+  privacy_version: CURRENT_PRIVACY_VERSION,
+  accepted_at: '2026-11-14T17:00:00.000Z',
+}
+
+/** chrome.storage.local holding `stored` under gpdt_policy_consent (or nothing). */
+function storedConsent(stored: unknown) {
+  const area: Record<string, unknown> = stored === undefined ? {} : { gpdt_policy_consent: stored }
+  vi.stubGlobal('chrome', {
+    runtime: {},
+    storage: {
+      local: {
+        get: (keys: string[], cb: (d: Record<string, unknown>) => void) => cb(Object.fromEntries(keys.filter((k) => k in area).map((k) => [k, area[k]]))),
+        set: (items: Record<string, unknown>, cb: () => void) => { Object.assign(area, items); cb() },
+      },
+    },
+  })
+  return area
+}
+
 beforeEach(() => {
   verify.mockReset()
   write.mockReset()
   writeWallet.mockReset()
+  vi.unstubAllGlobals()
+  storedConsent(CURRENT_CONSENT)
 })
 
 describe('activationRequest & walletActivationRequest (sender URL and message shape)', () => {
@@ -47,15 +78,15 @@ describe('activationRequest & walletActivationRequest (sender URL and message sh
   })
 
   it('accepts a Sylphx Money wallet activation message from the owned pricing and recovery pages', () => {
-    expect(walletActivationRequest(walletMsg('sess_live_abcdef123456'), PRICING)).toBe(
-      'sess_live_abcdef123456',
+    expect(walletActivationRequest(walletMsg(fake('sess', 'live', 'abcdef123456')), PRICING)).toBe(
+      fake('sess', 'live', 'abcdef123456'),
     )
     expect(
       walletActivationRequest(
-        walletMsg(' eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJ1c3JfMSJ9.c2ln '),
+        walletMsg(` ${fakeJwt('{"alg":"EdDSA"}', '{"sub":"usr_1"}', 'sig')} `),
         'https://gpd.sylphx.com/pricing',
       ),
-    ).toBe('eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJ1c3JfMSJ9.c2ln')
+    ).toBe(fakeJwt('{"alg":"EdDSA"}', '{"sub":"usr_1"}', 'sig'))
   })
 
   it('rejects other pages on the allowed origins, lookalike hosts and missing sender URLs', () => {
@@ -70,7 +101,7 @@ describe('activationRequest & walletActivationRequest (sender URL and message sh
       undefined,
     ]) {
       expect(activationRequest(msg('a.b'), url)).toBeNull()
-      expect(walletActivationRequest(walletMsg('sess_live_abcdef123456'), url)).toBeNull()
+      expect(walletActivationRequest(walletMsg(fake('sess', 'live', 'abcdef123456')), url)).toBeNull()
     }
   })
 
@@ -114,7 +145,7 @@ describe('handleExternalActivation', () => {
     writeWallet.mockResolvedValue(undefined)
     await expect(
       handleExternalActivation(
-        walletMsg('sess_live_wallet_token_123', {
+        walletMsg(fake('sess', 'live', 'wallet', 'token', '123'), {
           terms_version: CURRENT_TERMS_VERSION,
           privacy_version: CURRENT_PRIVACY_VERSION,
           accepted_at: '2026-11-14T17:00:00.000Z',
@@ -125,13 +156,39 @@ describe('handleExternalActivation', () => {
       ok: true,
       scope: 'AI Restore Wallet',
     })
-    expect(writeWallet).toHaveBeenCalledWith('sess_live_wallet_token_123')
+    expect(writeWallet).toHaveBeenCalledWith(fake('sess', 'live', 'wallet', 'token', '123'))
+  })
+
+  it('refuses a bare activation when no current acceptance is stored, and admits it once one is', async () => {
+    verify.mockResolvedValue({ ok: true, payload: { plan: 'pro', seats: 1 }, authority: 'money' })
+    write.mockResolvedValue(undefined)
+    writeWallet.mockResolvedValue(undefined)
+    for (const stored of [undefined, { ...CURRENT_CONSENT, terms_version: '2025-01-01' }, 'not a record']) {
+      storedConsent(stored)
+      await expect(handleExternalActivation(msg('signed.valid'), { url: PRICING })).resolves.toEqual({ ok: false, reason: 'consent_required' })
+      await expect(handleExternalActivation(walletMsg(fake('sess', 'live', 'wallet', 'token', '123')), { url: PRICING })).resolves.toEqual({ ok: false, reason: 'consent_required' })
+    }
+    expect(verify).not.toHaveBeenCalled()
+    expect(write).not.toHaveBeenCalled()
+    expect(writeWallet).not.toHaveBeenCalled()
+
+    storedConsent(CURRENT_CONSENT)
+    await expect(handleExternalActivation(msg('signed.valid'), { url: PRICING })).resolves.toMatchObject({ ok: true })
+  })
+
+  it('records inline consent from the page and then activates, even with nothing stored yet', async () => {
+    const area = storedConsent(undefined)
+    verify.mockResolvedValue({ ok: true, payload: { plan: 'pro', seats: 1 }, authority: 'money' })
+    write.mockResolvedValue(undefined)
+    await expect(handleExternalActivation({ ...msg('signed.valid'), ...INLINE_CONSENT }, { url: PRICING })).resolves.toMatchObject({ ok: true })
+    expect(area.gpdt_policy_consent).toMatchObject({ ...INLINE_CONSENT, surface: 'gpdt_web_activate' })
+    expect(write).toHaveBeenCalledWith('signed.valid')
   })
 
   it('rejects wallet activation when policy consent versions are outdated or unaccepted', async () => {
     await expect(
       handleExternalActivation(
-        walletMsg('sess_live_wallet_token_123', {
+        walletMsg(fake('sess', 'live', 'wallet', 'token', '123'), {
           terms_version: '2025-01-01',
           privacy_version: CURRENT_PRIVACY_VERSION,
           accepted_at: '2026-11-14T17:00:00.000Z',
@@ -192,7 +249,7 @@ describe('registerExternalActivation', () => {
     verify.mockResolvedValue({ ok: true, payload: { plan: 'pro', seats: 1 }, authority: 'money' })
     write.mockResolvedValue(undefined)
     const reply = vi.fn()
-    expect(listener!(msg('signed.valid'), { url: PRICING }, reply)).toBe(true)
+    expect(listener!({ ...msg('signed.valid'), ...INLINE_CONSENT }, { url: PRICING }, reply)).toBe(true)
     await vi.waitFor(() =>
       expect(reply).toHaveBeenCalledWith({ ok: true, scope: 'Personal · 1 account/profile' }),
     )

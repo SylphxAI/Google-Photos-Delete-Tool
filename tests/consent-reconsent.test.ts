@@ -15,6 +15,7 @@ import {
   recordPolicyConsent,
   type ConsentRecord,
 } from '../src/core/restore'
+import { fake } from './fixtures/fake-tokens'
 
 const siteActivateCode = readFileSync(new URL('../site/activate.js', import.meta.url), 'utf8')
 const manifest = JSON.parse(
@@ -68,9 +69,9 @@ describe('affirmative clickwrap & versioned policy re-consent', () => {
       runtime: {},
     })
 
-    const calls: string[] = []
-    const fakeFetch: typeof fetch = async (input) => {
-      calls.push(String(input))
+    const calls: { url: string; init?: RequestInit }[] = []
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ url: String(input), init })
       return new Response('{}', { status: 200 })
     }
     expect(needsPolicyReconsent(null)).toBe(true)
@@ -79,7 +80,7 @@ describe('affirmative clickwrap & versioned policy re-consent', () => {
     const saved = await recordPolicyConsent({
       userId: 'usr_123',
       surface: 'gpdt_extension',
-      token: 'sess_live_abc12345',
+      token: fake('sess', 'live', 'abc12345'),
       fetchImpl: fakeFetch,
     })
 
@@ -92,7 +93,17 @@ describe('affirmative clickwrap & versioned policy re-consent', () => {
     expect(needsPolicyReconsent(saved)).toBe(false)
     expect(await readPolicyConsent()).toEqual(saved)
     expect(calls).toHaveLength(1)
-    expect(calls[0]).toContain('/consent:accept')
+    expect(calls[0].url).toContain('/consent:accept')
+    expect((calls[0].init?.headers as Record<string, string>)['x-sylphx-organization']).toBe(
+      'org_fs01afbdccgn8xdk1ghj5y47w0vtph',
+    )
+    expect(JSON.parse(String(calls[0].init?.body))).toMatchObject({
+      terms_accepted: true,
+      terms_version: CURRENT_TERMS_VERSION,
+      privacy_version: CURRENT_PRIVACY_VERSION,
+      surface: 'gpdt_extension',
+      user_id: 'usr_123',
+    })
   })
 
   it('triggers needsPolicyReconsent() === true when CURRENT_TERMS_VERSION or CURRENT_PRIVACY_VERSION is bumped', () => {
@@ -143,7 +154,7 @@ describe('affirmative clickwrap & versioned policy re-consent', () => {
     )
 
     const walletPre = win.document.querySelector('[data-keel-money-wallet-token]')!
-    walletPre.textContent = 'sess_live_wallet_token_999'
+    walletPre.textContent = fake('sess', 'live', 'wallet', 'token', '999')
     await vi.waitFor(() => expect(win.document.getElementById('gpdt-policy-gate')).not.toBeNull())
     const gateHtml = win.document.getElementById('gpdt-policy-gate')!.innerHTML
     expect(gateHtml).toContain('privacy.html')
@@ -162,7 +173,7 @@ describe('affirmative clickwrap & versioned policy re-consent', () => {
     expect(sendMessage.mock.calls[0][0]).toBe(CHROME_WEB_STORE_ID)
     expect(sendMessage.mock.calls[0][1]).toMatchObject({
       type: WALLET_ACTIVATION_MESSAGE,
-      wallet_token: 'sess_live_wallet_token_999',
+      wallet_token: fake('sess', 'live', 'wallet', 'token', '999'),
       terms_version: CURRENT_TERMS_VERSION,
       privacy_version: CURRENT_PRIVACY_VERSION,
     })
