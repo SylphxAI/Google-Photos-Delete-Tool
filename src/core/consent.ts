@@ -1,13 +1,14 @@
 /**
  * Sole writer for destructive-run admission, empty-trash chain
- * admission, and single-run occupancy.
+ * admission, single-run occupancy, and versioned Terms/Privacy
+ * clickwrap + re-consent admission.
  *
  * Identities: GPDT-CONSENT, GPDT-TRASH-HANDOFF (chain predicate),
- * GPDT-CONTROL (no second engine while the first is settling).
+ * GPDT-CONTROL (no second engine while the first is settling),
+ * GPDT-POLICY-CONSENT (affirmative clickwrap & versioned re-consent).
  *
  * Surfaces read their own storage backends and pass interpreted
- * acknowledgements here. This module does not know chrome.storage vs
- * localStorage; it only admits or refuses.
+ * acknowledgements here.
  */
 import type { RunStatus } from './status'
 
@@ -16,6 +17,228 @@ export const EMPTY_TRASH_ACK_KEY = 'gpdt_emptyTrashAck_v3'
 
 /** Userscript / panel localStorage acknowledgement token. */
 export const LOCAL_ACK_VALUE = '1'
+
+/** Versioned Terms of Service and Privacy Policy identifiers (Chairman #3751-#3753). */
+export const CURRENT_TERMS_VERSION = '2026-11-14'
+export const CURRENT_PRIVACY_VERSION = '2026-11-14'
+export const POLICY_CONSENT_KEY = 'gpdt_policy_consent'
+
+export const DEFAULT_CONSENT_API_ORIGIN = 'https://api.sylphx.com'
+export const DEFAULT_CONSENT_PARENT =
+  'orgs/org_fs01afbdccgn8xdk1ghj5y47w0vtph/projects/prj_fs01etb6sjwf33tcvmhf93jwppx8a0/envs/env_fs01kkyfapshabd01pdps7kf0f72cr'
+export const DEFAULT_CONSENT_PUBLISHABLE_KEY = 'sylphx_pk_live_fs011xLNiTif0SkaOCFx'
+
+export type ConsentSurface = 'gpdt_extension' | 'gpdt_web_activate' | 'sylphx_account'
+
+export interface ConsentRecord {
+  user_id?: string
+  terms_version: string
+  privacy_version: string
+  accepted_at: string
+  surface: ConsentSurface
+}
+
+const VALID_SURFACES: readonly ConsentSurface[] = [
+  'gpdt_extension',
+  'gpdt_web_activate',
+  'sylphx_account',
+]
+
+export function isValidConsentSurface(value: unknown): value is ConsentSurface {
+  return typeof value === 'string' && (VALID_SURFACES as readonly string[]).includes(value)
+}
+
+export function isValidConsentRecord(raw: unknown): raw is ConsentRecord {
+  if (!raw || typeof raw !== 'object') return false
+  const r = raw as Record<string, unknown>
+  if (typeof r.terms_version !== 'string' || !r.terms_version.trim()) return false
+  if (typeof r.privacy_version !== 'string' || !r.privacy_version.trim()) return false
+  if (typeof r.accepted_at !== 'string' || !Number.isFinite(Date.parse(r.accepted_at))) return false
+  if (!isValidConsentSurface(r.surface)) return false
+  if (r.user_id !== undefined && typeof r.user_id !== 'string') return false
+  return true
+}
+
+/**
+ * Returns true whenever consent is missing, malformed, or accepted against an
+ * older Terms or Privacy Policy version than required.
+ */
+export function needsPolicyReconsent(
+  record: ConsentRecord | null | undefined,
+  requiredTermsVersion: string = CURRENT_TERMS_VERSION,
+  requiredPrivacyVersion: string = CURRENT_PRIVACY_VERSION,
+): boolean {
+  if (!record || !isValidConsentRecord(record)) return true
+  return (
+    record.terms_version < requiredTermsVersion ||
+    record.privacy_version < requiredPrivacyVersion
+  )
+}
+
+function writeChromeOrLocalPolicyConsent(record: ConsentRecord): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const g = globalThis as {
+      chrome?: {
+        storage?: {
+          local?: {
+            set?: (items: Record<string, unknown>, cb: () => void) => void
+          }
+        }
+        runtime?: { lastError?: { message?: string } }
+      }
+      window?: { localStorage?: Storage }
+      localStorage?: Storage
+    }
+    const localArea = g.chrome?.storage?.local
+    if (localArea && typeof localArea.set === 'function') {
+      localArea.set({ [POLICY_CONSENT_KEY]: record }, () => {
+        const err = g.chrome?.runtime?.lastError
+        if (err) reject(new Error(err.message ?? 'Failed to persist policy consent'))
+        else resolve()
+      })
+      return
+    }
+    try {
+      const ls = g.window?.localStorage ?? g.localStorage
+      if (ls && typeof ls.setItem === 'function') {
+        ls.setItem(POLICY_CONSENT_KEY, JSON.stringify(record))
+      }
+      resolve()
+    } catch (err) {
+      reject(err instanceof Error ? err : new Error('Failed to persist policy consent'))
+    }
+  })
+}
+
+export function readPolicyConsent(): Promise<ConsentRecord | null> {
+  return new Promise((resolve) => {
+    const g = globalThis as {
+      chrome?: {
+        storage?: {
+          local?: {
+            get?: (keys: string[], cb: (data: Record<string, unknown>) => void) => void
+          }
+        }
+        runtime?: { lastError?: { message?: string } }
+      }
+      window?: { localStorage?: Storage }
+      localStorage?: Storage
+    }
+    const localArea = g.chrome?.storage?.local
+    if (localArea && typeof localArea.get === 'function') {
+      localArea.get([POLICY_CONSENT_KEY], (data) => {
+        if (g.chrome?.runtime?.lastError) {
+          resolve(null)
+          return
+        }
+        const raw = data?.[POLICY_CONSENT_KEY]
+        resolve(isValidConsentRecord(raw) ? raw : null)
+      })
+      return
+    }
+    try {
+      const ls = g.window?.localStorage ?? g.localStorage
+      const raw = ls?.getItem(POLICY_CONSENT_KEY)
+      if (!raw) {
+        resolve(null)
+        return
+      }
+      const parsed: unknown = JSON.parse(raw)
+      resolve(isValidConsentRecord(parsed) ? parsed : null)
+    } catch {
+      resolve(null)
+    }
+  })
+}
+
+export interface RecordPolicyConsentInput {
+  userId?: string
+  user_id?: string
+  surface: ConsentSurface
+  accepted?: boolean
+  termsVersion?: string
+  privacyVersion?: string
+  acceptedAt?: string
+  token?: string
+  apiOrigin?: string
+  parent?: string
+  publishableKey?: string
+  fetchImpl?: typeof fetch
+  requiredTermsVersion?: string
+  requiredPrivacyVersion?: string
+}
+
+/**
+ * Validates affirmative clickwrap consent, persists `gpdt_policy_consent` in
+ * `chrome.storage.local`, and when authenticated (`token` provided) posts the
+ * immutable acceptance record to the cloud consent endpoint.
+ */
+export async function recordPolicyConsent(input: RecordPolicyConsentInput): Promise<ConsentRecord> {
+  if (input.accepted === false) {
+    throw new Error('affirmative_consent_required')
+  }
+  if (!isValidConsentSurface(input.surface)) {
+    throw new Error('invalid_consent_surface')
+  }
+  const userId = (input.userId ?? input.user_id)?.trim()
+  const record: ConsentRecord = {
+    ...(userId ? { user_id: userId } : {}),
+    terms_version: input.termsVersion ?? CURRENT_TERMS_VERSION,
+    privacy_version: input.privacyVersion ?? CURRENT_PRIVACY_VERSION,
+    accepted_at: input.acceptedAt ?? new Date().toISOString(),
+    surface: input.surface,
+  }
+  if (
+    needsPolicyReconsent(
+      record,
+      input.requiredTermsVersion ?? CURRENT_TERMS_VERSION,
+      input.requiredPrivacyVersion ?? CURRENT_PRIVACY_VERSION,
+    )
+  ) {
+    throw new Error('affirmative_consent_required')
+  }
+
+  await writeChromeOrLocalPolicyConsent(record)
+
+  const token = input.token?.trim()
+  if (token) {
+    const apiOrigin = (input.apiOrigin ?? DEFAULT_CONSENT_API_ORIGIN).replace(/\/+$/, '')
+    const parent = input.parent ?? DEFAULT_CONSENT_PARENT
+    const publishableKey = input.publishableKey ?? DEFAULT_CONSENT_PUBLISHABLE_KEY
+    const defaultFetch =
+      typeof fetch === 'function' &&
+      ('mock' in fetch || !(globalThis as { process?: { env?: { VITEST?: string } } }).process?.env?.VITEST)
+        ? fetch
+        : undefined
+    const f = input.fetchImpl ?? defaultFetch
+    if (f) {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+        'x-sylphx-key': publishableKey,
+        'Content-Type': 'application/json',
+      }
+      const body = JSON.stringify(record)
+      try {
+        const res = await f(`${apiOrigin}/v1/auth/${parent}/consent:accept`, {
+          method: 'POST',
+          headers,
+          body,
+        })
+        if (res && res.status === 404) {
+          await f(`${apiOrigin}/account/consent`, {
+            method: 'POST',
+            headers,
+            body,
+          })
+        }
+      } catch {
+        // Local consent record is authoritative offline; cloud sync retries on next auth call
+      }
+    }
+  }
+
+  return record
+}
 
 export type Acknowledgement = {
   readable: boolean

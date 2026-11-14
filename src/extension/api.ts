@@ -10,6 +10,9 @@
 import type { EmptyTrashBaton } from '../core/empty-trash-baton'
 import { PRESETS_KEY, type PresetStore } from '../core/presets'
 import { PRO_TOKEN_KEY } from '../core/pro-moments'
+import { WALLET_TOKEN_KEY } from '../core/restore/wallet'
+
+export { WALLET_TOKEN_KEY }
 
 export function storageGet(keys: string | string[]): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
@@ -140,6 +143,25 @@ export async function writeProToken(token: string): Promise<void> {
   } catch (err) {
     console.warn('[gpdt:license] sync write failed:', err)
   }
+}
+
+/** Read the Sylphx Auth session token for the AI Restore Credit wallet from chrome.storage.local. */
+export async function readWalletToken(): Promise<string | null> {
+  try {
+    const local = (await storageGet([WALLET_TOKEN_KEY]))[WALLET_TOKEN_KEY]
+    return typeof local === 'string' && local ? local : null
+  } catch {
+    return null
+  }
+}
+
+/** Save the Sylphx Auth session token for the AI Restore Credit wallet in chrome.storage.local. */
+export async function writeWalletToken(token: string): Promise<void> {
+  await storageSet({ [WALLET_TOKEN_KEY]: token })
+}
+
+export async function clearWalletToken(): Promise<void> {
+  await storageRemove([WALLET_TOKEN_KEY])
 }
 
 export function runtimeSendMessage(message: unknown): Promise<unknown> {

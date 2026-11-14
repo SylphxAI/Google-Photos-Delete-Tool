@@ -1,10 +1,25 @@
 {
   "spec": {
+    "application_data": {
+      "wallet_trial_grants": {
+        "AI_RESTORE_CREDIT": "3"
+      }
+    },
     "features": [
       {
         "key": "gpdt_pro",
         "display_name": "Google Photos Delete Tool Pro",
         "kind": "boolean"
+      },
+      {
+        "key": "gpdt_restore_pass",
+        "display_name": "Google Photos AI 4K Restore Pass",
+        "kind": "boolean"
+      },
+      {
+        "key": "ai_restore_monthly_credits",
+        "display_name": "Monthly AI 4K Restore Credits",
+        "kind": "limit"
       }
     ],
     "products": [
@@ -67,6 +82,92 @@
               "GBP": "390",
               "EUR": "450",
               "HKD": "3800"
+            }
+          }
+        ]
+      },
+      {
+        "key": "gpdt_credits_30",
+        "display_name": "Google Photos AI 4K Restore — 30 Credits",
+        "grants": {
+          "AI_RESTORE_CREDIT": "30"
+        },
+        "prices": [
+          {
+            "key": "gpdt_credits_30",
+            "default_currency": "USD",
+            "tax_behavior": "inclusive",
+            "unit_amounts": {
+              "USD": "500",
+              "GBP": "399",
+              "EUR": "459",
+              "HKD": "3900"
+            }
+          }
+        ]
+      },
+      {
+        "key": "gpdt_credits_100",
+        "display_name": "Google Photos AI 4K Restore — 100 Credits",
+        "grants": {
+          "AI_RESTORE_CREDIT": "100"
+        },
+        "prices": [
+          {
+            "key": "gpdt_credits_100",
+            "default_currency": "USD",
+            "tax_behavior": "inclusive",
+            "unit_amounts": {
+              "USD": "1200",
+              "GBP": "949",
+              "EUR": "1099",
+              "HKD": "9400"
+            }
+          }
+        ]
+      },
+      {
+        "key": "gpdt_credits_300",
+        "display_name": "Google Photos AI 4K Restore — 300 Credits",
+        "grants": {
+          "AI_RESTORE_CREDIT": "300"
+        },
+        "prices": [
+          {
+            "key": "gpdt_credits_300",
+            "default_currency": "USD",
+            "tax_behavior": "inclusive",
+            "unit_amounts": {
+              "USD": "2900",
+              "GBP": "2299",
+              "EUR": "2699",
+              "HKD": "22600"
+            }
+          }
+        ]
+      },
+      {
+        "key": "gpdt_restore_pass",
+        "display_name": "Google Photos AI 4K Restore Pass",
+        "features": {
+          "gpdt_restore_pass": "true",
+          "ai_restore_monthly_credits": "50"
+        },
+        "grants": {
+          "AI_RESTORE_CREDIT": "50"
+        },
+        "prices": [
+          {
+            "key": "gpdt_restore_pass_monthly",
+            "default_currency": "USD",
+            "tax_behavior": "inclusive",
+            "recurring_interval": "month",
+            "trial_days": 0,
+            "unit_amounts": {
+              "USD": "499",
+              "GBP": "399",
+              "EUR": "459",
+              "HKD": "3900"
             }
           }
         ]

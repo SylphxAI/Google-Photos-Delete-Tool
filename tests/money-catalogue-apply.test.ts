@@ -317,3 +317,25 @@ describe('money catalogue workflow', () => {
 		expect(production).not.toContain('STRIPE_TEST_RESTRICTED_KEY')
 	})
 })
+
+describe('money catalogue declarative schema (v3.7.0 Pro + AI Restore Credits)', () => {
+	test('preserves gpdt_pro and declares wallet_trial_grants, credit packs, and restore pass', () => {
+		const raw = JSON.parse(readFileSync(join(root, 'config/money-catalogue.json'), 'utf8'))
+		expect(raw.spec.application_data).toEqual({
+			wallet_trial_grants: { AI_RESTORE_CREDIT: '3' },
+		})
+		expect(raw.spec.features).toEqual([
+			{ key: 'gpdt_pro', display_name: 'Google Photos Delete Tool Pro', kind: 'boolean' },
+			{ key: 'gpdt_restore_pass', display_name: 'Google Photos AI 4K Restore Pass', kind: 'boolean' },
+			{ key: 'ai_restore_monthly_credits', display_name: 'Monthly AI 4K Restore Credits', kind: 'limit' },
+		])
+		const productKeys = raw.spec.products.map((p: { key: string }) => p.key)
+		expect(productKeys).toEqual([
+			'gpdt_pro',
+			'gpdt_credits_30',
+			'gpdt_credits_100',
+			'gpdt_credits_300',
+			'gpdt_restore_pass',
+		])
+	})
+})
